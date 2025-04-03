@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Premium pricing plans for our service" />
+    <title>Premium Plans | Service Name</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --basic-color: #6c5ce7;
+        --pro-color: #00b894;
+        --exp-color: #0984e3;
+        --text-dark: #2d3436;
+        --text-light: #f5f6fa;
+        --bg-color: #abacad;
+        --card-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-dark);
+        line-height: 1.6;
+      }
+
+
+      
+   
+      .pricing-section {
+        padding: 4rem 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        align-items: stretch;
+        padding: 2rem;
+        flex-wrap: wrap;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .card {
+        background-color: white;
+        width: 350px;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        position: relative;
+        margin-bottom: 2rem;
+      }
+
+      .card:hover {
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      .top {
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        position: relative;
+      }
+
+      .card-1 .top {
+        background: linear-gradient(135deg, var(--basic-color), #a29bfe);
+      }
+
+      .card-2 .top {
+        background: linear-gradient(135deg, var(--pro-color), #55efc4);
+      }
+
+      .card-3 .top {
+        background: linear-gradient(135deg, var(--exp-color), #74b9ff);
+      }
+
+      .card h3 {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+
+      .card .top p {
+        font-weight: 300;
+        opacity: 0.9;
+        font-size: 1.1rem;
+      }
+
+      .content {
+        padding: 2rem;
+        color: var(--text-dark);
+      }
+
+      .feature {
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .feature i {
+        margin-right: 0.5rem;
+        color: var(--text-dark);
+      }
+
+      .feature span:first-child {
+        display: flex;
+        align-items: center;
+      }
+
+      .not-avail {
+        opacity: 0.5;
+        text-decoration: line-through;
+      }
+
+      .price {
+        padding: 1.5rem;
+        text-align: center;
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+      }
+
+      .price p {
+        font-size: 1rem;
+        font-weight: 400;
+        opacity: 0.9;
+        margin-top: 0.5rem;
+      }
+
+      .footer {
+        padding: 1.5rem;
+        text-align: center;
+      }
+
+      button {
+        padding: 1rem 2.5rem;
+        border-radius: 50px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        font-size: 1rem;
+        width: 100%;
+        display: block;
+      }
+
+      .card-1 button {
+        background: white;
+        color: var(--basic-color);
+        border: 2px solid var(--basic-color);
+      }
+
+      .card-2 button {
+        background: white;
+        color: var(--pro-color);
+        border: 2px solid var(--pro-color);
+      }
+
+      .card-3 button {
+        background: white;
+        color: var(--exp-color);
+        border: 2px solid var(--exp-color);
+      }
+
+      button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-1 button:hover {
+        background: var(--basic-color);
+        color: white;
+      }
+
+      .card-2 button:hover {
+        background: var(--pro-color);
+        color: white;
+      }
+
+      .card-3 button:hover {
+        background: var(--exp-color);
+        color: white;
+      }
+
+      .highlight {
+        transform: scale(1.05);
+        z-index: 1;
+      }
+
+      .highlight .top {
+        padding-top: 2.5rem;
+      }
+
+      .highlight::after {
+        content: "MOST POPULAR";
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: linear-gradient(135deg, #fdcb6e, #e17055);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-bottom-left-radius: 16px;
+      }
+
+      
+
+      .copyright {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        color: #b2bec3;
+        font-size: 0.9rem;
+      }
+
+     
+      @media (max-width: 768px) {
+        .hero h1 {
+          font-size: 2.2rem;
+        }
+
+        .hero p {
+          font-size: 1rem;
+        }
+
+        .container {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .card {
+          width: 100%;
+          max-width: 400px;
+        }
+
+        .highlight {
+          transform: none;
+        }
+
+        nav {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .nav-links {
+          flex-direction: column;
+          gap: 1rem;
+          text-align: center;
+        }
+      }
+
+ 
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.8s ease forwards;
+      }
+
+      .delay-1 {
+        animation-delay: 0.2s;
+      }
+
+      .delay-2 {
+        animation-delay: 0.4s;
+      }
+
+      .delay-3 {
+        animation-delay: 0.6s;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="pricing-section">
+      <div class="container">
+      
+        <div class="card card-1 fade-in delay-1">
+          <div class="top">
+            <h3>Basic</h3>
+            <p>Perfect for individuals and small teams</p>
+          </div>
+          <div class="content">
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Core Features</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Basic Analytics</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Email Support</span>
+            </div>
+            <div class="feature">
+              <span class="not-avail"
+                ><i class="fas fa-times"></i> Advanced Reports</span
+              >
+            </div>
+            <div class="feature">
+              <span class="not-avail"
+                ><i class="fas fa-times"></i> Priority Support</span
+              >
+            </div>
+          </div>
+          <div class="price" style="background: var(--basic-color)">
+            $19<span>/mo</span>
+            <p>billed annually</p>
+          </div>
+          <div class="footer">
+            <button>Choose Basic</button>
+          </div>
+        </div>
+
+     
+        <div class="card card-2 highlight fade-in delay-2">
+          <div class="top">
+            <h3>Professional</h3>
+            <p>Best for growing businesses</p>
+          </div>
+          <div class="content">
+            <div class="feature">
+              <span><i class="fas fa-check"></i> All Basic Features</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Advanced Analytics</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> 24/7 Support</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Custom Reports</span>
+            </div>
+            <div class="feature">
+              <span class="not-avail"
+                ><i class="fas fa-times"></i> Dedicated Account Manager</span
+              >
+            </div>
+          </div>
+          <div class="price" style="background: var(--pro-color)">
+            $49<span>/mo</span>
+            <p>billed annually</p>
+          </div>
+          <div class="footer">
+            <button>Choose Professional</button>
+          </div>
+        </div>
+
+        
+        <div class="card card-3 fade-in delay-3">
+          <div class="top">
+            <h3>Enterprise</h3>
+            <p>For large organizations</p>
+          </div>
+          <div class="content">
+            <div class="feature">
+              <span><i class="fas fa-check"></i> All Pro Features</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Premium Analytics</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> VIP Support</span>
+            </div>
+            <div class="feature">
+              <span><i class="fas fa-check"></i> Custom Solutions</span>
+            </div>
+            <div class="feature">
+              <span
+                ><i class="fas fa-check"></i> Dedicated Account Manager</span
+              >
+            </div>
+          </div>
+          <div class="price" style="background: var(--exp-color)">
+            $99<span>/mo</span>
+            <p>billed annually</p>
+          </div>
+          <div class="footer">
+            <button>Choose Enterprise</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+        </div>
+      </div>
+    </section>
+
+   
+      <div class="copyright">&copy; 2023 ServiceName. All rights reserved.</div>
+    </footer>
+
+    
+  </body>
+</html>
