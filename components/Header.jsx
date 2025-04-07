@@ -16,7 +16,7 @@ const Header = async ({ isAdminPage = false }) => {
             alt="Gadi Ghar Logo"
             width={200}
             height={60}
-            className="h-12 w-auto object-contain"
+            className=" w-auto object-contain"
           />
           {isAdminPage && (
             <span className="text-xs font-extralight">admin</span>
