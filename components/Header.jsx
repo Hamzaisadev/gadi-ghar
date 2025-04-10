@@ -6,7 +6,7 @@ import React from "react";
 import { Button } from "./ui/button";
 
 const Header = async ({ isAdminPage = false }) => {
-  const isAdmin = false;
+  const isAdmin = true;
   return (
     <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b">
       <nav className="mx-auto px-4 py-4 flex items-center justify-between">
