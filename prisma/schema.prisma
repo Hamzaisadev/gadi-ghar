@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../lib/generated/prisma"
 }
 
 datasource db {
@@ -26,7 +25,7 @@ model User {
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   role                 UserRole              @default(USER)
-  savedCars            UserSaveCars[]
+  savedCars            UserSavedCar[]
   testDrives           TestDriveBooking[]
 }
 
@@ -52,7 +51,7 @@ model Car {
   featured            Boolean               @default(false)
   images              String[]              // Array of Supabase storage
   savedBy             UserSavedCar[]
-  testDriveBookings    TestDriveBooking[]
+  testDriveBookings   TestDriveBooking[]
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
 
@@ -109,7 +108,46 @@ enum DayOfWeek {
   SUNDAY
 }
 
+model UserSavedCar {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId] , references: [id],  onDelete: Cascade)
+  carId       String
+  car         Car           @relation(fields: [carId] , references: [id], onDelete: Cascade)
+  savedAt     DateTime      @default(now())
 
+  @@unique([userId, carId])
+  @@index([userId])
+  @@index([carId])
+}
+
+model TestDriveBooking {
+  id            String        @id @default(uuid())
+  carId         String
+  car           Car           @relation(fields: [carId], references: [id])
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  bookingDate   DateTime      @db.Date
+  startTime     String        // Format: "HH:MM" (24-hour)
+  endTime       String        // Format: "HH:MM" (24-hour)
+  status        BookingStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([carId])
+  @@index([userId])
+  @@index([bookingDate])
+  @@index([status])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
 
 
 
