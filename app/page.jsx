@@ -16,8 +16,8 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="pt-20 flex flex-col">
-      <section className="relative  md:mt-20 mt-18 py-16 md:py-28 dotted-background">
+    <div className=" flex flex-col">
+      <section className="relative  py-16 md:py-28 dotted-background">
         <div className="max-w-4xl mx-auto text-center">
           <div className="mb-8">
             <h1 className="text-5xl md:text-8xl mb-4 gradient-title">

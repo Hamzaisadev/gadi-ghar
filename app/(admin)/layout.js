@@ -3,6 +3,7 @@ import React from "react";
 import Header from "@/components/Header";
 import NotAdmin from "./admin/_components/NotAdmin";
 import Sidebar from "./admin/_components/Sidebar";
+import NavbarServer from "@/components/NavbarServer";
 
 export const metadata = {
   title: "Admin | Gadi Ghar",
@@ -17,7 +18,7 @@ export default async function AdminLayout({ children }) {
   }
   return (
     <div className="h-full">
-      <Header isAdminPage={true} className="hidden" />
+      <NavbarServer isAdminPage={true} className="hidden" />
       <div className="flex h-full w-56 md:mt-12 mt-16 flex-col top-20 fixed inset-y-0 z-50">
         <Sidebar />
       </div>

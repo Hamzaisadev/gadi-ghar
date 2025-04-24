@@ -4,6 +4,8 @@ import Header from "@/components/Header";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import Footer from "@/components/Footer";
+import Navbar from "@/components/Navbar";
+import NavbarServer from "@/components/NavbarServer";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -21,7 +23,8 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <body className={`${poppins.variable} antialiased`}>
-          <Header />
+          {/* <Header /> */}
+          <NavbarServer />
           <main className="min-h-screen">{children}</main>
           <Toaster
             richColors
