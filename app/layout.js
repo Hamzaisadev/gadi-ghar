@@ -6,7 +6,8 @@ import { Toaster } from "sonner";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import NavbarServer from "@/components/NavbarServer";
-
+import { ViewTransitions } from "next-view-transitions";
+import PageWrapper from "@/components/utils/pageWrapper";
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -21,25 +22,30 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${poppins.variable} antialiased`}>
-          {/* <Header /> */}
-          <NavbarServer />
-          <main className="min-h-screen">{children}</main>
-          <Toaster
-            richColors
-            expand
-            toastOptions={{
-              style: {
-                fontSize: "1.1rem",
-                padding: "16px",
-              },
-            }}
-          />
+      <ViewTransitions>
+        <html lang="en">
+          <body className={`${poppins.variable} antialiased`}>
+            {/* <Header /> */}
+            <PageWrapper>
+              <NavbarServer />
 
-          <Footer />
-        </body>
-      </html>
+              <main className="bg-white min-h-screen">{children}</main>
+
+              <Toaster
+                richColors
+                expand
+                toastOptions={{
+                  style: {
+                    fontSize: "1.1rem",
+                    padding: "16px",
+                  },
+                }}
+              />
+              <Footer />
+            </PageWrapper>
+          </body>
+        </html>
+      </ViewTransitions>
     </ClerkProvider>
   );
 }

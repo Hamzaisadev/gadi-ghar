@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import NotAdmin from "./admin/_components/NotAdmin";
 import Sidebar from "./admin/_components/Sidebar";
 import NavbarServer from "@/components/NavbarServer";
+import PageWrapper from "@/components/utils/pageWrapper";
 
 export const metadata = {
   title: "Admin | Gadi Ghar",
@@ -17,14 +18,14 @@ export default async function AdminLayout({ children }) {
     return <NotAdmin />;
   }
   return (
-    <div className="h-full">
-      <NavbarServer isAdminPage={true} className="hidden" />
-      <div className="flex h-full w-56 md:mt-12 mt-16 flex-col top-20 fixed inset-y-0 z-50">
-        <Sidebar />
+    <PageWrapper>
+      <div className="min-h-screen ">
+        <NavbarServer isAdminPage={true} />
+        <div className="flex h-full w-56 md:mt-12 mt-16 flex-col top-20 fixed inset-y-0 z-50">
+          <Sidebar />
+        </div>
+        <main className="md:pl-56 pt-[80px]  h-full">{children}</main>
       </div>
-      <main className="md:pl-56 pt-[80px] md:mt-12 mt-7 h-full">
-        {children}
-      </main>
-    </div>
+    </PageWrapper>
   );
 }
