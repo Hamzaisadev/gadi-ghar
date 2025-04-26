@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import TransactionLink from "../TransitionLink";
-import { links } from "./navbarData";
+import { footerLinks, links } from "./navbarData";
 import TransitionLink from "../TransitionLink";
-import { perspective } from "./navbarAnim";
+import { perspective, slideIn } from "./navbarAnim";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 const MenuNavbar = () => {
   return (
@@ -32,6 +32,27 @@ const MenuNavbar = () => {
           );
         })}
       </div>
+      <motion.div className="flex flex-wrap gap-6">
+        {footerLinks.map((link, i) => {
+          const { icon, href } = link;
+          return (
+            <motion.div
+              variants={slideIn}
+              custom={i}
+              initial="initial"
+              animate="enter"
+              exit="exit"
+              key={`f_${i}`}
+            >
+              <Link href={href}>
+                <span className="">
+                  {React.cloneElement(icon, { size: 30, color: "black" })}
+                </span>
+              </Link>
+            </motion.div>
+          );
+        })}
+      </motion.div>
     </div>
   );
 };

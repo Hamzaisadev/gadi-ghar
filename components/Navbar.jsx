@@ -15,7 +15,7 @@ import { Button } from "./ui/button";
 import TransitionLink from "./utils/TransitionLink";
 import MenuButton from "./utils/MenuButton";
 import PageWrapper from "./utils/pageWrapper";
-import NavbarMenu from "./utils/Menu";
+import { NavbarMenu, MobNavbarMenu } from "./utils/Menu";
 
 const Navbar = ({ user, isAdminPage = false }) => {
   // true = navbar visible; false = navbar hidden
@@ -54,7 +54,7 @@ const Navbar = ({ user, isAdminPage = false }) => {
       <nav
         className={`
         fixed top-0 left-0 w-full z-50
-        transform transition-transform duration-300
+        transform transition-transform duration-1000
         py-4 md:py-5               ← add some vertical padding!
         ${
           isVisible
@@ -74,17 +74,15 @@ const Navbar = ({ user, isAdminPage = false }) => {
                 alt="Gadi Ghar Logo"
                 width={100}
                 height={60}
-                className="md:w-full w-44 object-contain"
+                className="md:w-44 w-36 object-contain"
               />
               {isAdminPage && (
                 <span className="text-xs font-extralight">admin</span>
               )}
             </Link>
 
-            <div></div>
-
             {/* Desktop */}
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden md:flex items-center space-x-4">
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
@@ -132,7 +130,7 @@ const Navbar = ({ user, isAdminPage = false }) => {
               )}
 
               <SignedOut>
-                <MenuButton />
+                <NavbarMenu />
                 {!isAdminPage && (
                   <SignInButton forceRedirectUrl="/">
                     <Button variant="outline">Login</Button>
@@ -150,38 +148,72 @@ const Navbar = ({ user, isAdminPage = false }) => {
                 />
               </SignedIn>
             </div>
+            <div className="md:hidden flex  shadow-lg animate-in fade-in gap-x-3">
+              {isAdminPage ? (
+                <>
+                  <TransitionLink href="/">
+                    <Button variant="outline">
+                      <ArrowLeft size={18} />
+                      <span>Back to app</span>
+                    </Button>
+                  </TransitionLink>
+                </>
+              ) : (
+                <SignedIn>
+                  {!isAdmin && (
+                    <TransitionLink
+                      href="/reservations"
+                      className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+                    >
+                      <Button variant="outline">
+                        <CarFront size={18} />
+                        <span className="hidden md:inline">
+                          My Reservations
+                        </span>
+                      </Button>
+                    </TransitionLink>
+                  )}
+                  <TransitionLink href="/saved-cars">
+                    <Button>
+                      <Heart size={18} />
+                      <span className="hidden md:inline">Saved Cars</span>
+                    </Button>
+                  </TransitionLink>
+                  <MobNavbarMenu />
+                  {isAdmin && (
+                    <TransitionLink href="/admin">
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        <Layout size={18} />
+                        <span className="hidden md:inline">Admin Portal</span>
+                      </Button>
+                    </TransitionLink>
+                  )}
+                </SignedIn>
+              )}
 
-            {/* Mobile toggle */}
-            <button
-              className="md:hidden text-gray-700 focus:outline-none"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <Menu size={24} />
-            </button>
-          </div>
+              <SignedOut>
+                <MobNavbarMenu />
+                {!isAdminPage && (
+                  <SignInButton forceRedirectUrl="/">
+                    <Button variant="outline">Login</Button>
+                  </SignInButton>
+                )}
+              </SignedOut>
 
-          {isMobileMenuOpen && (
-            <div className="md:hidden mt-4 pb-4 bg-white rounded-lg shadow-lg animate-in fade-in">
-              <div className="flex flex-col space-y-4 pt-2 pb-3 px-4">
-                <Link href="#" className="nav-link font-medium py-2">
-                  Home
-                </Link>
-                <Link href="#featured" className="nav-link font-medium py-2">
-                  Featured Cars
-                </Link>
-                <Link href="#about" className="nav-link font-medium py-2">
-                  About
-                </Link>
-                <Link href="#services" className="nav-link font-medium py-2">
-                  Services
-                </Link>
-                <Link href="#contact" className="nav-link font-medium py-2">
-                  Contact
-                </Link>
-                <Button className="btn-primary w-full">Book Test Drive</Button>
-              </div>
+              <SignedIn>
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-8 md:block  h-8",
+                    },
+                  }}
+                />
+              </SignedIn>
             </div>
-          )}
+          </div>
         </div>
       </nav>
     </PageWrapper>

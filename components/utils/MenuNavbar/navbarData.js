@@ -1,4 +1,10 @@
+import { Facebook, Github, Instagram, Linkedin } from "lucide-react";
+
 export const links = [
+  {
+    title: "Home",
+    href: "/",
+  },
   {
     title: "Cars",
     href: "/cars",
@@ -19,19 +25,19 @@ export const links = [
 
 export const footerLinks = [
   {
-    icon: "Facebook",
+    icon: <Github />,
     href: "/",
   },
   {
-    icon: "LinkedIn",
+    icon: <Linkedin />,
     href: "/",
   },
   {
-    icon: "Instagram",
+    icon: <Instagram />,
     href: "/",
   },
   {
-    icon: "Twitter",
+    icon: <Facebook />,
     href: "/",
   },
 ];

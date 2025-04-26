@@ -1,32 +1,56 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Clock, CrossIcon, Menu, PanelTopCloseIcon } from "lucide-react";
+import { Button } from "../ui/button";
 
 export default function MenuButton({ isActive, toggleMenu }) {
   return (
-    <div
-      className="
+    <>
+      <div
+        className=" hidden md:block
      top-0 right-0 w-[100px] h-[35px] cursor-pointer rounded-md overflow-hidden"
-    >
-      <motion.div
-        className="relative w-full h-full"
-        animate={{ top: isActive ? "-100%" : "0%" }}
-        transition={{ duration: 0.5, type: "tween", ease: [0.76, 0, 0.24, 1] }}
-        style={{ position: "relative" }}
       >
-        <div
-          className="w-full h-full flex bg-white text-white hover:[&_p:nth-of-type(1)]:-translate-y-full hover:[&_p:nth-of-type(1)]:opacity-0 hover:[&_p:nth-of-type(2)]:opacity-100 hover:[&_div.perspectiveText]:rotate-x-90 transition-all duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)]"
-          onClick={toggleMenu}
+        <motion.div
+          className="relative w-full h-full"
+          animate={{ top: isActive ? "-100%" : "0%" }}
+          transition={{
+            duration: 0.5,
+            type: "tween",
+            ease: [0.76, 0, 0.24, 1],
+          }}
+          style={{ position: "relative" }}
         >
-          <PerspectiveText label="Menu" />
-        </div>
-        <div
-          className="w-full h-full flex bg-black hover:[&_p:nth-of-type(1)]:-translate-y-full hover:[&_p:nth-of-type(1)]:opacity-0 hover:[&_p:nth-of-type(2)]:opacity-100 hover:[&_div.perspectiveText]:rotate-x-90 transition-all duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)]"
-          onClick={toggleMenu}
+          <div
+            className="w-full h-full flex bg-white text-white hover:[&_p:nth-of-type(1)]:-translate-y-full hover:[&_p:nth-of-type(1)]:opacity-0 hover:[&_p:nth-of-type(2)]:opacity-100 hover:[&_div.perspectiveText]:rotate-x-90 transition-all duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)]"
+            onClick={toggleMenu}
+          >
+            <PerspectiveText label="Menu" />
+          </div>
+          <div
+            className="w-full h-full flex bg-black hover:[&_p:nth-of-type(1)]:-translate-y-full hover:[&_p:nth-of-type(1)]:opacity-0 hover:[&_p:nth-of-type(2)]:opacity-100 hover:[&_div.perspectiveText]:rotate-x-90 transition-all duration-[750ms] ease-[cubic-bezier(0.76,0,0.24,1)]"
+            onClick={toggleMenu}
+          >
+            <PerspectiveText label="Close" textColor="text-white" />
+          </div>
+        </motion.div>
+      </div>
+      <div className="block md:hidden">
+        <motion.div
+          className="relative w-full h-full"
+          animate={{ top: isActive ? "-100%" : "0%" }}
+          transition={{
+            duration: 0.5,
+            type: "tween",
+            ease: [0.76, 0, 0.24, 1],
+          }}
+          style={{ position: "relative" }}
         >
-          <PerspectiveText label="Close" textColor="text-lime-200" />
-        </div>
-      </motion.div>
-    </div>
+          <Button variant="ghost" onClick={toggleMenu}>
+            {!isActive ? <Menu /> : <PanelTopCloseIcon />}
+          </Button>
+        </motion.div>
+      </div>
+    </>
   );
 }
 
