@@ -5,7 +5,7 @@ import React from "react";
 const Footer = () => {
   return (
     <div>
-      <footer className="bg-blue-50 py-12 animate-fadeIn">
+      <footer className="bg-blue-50 py-12">
         <div className="container mx-auto px-4 text-center">
           <div className="flex justify-center space-x-6 mb-4">
             <a
@@ -59,94 +59,11 @@ const Footer = () => {
               </svg>
             </a>
           </div>
-          <p className="text-gray-600 animate-fadeIn-delayed">
+          <p className="text-gray-600">
             © 2025 Gari Ghar Car Showroom. All rights reserved.
           </p>
         </div>
       </footer>
-
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes shine {
-          0% {
-            transform: translateX(-100%) rotate(45deg);
-          }
-          100% {
-            transform: translateX(100%) rotate(45deg);
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 1s ease-out;
-        }
-
-        .animate-fadeIn-delayed {
-          animation: fadeIn 1s ease-out 0.5s backwards;
-        }
-
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-
-        .social-icon-link {
-          position: relative;
-          color: #666;
-          overflow: hidden;
-          transition: all 0.3s ease;
-          padding: 8px;
-          border-radius: 50%;
-        }
-
-        .social-icon-link:hover {
-          color: #ef4444;
-          transform: translateY(-5px);
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .social-icon-link::before {
-          content: "";
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(
-            45deg,
-            transparent,
-            rgba(255, 255, 255, 0.3),
-            transparent
-          );
-          transform: translateX(-100%) rotate(45deg);
-        }
-
-        .social-icon-link:hover::before {
-          animation: shine 0.5s forwards;
-        }
-
-        .transform {
-          transition: all 0.3s ease;
-        }
-      `}</style>
     </div>
   );
 };
