@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "prisma generate && next build",
   "outputDirectory": ".next",
   "installCommand": "npm install --legacy-peers-deps",
   "framework": "nextjs",
@@ -16,4 +16,4 @@
       "NODE_ENV": "production"
     }
   }
-} 
+}
