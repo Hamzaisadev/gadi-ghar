@@ -10,6 +10,7 @@ const menuVariants = {
     height: "600px",
     top: "-25px",
     right: "-25px",
+  
     transition: { duration: 0.75, type: "tween", ease: [0.76, 0, 0.24, 1] },
     opacity: 1,
     pointerEvents: "auto",
@@ -84,15 +85,17 @@ const NavbarMenu = () => {
   return (
     <div className="relative">
       <motion.div
-        className="bg-[#f5f3f3] rounded-[25px] absolute z-40"
+        className="absolute z-40 w-full h-full rounded-[25px]  bg-[#f5f3f3] "
         variants={menuVariants}
         animate={isActive ? "open" : "closed"}
         initial="closed"
         style={{ overflow: "hidden" }}
       >
-        <AnimatePresence>{isActive && <MenuNavbar />}</AnimatePresence>
+        <AnimatePresence>
+          {isActive && <MenuNavbar toggleMenu={() => setIsActive(false)} />}
+        </AnimatePresence>
       </motion.div>
-      <div className="relative z-50">
+      <div className="relative z-50 ">
         <MenuButton
           isActive={isActive}
           toggleMenu={() => {
@@ -132,13 +135,15 @@ const MobNavbarMenu = () => {
   return (
     <div className="relative">
       <motion.div
-        className="bg-[#f5f3f3] rounded-[25px] absolute z-40"
+        className=" bg-[#f5f3f3] rounded-[25px] absolute z-40"
         variants={mobMenuVariants}
         animate={isActive ? "open" : "closed"}
         initial="closed"
         style={{ overflow: "hidden" }}
       >
-        <AnimatePresence>{isActive && <MenuNavbar />}</AnimatePresence>
+        <AnimatePresence>
+          {isActive && <MenuNavbar toggleMenu={() => setIsActive(false)} />}
+        </AnimatePresence>
       </motion.div>
       <div className="relative z-50">
         <MenuButton

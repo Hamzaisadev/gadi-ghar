@@ -1,5 +1,7 @@
 import CarCard from "@/components/car-card";
-import HomeSearch from "@/components/home-search";
+import BrowseByType from "@/components/sections/BrowseByType";
+import GadiGharInfo from "@/components/sections/GadiGharInfo";
+import HeroSection from "@/components/sections/HeroSection";
 import {
   Accordion,
   AccordionContent,
@@ -19,20 +21,9 @@ export default function Home() {
   return (
     <PageWrapper>
       <div className="bg-white flex flex-col">
-        <section className="relative  py-16 md:py-28 dotted-background">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8">
-              <h1 className="text-5xl md:text-8xl mb-4 gradient-title">
-                Discover Your Ideal Vehicle with Gadi Ghar AI
-              </h1>
-              <p className="text-xl text-gray-500 mb-8 max-w-2xl mx-auto">
-                Utilize advanced AI for car searches and test drives from a vast
-                selection of vehicles
-              </p>
-            </div>
-            <HomeSearch />
-          </div>
-        </section>
+        <HeroSection />
+        <BrowseByType />
+        <GadiGharInfo />
 
         <section className="py-12">
           <div className="container mx-auto px-4">
@@ -52,6 +43,7 @@ export default function Home() {
             </div>
           </div>
         </section>
+
         <section className="py-12 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="flex justify-between items-center mb-8">
@@ -125,45 +117,6 @@ export default function Home() {
                   booking process.
                 </p>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-12 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold">Browse by Body Type</h2>
-              <Button variant="ghost" className="flex items-center" asChild>
-                <Link href="/cars">
-                  View all <ChevronRight className="ml-1 h-4 w-4" />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {bodyTypes.map((type) => {
-                return (
-                  <Link
-                    key={type.name}
-                    href={`/cars?bodyType=${type.name}`}
-                    className="relative group cursor-pointer"
-                  >
-                    <div className="overflow-hidden rounded-lg flex justify-center h-40 mb-4 relative">
-                      <Image
-                        src={type.image}
-                        alt={type.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition duration-300"
-                      />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-lg flex items-end">
-                      <h3 className="text-white text-xl font-bold pl-4 pb-4">
-                        {type.name}
-                      </h3>
-                    </div>
-                  </Link>
-                );
-              })}
             </div>
           </div>
         </section>

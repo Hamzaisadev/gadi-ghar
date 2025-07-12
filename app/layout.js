@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
             <PageWrapper>
               <NavbarServer />
 
-              <main className="bg-white min-h-screen">{children}</main>
+              <main className=" min-h-screen">{children}</main>
 
               <Toaster
                 richColors

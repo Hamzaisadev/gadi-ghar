@@ -74,40 +74,44 @@ const HomeSearch = () => {
     });
 
   return (
-    <div>
-      <form onSubmit={handleTextSearch}>
-        <div className="relative flex items-center">
-          <Search className="absolute left-3 w-5 h-5" />
+    <div className="bg-black/10 backdrop-blur-[20px] border-2 border-black/20 rounded-xl p-4 shadow-xl max-w-2xl mx-auto mb-8">
+      <form onSubmit={handleTextSearch} className="flex flex-col sm:flex-row gap-3">
+      
+      <Button type="button" onClick={() => setIsImageSearchActive(!isImageSearchActive)} className=" bg-black/40 text-white backdrop-blur-sm font-bold text-sm cursor-pointer h-12 px-4 border-2 border-dashed border-gray-300 hover:border-black hover:bg-red-700 transition-colors whitespace-nowrap">
+        <Camera className="  w-8 h-8 mr-2 cursor-pointer  " 
+              
+               />
+               Upload Photo
+          
+          
+          </Button>
+
+
+          <div className="flex gap-2 flex-1">
+       
           <Input
             type="text"
-            placeholder="Enter make, model, or use our AI Image Search..."
+            placeholder="Search by make, model..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-12 py-6 w-full rounded-full border-gray-300 bg-white/95 backdrop-blur-sm"
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="pl-6 pr-6 pb-2  h-12  leading-tight focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:ring-white-500 focus-visible:border-white bg-red-/10  text-red-700  backdrop-blur-[1px] placeholder:text-black  placeholder:text-lg !text-2xl  "
           />
-
-          <div className="absolute right-[100px]">
-            <Camera
-              size={35}
-              onClick={() => setIsImageSearchActive(!isImageSearchActive)}
-              className="cursor-pointer rounded-xl p-1.5"
-              style={{
-                background: isImageSearchActive ? "black" : "",
-                color: isImageSearchActive ? "white" : "",
-              }}
-            />
-          </div>
-
-          <Button type="submit" className="absolute right-2 rounded-full">
+        <Button type="submit" className=" h-12 px-6 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm whitespace-nowrap ">
+        <Search className=" left-3 w-5 h-5" />
             Search
           </Button>
+          
+
         </div>
+        
+
+      
       </form>
 
       {isImageSearchActive && (
         <div className="mt-4">
           <form onSubmit={handleImageSearch}>
-            <div className="border-2 border-dashed border-gray-300 rounded-3xl p-6 text-center">
+            <div className="border-2 border-dashed border-red-500 rounded-3xl p-6 text-center">
               {imagePreview ? (
                 <div>
                   <img

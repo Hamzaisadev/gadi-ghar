@@ -4,11 +4,15 @@ import { useTransitionRouter } from "next-view-transitions";
 import Link, { LinkProps } from "next/link";
 import React, { ReactNode } from "react";
 
-const TransitionLink = ({ children, href, ...props }) => {
+const TransitionLink = ({ children, href, toggleMenu, ...props }) => {
   const router = useTransitionRouter();
 
   const handleTransition = async (e) => {
     e.preventDefault();
+
+    if (toggleMenu) {
+      toggleMenu();
+    }
 
     router.push(href, { onTransitionReady: pageAnimation });
   };

@@ -7,7 +7,7 @@ import { perspective, slideIn } from "./navbarAnim";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-const MenuNavbar = () => {
+const MenuNavbar = ({ toggleMenu }) => {
   return (
     <div className="flex flex-col justify-between h-full pt-[100px] pr-[40px] pb-[50px] pl-[40px]">
       <div className="flex flex-col gap-[10px]">
@@ -22,7 +22,7 @@ const MenuNavbar = () => {
                 animate="enter"
                 exit="exit"
               >
-                <TransitionLink href={href}>
+                <TransitionLink href={href} toggleMenu={toggleMenu}>
                   <span className="no-underline text-black text-[46px]">
                     {title}
                   </span>
@@ -44,7 +44,7 @@ const MenuNavbar = () => {
               exit="exit"
               key={`f_${i}`}
             >
-              <Link href={href}>
+              <Link href={href} onClick={toggleMenu}>
                 <span className="">
                   {React.cloneElement(icon, { size: 30, color: "black" })}
                 </span>

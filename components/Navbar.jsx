@@ -7,7 +7,7 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/nextjs";
-import { ArrowLeft, CarFront, Heart, Layout, Menu } from "lucide-react";
+import { ArrowLeft, CarFront, Heart, Layout, LogIn, Menu, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
@@ -64,7 +64,7 @@ const Navbar = ({ user, isAdminPage = false }) => {
       `}
       >
         <div
-          className=" shadow-[0px_-1px_17px_-1px_rgba(134,_118,_120,_0.61)] bg-white container mx-auto py-4 rounded-xl
+          className="  bg-black/10 backdrop-blur-[15px] border-neutral-400/20 container mx-auto py-4 rounded-xl
        px-4 md:px-8"
         >
           <div className="flex justify-between items-center">
@@ -133,7 +133,7 @@ const Navbar = ({ user, isAdminPage = false }) => {
                 <NavbarMenu />
                 {!isAdminPage && (
                   <SignInButton forceRedirectUrl="/">
-                    <Button variant="outline">Login</Button>
+                    <Button variant="outline" className="bg-red-600 border-none text-white"> <User/> Login</Button>
                   </SignInButton>
                 )}
               </SignedOut>
@@ -148,7 +148,7 @@ const Navbar = ({ user, isAdminPage = false }) => {
                 />
               </SignedIn>
             </div>
-            <div className="md:hidden flex  shadow-lg animate-in fade-in gap-x-3">
+            <div className="md:hidden flex  animate-in fade-in gap-x-3">
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
@@ -198,7 +198,7 @@ const Navbar = ({ user, isAdminPage = false }) => {
                 <MobNavbarMenu />
                 {!isAdminPage && (
                   <SignInButton forceRedirectUrl="/">
-                    <Button variant="outline">Login</Button>
+                    <Button variant="outline" className="bg-red-600 border-none text-white">Login</Button>
                   </SignInButton>
                 )}
               </SignedOut>
