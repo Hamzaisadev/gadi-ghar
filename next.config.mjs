@@ -1,7 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["img.clerk.com"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'source.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com', 
+      },
+    ],
   },
   async headers() {
     return [
@@ -10,7 +23,7 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src `self` https://www.youtube.com",
+            value: "frame-src 'self' https://www.youtube.com", // Use single quotes, not backticks
           },
         ],
       },

@@ -175,3 +175,18 @@ body {
 .bebas {
   font-family: "Bebas Neue", sans-serif;
 }
+
+.bg-buy-card {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0)),
+    url("/bg-buy-card.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.bg-sell-card {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.1) ,rgba(0, 0, 0, 0)),
+    url("/bg-sell-card.jpg");
+  background-size: cover;
+  background-position: 0px, 0px, 10px, 100px;
+  background-repeat: no-repeat;
+}

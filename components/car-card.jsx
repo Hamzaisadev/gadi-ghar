@@ -35,7 +35,7 @@ const CarCard = ({ car }) => {
         <Button
           variant="Ghost"
           size="icon"
-          className={`absolute top-2 right-2 bg-white/90 rounded-full p-1.5 ${
+          className={`absolute top-2 right-2  bg-white/90 rounded-full p-1.5 ${
             isSaved
               ? "text-red-500 hover:text-red-600"
               : "text-gray-600  hover:text-gray-900 "
@@ -51,7 +51,7 @@ const CarCard = ({ car }) => {
           <h3 className="text-lg font-bold line-clamp-1">
             {car.make} {car.model}
           </h3>
-          <span className="text-xl font-bold text-blue-600">
+          <span className="text-xl font-bold text-red-600">
             ${car.price.toLocaleString()}
           </span>
         </div>
