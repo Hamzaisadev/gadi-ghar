@@ -62,7 +62,7 @@ const ContactSec = () => {
             </div>
 
             <div className="pt-4">
-              <Button className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-xl font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg">
+              <Button className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 h-12 font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg">
                 Contact Now
               </Button>
             </div>
