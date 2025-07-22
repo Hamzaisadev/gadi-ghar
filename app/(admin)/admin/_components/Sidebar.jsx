@@ -1,17 +1,14 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { SignedIn, UserButton, useUser } from "@clerk/nextjs";
 import { Calendar, Car, Cog, LayoutDashboard, User } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
 
 const Sidebar = () => {
   const pathname = usePathname();
-  const { user } = useUser();
-  console.log(user);
 
   const routes = [
     {
@@ -39,59 +36,80 @@ const Sidebar = () => {
   const mobileRoutes = [
     ...routes,
     {
-      label: user?.firstName || "Profile",
+      label: "Profile",
       icon: User,
-      image: user?.imageUrl,
-      href: <UserButton />,
+      href: "/admin/profile",
     },
   ];
 
   return (
     <>
-      <div className="hidden md:flex h-full flex-col overflow-y-auto bg-white shadow-sm border-r-2">
-        {routes.map((route) => {
-          return (
-            <Link
-              key={route.href}
-              href={route.href}
-              className={cn(
-                "flex h-14 items-center gap-x-2 to-slate-500 text-sm font-medium pl-6 transition-all hover:text-slate-600 hover:bg-slate-100/50",
-                pathname === route.href
-                  ? "text-blue-700 bg-blue-100/50 hover:bg-blue-100 hover:text-blue-700"
-                  : ""
-              )}
-            >
-              <route.icon className="h-5 w-5" />
-              {route.label}
-            </Link>
-          );
-        })}
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex max-h-screen flex-col overflow-y-auto bg-background shadow-elegant border-r border-border">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-xl pt-10 font-bold text-foreground">
+            Admin Dashboard
+          </h2>
+        </div>
+
+        <nav className="flex-1 py-4">
+          {routes.map((route) => {
+            const isActive = pathname === route.href;
+            return (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  "flex h-12 items-center gap-x-3 text-sm font-medium px-6 mx-2 rounded-lg transition-all duration-200 group hover:translate-x-1",
+                  isActive
+                    ? "bg-red-500 text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <route.icon
+                  className={cn(
+                    "h-5 w-5 transition-transform duration-200",
+                    isActive
+                      ? "text-primary-foreground"
+                      : "group-hover:scale-110"
+                  )}
+                />
+                {route.label}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t flex justify-around items-center h-16">
-        {mobileRoutes.map((route) => {
-          return (
-            <Link
-              key={route.href}
-              href={route.href}
-              className={cn(
-                "flex flex-col items-center text-slate-500 text-xs font-medium transition-all py-1 flex-1",
-                pathname === route.href
-                  ? "text-blue-700 bg-blue-100/50 hover:bg-blue-100 hover:text-blue-700"
-                  : ""
-              )}
-            >
-              {route.image && route.image.length > 0 ? (
-                <Button variant="ghost" href={user.href}>
-                  <UserButton />
-                </Button>
-              ) : (
-                <route.icon className="h-5 w-5" />
-              )}
-              {route.label}
-            </Link>
-          );
-        })}
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-elegant">
+        <div className="flex justify-around items-center h-16">
+          {mobileRoutes.map((route) => {
+            const isActive = pathname === route.href;
+            return (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  "flex flex-col items-center justify-center text-xs font-medium transition-all duration-200 py-2 px-3 rounded-lg min-w-0 flex-1",
+                  isActive
+                    ? "text-primary bg-red-500"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <route.icon
+                  className={cn(
+                    "h-5 w-5 mb-1 transition-all duration-200",
+                    isActive
+                      ? "text-primary scale-110"
+                      : "group-hover:scale-105"
+                  )}
+                />
+                <span className="truncate">{route.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </>
   );

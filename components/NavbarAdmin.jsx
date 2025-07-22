@@ -24,18 +24,14 @@ import TransitionLink from "./utils/TransitionLink";
 import MenuButton from "./utils/MenuButton";
 import PageWrapper from "./utils/pageWrapper";
 import { NavbarMenu, MobNavbarMenu } from "./utils/Menu";
-import { usePathname } from "next/navigation";
 
-const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
+const NavbarAdmin = ({ user, isAdminPage = false }) => {
   // true = navbar visible; false = navbar hidden
   const [isVisible, setIsVisible] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // hold the last scroll position to detect direction
   const lastScrollY = useRef(0);
-
-  const pathname = usePathname();
-  const isAdminPage = isAdminPageProp || pathname.startsWith("/admin");
 
   useEffect(() => {
     // initialize lastScrollY on mount
@@ -243,4 +239,4 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
   );
 };
 
-export default Navbar;
+export default NavbarAdmin;

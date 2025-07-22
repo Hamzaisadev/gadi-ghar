@@ -7,7 +7,7 @@ import { perspective, slideIn } from "./navbarAnim";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-const MenuNavbar = ({ toggleMenu }) => {
+const MenuNavbar = ({ toggleMenu, animationDuration = 400 }) => {
   return (
     <div className="flex flex-col justify-between h-full pt-[100px] pr-[40px] pb-[50px] pl-[40px]">
       <div className="flex flex-col gap-[10px]">
@@ -22,7 +22,12 @@ const MenuNavbar = ({ toggleMenu }) => {
                 animate="enter"
                 exit="exit"
               >
-                <TransitionLink href={href} toggleMenu={toggleMenu}>
+                <TransitionLink
+                  href={href}
+                  onClick={toggleMenu}
+                  toggleMenu={toggleMenu}
+                  animationDuration={animationDuration}
+                >
                   <span className="no-underline text-black text-[46px]">
                     {title}
                   </span>

@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import NavbarServer from "@/components/NavbarServer";
 import { ViewTransitions } from "next-view-transitions";
 import PageWrapper from "@/components/utils/pageWrapper";
+import { headers } from "next/headers";
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -20,17 +21,15 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+
   return (
     <ClerkProvider>
       <ViewTransitions>
         <html lang="en">
           <body className={`${poppins.variable} antialiased`}>
-            {/* <Header /> */}
             <PageWrapper>
-              <NavbarServer />
-
+              { <NavbarServer />}
               <main className=" min-h-screen">{children}</main>
-
               <Toaster
                 richColors
                 expand

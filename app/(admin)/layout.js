@@ -19,12 +19,13 @@ export default async function AdminLayout({ children }) {
   }
   return (
     <PageWrapper>
-      <div className="min-h-screen ">
-        <NavbarServer isAdminPage={true} />
-        <div className="flex h-full w-56 md:mt-12 mt-16 flex-col top-20 fixed inset-y-0 z-50">
+      <div className="min-h-screen bg-background pt-20">
+        <div className="flex">
           <Sidebar />
+          <main className="flex-1 md:ml-0 pb-20 md:pb-0 animate-fade-in">
+            <div className="p-6 md:p-8">{children}</div>
+          </main>
         </div>
-        <main className="md:pl-56 pt-[80px]  h-full">{children}</main>
       </div>
     </PageWrapper>
   );

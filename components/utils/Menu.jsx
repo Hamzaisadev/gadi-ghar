@@ -10,7 +10,7 @@ const menuVariants = {
     height: "600px",
     top: "-25px",
     right: "-25px",
-  
+
     transition: { duration: 0.75, type: "tween", ease: [0.76, 0, 0.24, 1] },
     opacity: 1,
     pointerEvents: "auto",
@@ -92,7 +92,12 @@ const NavbarMenu = () => {
         style={{ overflow: "hidden" }}
       >
         <AnimatePresence>
-          {isActive && <MenuNavbar toggleMenu={() => setIsActive(false)} />}
+          {isActive && (
+            <MenuNavbar
+              toggleMenu={() => setIsActive(false)}
+              animationDuration={400}
+            />
+          )}
         </AnimatePresence>
       </motion.div>
       <div className="relative z-50 ">
@@ -142,7 +147,12 @@ const MobNavbarMenu = () => {
         style={{ overflow: "hidden" }}
       >
         <AnimatePresence>
-          {isActive && <MenuNavbar toggleMenu={() => setIsActive(false)} />}
+          {isActive && (
+            <MenuNavbar
+              toggleMenu={() => setIsActive(false)}
+              animationDuration={400}
+            />
+          )}
         </AnimatePresence>
       </motion.div>
       <div className="relative z-50">

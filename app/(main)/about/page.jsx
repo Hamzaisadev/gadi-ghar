@@ -3,6 +3,7 @@
 import { Heart, Shield, Trophy, Users } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useMotionValue, animate, useInView } from "framer-motion";
+import PageWrapper from "@/components/utils/pageWrapper";
 
 const AnimatedNumber = ({ value, duration = 2, inView }) => {
   const motionValue = useMotionValue(0);
@@ -89,7 +90,7 @@ const AboutPage = () => {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <div className="bg-white flex flex-col">
+    <PageWrapper className="bg-white flex flex-col">
       <section className="bg-background py-12 lg:py-32">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
@@ -247,7 +248,7 @@ const AboutPage = () => {
           </div>
         </div>
       </section>
-    </div>
+    </PageWrapper>
   );
 };
 

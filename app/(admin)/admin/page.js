@@ -1,3 +1,4 @@
+import PageWrapper from "@/components/utils/pageWrapper";
 import React from "react";
 
 export const metadata = {
@@ -6,7 +7,8 @@ export const metadata = {
 };
 
 const AdminPage = () => {
-  return <div>AdminPagefff</div>;
+  return <PageWrapper className="p-6">AdminPagefff</PageWrapper>;
 };
 
 export default AdminPage;
+PageWrapper

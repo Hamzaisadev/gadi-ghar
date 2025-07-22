@@ -1,6 +1,6 @@
 import React from "react";
 import CarList from "./_components/CarList";
-import AddCarForm from "./_components/AddCarForm";
+import PageWrapper from "@/components/utils/pageWrapper";
 
 export const metadata = {
   title: "Cars | Gadi Ghar Admin",
@@ -9,10 +9,9 @@ export const metadata = {
 
 const CarsPage = () => {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Cars Managment</h1>
-      <AddCarForm />
-    </div>
+    <PageWrapper className="p-6">
+      <CarList />
+    </PageWrapper>
   );
 };
 

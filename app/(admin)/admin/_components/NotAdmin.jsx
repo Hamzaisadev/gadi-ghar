@@ -14,7 +14,7 @@ const NotAdmin = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Animated road */}
       <div className="road-container">
         <div className="road"></div>
@@ -52,7 +52,7 @@ const NotAdmin = () => {
           VIP Area - Authorized Personnel Only
         </h2>
 
-        <p className="text-gray-400 mb-8 max-w-md mx-auto">
+        <p className="text-black mb-8 max-w-md mx-auto">
           Sorry, but you don't have permission to access this exclusive area of
           Gadi Ghar. Please contact an administrator if you believe this is a
           mistake.

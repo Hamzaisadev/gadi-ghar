@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, MapPin, Phone } from "lucide-react";
+import PageWrapper from "@/components/utils/pageWrapper";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -43,7 +44,7 @@ const ContactPage = () => {
   };
 
   return (
-    <div>
+    <PageWrapper>
       <section className="bg-background py-20 lg:py-32">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto mb-16">
@@ -229,7 +230,7 @@ const ContactPage = () => {
       </section>
 
       <ContactSec />
-    </div>
+    </PageWrapper>
   );
 };
 
