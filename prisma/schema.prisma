@@ -39,8 +39,8 @@ model Car {
   make                 String
   model                String
   year                 Int
-  minPrice             Decimal?               @db.Decimal(10, 2)
-  maxPrice             Decimal?               @db.Decimal(10, 2)
+  minPrice             Decimal             @db.Decimal(10, 2)
+  maxPrice             Decimal             @db.Decimal(10, 2)
   mileage              Int
   color                String
   fuelType            String
