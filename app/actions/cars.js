@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/lib/prisma";
 import { createClient } from "@/lib/server";
 import { auth } from "@clerk/nextjs/server";
@@ -10,7 +12,7 @@ export async function processCarImageWithAI(file) {
   async function fileToBase64() {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    return buffer.toString("based64");
+    return buffer.toString("base64");
   }
   try {
     // check if api is available
@@ -26,46 +28,55 @@ export async function processCarImageWithAI(file) {
     const imagePart = {
       inlineData: {
         data: based64image,
-        MimeType: file.type,
+        mimeType: file.type,
       },
     };
 
     const prompt = `
-        Analyze this car image and extract the following information:
-        1. Make (manufacturer)
-        2. Model
-        3. Year (approximately)
-        4. Color
-        5. Body type (SUV, Sedan, Hatchback, etc.)
-        6. Mileage
-        7. Fuel type (your best guess)
-        8. Transmission type (your best guess)
-        9. Price (your best guess)
-        9. Short Description as to be added to a car listing
-  
-        Format your response as a clean JSON object with these fields:
-        {
-          "make": "",
-          "model": "",
-          "year": 0000,
-          "color": "",
-          "price": "",
-          "mileage": "",
-          "bodyType": "",
-          "fuelType": "",
-          "transmission": "",
-          "description": "",
-          "confidence": 0.0
-        }
-  
-        For confidence, provide a value between 0 and 1 representing how confident you are in your overall identification.
-        Only respond with the JSON object, nothing else.
-      `;
+    You are an expert automotive analyst for a Pakistani car listing website, specializing in visual car identification and local market valuation. Your primary goal is to provide highly accurate and contextually relevant details about a car based on its image, specifically tailored for the Pakistani automobile market.
+    
+    **Crucial Directive for Year Estimation:**
+    For the 'year' field, estimate the *likely model year of this specific vehicle in the Pakistani market*. Prioritize common release years, facelifts, or current production years in Pakistan. If a car model was introduced in Pakistan in a specific year (e.g., Changan Alsvin in 2021), the estimated year should *never* predate its local launch unless there's explicit visual evidence of an imported, older generation. If the exact year is hard to discern visually but the car appears recent, use the most common recent model year for that vehicle in Pakistan.
+    
+    For pricing and mileage, prioritize current data from reputable Pakistani automotive sources like PakWheels.com or OLX.pk. Provide precise figures and ranges whenever possible.
+    
+    From the uploaded car image, visually identify and extract the following information. If any information cannot be precisely determined from the image, provide the most educated estimate based on common Pakistani market trends for similar vehicles, or state "N/A" with a lower confidence if truly unknown.
+    
+    - make (e.g., Changan, Suzuki, Honda)
+    - model (e.g., Alsvin, Alto, City)
+    - year (estimated, the likely model year in Pakistan, e.g., 2021, 2023,2024 ,2025. If unsure but the car appears recent, use the most current or common production year for that model in Pakistan. For the Changan Alsvin, for instance, consider years from 2021 onwards.)
+    - color (dominant exterior color)
+    - bodyType (e.g., Sedan, Hatchback, SUV, Crossover, Coupe, Van, Pickup)
+mileage (estimated **fuel efficiency in KM/L**, providing a realistic range based on variant, e.g., "12-18 KM/L" for Changan Alsvin)    - fuelType (Petrol, Diesel, Hybrid, or Electric)
+    - transmission (Manual or Automatic/DCT/CVT - specify if possible, otherwise "Automatic")
+    - minPrice (estimated minimum current market value in PKR)
+    - maxPrice (estimated maximum current market value in PKR)
+    - description (a medium sized, compelling listing description for the Pakistani market, highlighting key features and suitable for car marketplaces in Pakistan, e.g., "Well-maintained [Make Model Year] in [Color]. [Key feature 1], [Key feature 2]. [Estimated Mileage KM] driven. [Transmission] transmission. Ideal for city or highway driving.")
+    - confidence (value from 0.0 to 1.0 indicating your confidence in the overall accuracy and completeness of this response. Provide a lower confidence if specific details like the exact year or a precise price within a range are uncertain from the image alone.)
+    
+    Your response must be in this exact JSON format:
+    {
+      "make": "",
+      "model": "",
+      "year": 0000,
+      "color": "",
+      "minPrice": 0,
+      "maxPrice": 0,
+      "mileage": "",
+      "bodyType": "",
+      "fuelType": "",
+      "transmission": "",
+      "description": "",
+      "confidence": 0.0
+    }
+    
+    Only return the JSON object. Do not include any explanation, formatting, or extra content. All information should strictly reflect Pakistani market trends and pricing, not international or dollar-based data.
+    `
 
     // Get response from Gemini
     const result = await model.generateContent([imagePart, prompt]);
     const response = await result.response;
-    const text = response.text();
+    const text = await response.text();
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
 
     try {
@@ -76,9 +87,10 @@ export async function processCarImageWithAI(file) {
         "model",
         "year",
         "color",
-        "bodyType",
-        "price",
+        "minPrice",
+        "maxPrice",
         "mileage",
+        "bodyType",
         "fuelType",
         "transmission",
         "description",
@@ -86,7 +98,7 @@ export async function processCarImageWithAI(file) {
       ];
 
       const missingFields = requiredFields.filter(
-        (field) => !field in carDetails
+        (field) => !(field in carDetails)
       );
       if (missingFields.length > 0)
         throw new Error(
@@ -97,14 +109,14 @@ export async function processCarImageWithAI(file) {
         data: carDetails,
       };
     } catch (error) {
-      console.log("Failed to parse AI Response: ", parseError);
+      console.log("Failed to parse AI Response: ", error);
       return {
         success: false,
         error: "Failed to parse AI Response",
       };
     }
   } catch (error) {
-    throw new Error("Gemini API Error: ", error.message);
+    throw new Error("Gemini API Error: " + error.message);
   }
 }
 
@@ -130,7 +142,7 @@ export async function addCar({ carData, images }) {
     for (let i = 0; i < images.length; i++) {
       const based64Data = images[i];
 
-      if (!based64Data || !based64Data.startWith("data:image/")) {
+      if (!based64Data || !based64Data.startsWith("data:image/")) {
         console.warn("Skipping invalid image data");
         continue;
       }
@@ -145,20 +157,20 @@ export async function addCar({ carData, images }) {
 
       const { data, error } = await supabase.storage
         .from("car-images")
-        .upload(filePath, imageBuffer{
-          contentType: `image/${fileExtension}`
+        .upload(filePath, imageBuffer, {
+          contentType: `image/${fileExtension}`,
         });
-      
-        if (error) {
-          console.log("Error uploading image:", error);
-          throw new Error("Error uploading image" + error.message);
-        }
-    
-        const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-imgages/${filePath}`
-        imageUrls.push(publicUrl);
+
+      if (error) {
+        console.log("Error uploading image:", error);
+        throw new Error("Error uploading image" + error.message);
+      }
+
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-images/${filePath}`;
+      imageUrls.push(publicUrl);
     }
 
-    if (imageUrls.length === 0) { 
+    if (imageUrls.length === 0) {
       throw new Error("No images uploaded");
     }
 
@@ -168,7 +180,8 @@ export async function addCar({ carData, images }) {
         make: carData.make,
         model: carData.model,
         year: carData.year,
-        price: carData.price,
+        minPrice: carData.minPrice,
+        maxPrice: carData.maxPrice,
         mileage: carData.mileage,
         color: carData.color,
         fuelType: carData.fuelType,
@@ -179,20 +192,16 @@ export async function addCar({ carData, images }) {
         status: carData.status,
         featured: carData.featured,
         images: imageUrls, // Store the array of image URLs
-      }
-    })
+      },
+    });
 
-    revalidatePath("/admin/cars")
+    revalidatePath("/admin/cars");
 
     return {
       success: true,
-    }
-
-
-    
-
-    
+    };
   } catch (error) {
-    throw new Error("Error adding car:" + error.message);
+    console.error("Error adding car:", error);
+    throw new Error("Error adding car: " + error.message);
   }
 }

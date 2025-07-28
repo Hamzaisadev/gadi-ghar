@@ -1,6 +1,6 @@
 "use client";
 import PageWrapper from "@/components/utils/pageWrapper";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,10 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-  formatCurrency,
-  parseCurrency,
-} from "@/components/utils/FormatCurrency";
+import { parseCurrency } from "@/components/utils/FormatCurrency";
 import {
   Select,
   SelectContent,
@@ -38,10 +35,14 @@ import {
   Upload,
   Camera,
   Sparkles,
+  X,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { X, Loader2 } from "lucide-react";
+import useFetch from "@/hooks/use-fetch";
+import { addCar, processCarImageWithAI } from "@/app/actions/cars";
+import { useRouter } from "next/navigation";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
 const transmissions = ["Automatic", "Manual", "Semi-Automatic"];
@@ -56,29 +57,53 @@ const bodyTypes = [
 ];
 const carStatuses = ["AVAILABLE", "UNAVAILABLE", "SOLD"];
 
-const AddCarForm = () => {
-  const carFormSchema = z.object({
-    make: z.string().min(1, "Make is required"),
-    model: z.string().min(1, "Model is required"),
-    year: z.string().refine((val) => {
-      const year = parseInt(val);
-      return (
-        !isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1
-      );
-    }, "Valid year required"),
-    price: z.string().min(1, "Price is required"),
-    mileage: z.string().min(1, "Mileage is required"),
-    color: z.string().min(1, "Color is required"),
-    fuelType: z.string().min(1, "Fuel type is required"),
-    transmission: z.string().min(1, "Transmission is required"),
-    bodyType: z.string().min(1, "Body type is required"),
-    seats: z.string().optional(),
-    description: z
-      .string()
-      .min(10, "Description must be at least 10 characters"),
-    status: z.enum(["AVAILABLE", "UNAVAILABLE", "SOLD"]),
-    featured: z.boolean().default(false),
-  });
+const carFormSchema = z.object({
+  make: z.string().min(1, "Make is required"),
+  model: z.string().min(1, "Model is required"),
+  year: z.string().refine((val) => {
+    const year = parseInt(val);
+    return !isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1;
+  }, "Valid year required"),
+  minPrice: z.string().min(1, "Min price is required"),
+  maxPrice: z.string().min(1, "Max price is required"),
+  mileage: z.string().min(1, "Mileage is required"),
+  color: z.string().min(1, "Color is required"),
+  fuelType: z.string().min(1, "Fuel type is required"),
+  transmission: z.string().min(1, "Transmission is required"),
+  bodyType: z.string().min(1, "Body type is required"),
+  seats: z.string().optional(),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+  status: z.enum(["AVAILABLE", "UNAVAILABLE", "SOLD"]),
+  featured: z.boolean().default(false),
+  // Images are handled separately
+}).refine((data) => {
+  // Ensure minPrice <= maxPrice
+  const min = Number(data.minPrice);
+  const max = Number(data.maxPrice);
+  return !isNaN(min) && !isNaN(max) && min <= max;
+}, {
+  message: "Min price must be less than or equal to Max price",
+  path: ["minPrice", "maxPrice"],
+});
+
+export const AddCarForm = () => {
+  const [activeTab, setActiveTab] = useState("ai");
+  const [amount, setAmount] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
+  // Separate states for manual and AI images
+  const [manualUploadedImages, setManualUploadedImages] = useState([]);
+  const [aiUploadedImages, setAiUploadedImages] = useState([]);
+  const [imageError, setImageError] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadedAiImage, setUploadedAiImage] = useState(null);
+  const router = useRouter();
+  const removeManualImage = (index) => {
+    setManualUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    toast.error("Image removed");
+  };
+
 
   const {
     register,
@@ -93,7 +118,8 @@ const AddCarForm = () => {
       make: "",
       model: "",
       year: "",
-      price: "",
+      minPrice: "",
+      maxPrice: "",
       mileage: "",
       color: "",
       fuelType: "",
@@ -106,26 +132,40 @@ const AddCarForm = () => {
     },
   });
 
-  const [activeTab, setActiveTab] = useState("ai");
-  const [amount, setAmount] = useState("");
-  const [uploadedImages, setUploadedImages] = useState([]);
-  const [imageError, setImageError] = useState("");
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [addCarLoading, setAddCarLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [uploadedAiImage, setUploadedAiImage] = useState(null);
-  const [processImageLoading, setProcessImageLoading] = useState(false);
+  // Watch the minPrice and maxPrice values from the form
+  const watchedMinPrice = watch("minPrice");
+  const watchedMaxPrice = watch("maxPrice");
 
-  const removeImage = (index) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
-    toast.error("Image removed");
+  // Sync amount states with form's minPrice and maxPrice values
+  useEffect(() => {
+    setMinAmount(watchedMinPrice || "");
+  }, [watchedMinPrice]);
+
+  useEffect(() => {
+    setMaxAmount(watchedMaxPrice || "");
+  }, [watchedMaxPrice]);
+
+  const handleMinAmountChange = (e) => {
+    const rawValue = e.target.value.replace(/[^0-9.]/g, "");
+    setMinAmount(rawValue);
+    setValue("minPrice", rawValue);
   };
 
-  const formatAmount = (value) => {
-    const numericValue = value.replace(/[^0-9]/g, "");
-
-    return numericValue.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const handleMaxAmountChange = (e) => {
+    const rawValue = e.target.value.replace(/[^0-9.]/g, "");
+    setMaxAmount(rawValue);
+    setValue("maxPrice", rawValue);
   };
+
+  
+
+  const removeAiImage = (index) => {
+    setAiUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    toast.error("AI image removed");
+  };
+
+  // Ensure processWithAI is only called on button click, no other triggers
+  // No changes needed here as processWithAI is only called on button click
 
   // Watch the price value from the form
   const watchedPrice = watch("price");
@@ -146,7 +186,7 @@ const AddCarForm = () => {
 
   // On submit, parse the price to a number
 
-  const onMultiImagesDrop = (acceptedFiles) => {
+  const onMultiImagesDrop = useCallback((acceptedFiles) => {
     const validFiles = acceptedFiles.filter((file) => {
       if (file.size > 5 * 1024 * 1024) {
         toast.error(
@@ -161,11 +201,17 @@ const AddCarForm = () => {
     const newImages = [];
     validFiles.forEach((file) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        newImages.push(reader.result);
+      reader.onload = (e) => {
+        newImages.push(e.target.result);
 
         if (newImages.length === validFiles.length) {
-          setUploadedImages((prev) => [...prev, ...newImages]);
+          // Prevent duplicates
+          setManualUploadedImages((prev) => {
+            const filteredNewImages = newImages.filter(
+              (img) => !prev.includes(img)
+            );
+            return [...prev, ...filteredNewImages];
+          });
           setImageError("");
           toast.success(`successfully uploaded ${validFiles.length} images`);
         }
@@ -173,7 +219,7 @@ const AddCarForm = () => {
 
       reader.readAsDataURL(file);
     });
-  };
+  });
   const {
     getRootProps: getMultiImageRootProps,
     getInputProps: getMultiImageInputProps,
@@ -185,33 +231,128 @@ const AddCarForm = () => {
     multiple: true,
   });
 
-  const onAiImageDrop = (acceptedFiles) => {
-    if (acceptedFiles && acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setUploadedAiImage(file);
-      };
-      reader.readAsDataURL(file);
+  const onAiImageDrop = useCallback((acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
     }
-  };
+
+    setUploadedAiImage(file);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target.result);
+      // Add AI image preview to aiUploadedImages state
+      setAiUploadedImages([e.target.result]);
+    };
+    reader.readAsDataURL(file);
+  }, []);
   const { getRootProps: getAiRootProps, getInputProps: getAiInputProps } =
     useDropzone({
       onDrop: onAiImageDrop,
       accept: {
         "image/*": [".jpg", ".jpeg", ".png", ".webp"],
       },
+      maxFiles: 1,
       multiple: false,
     });
 
-  const onSubmit = async (data) => {
-    const parsedPrice = parseCurrency(data.price); // This will be a number
+  const {
+    loading: processImageLoading,
+    fn: processImageFn,
+    error: processImageError,
+    data: processImageData,
+  } = useFetch(processCarImageWithAI);
+
+  const processWithAI = async () => {
+    if (!uploadedAiImage) {
+      toast.error("Please upload an image");
+      return;
+    }
+    await processImageFn(uploadedAiImage);
+  };
+
+  useEffect(() => {
+    if (processImageError) {
+      toast.error(processImageError.message || "Failed to process image");
+    }
+  }, [processImageError]);
+
+  useEffect(() => {
+    if (processImageData?.success) {
+      const carDetails = processImageData.data;
+
+      // Update form with AI results
+      setValue("make", carDetails.make);
+      setValue("model", carDetails.model);
+      setValue("year", carDetails.year.toString());
+      setValue("color", carDetails.color);
+      setValue("bodyType", carDetails.bodyType);
+      setValue("fuelType", carDetails.fuelType);
+      // Debug: log AI price and parse result
+      console.log('AI carDetails.price:', carDetails.price);
+      const { parseRangeFromAI } = require("@/components/utils/FormatCurrency");
+      const priceResult = parseRangeFromAI(carDetails.price);
+      setValue("minPrice", carDetails.minPrice?.toString() || "");
+setValue("maxPrice", carDetails.maxPrice?.toString() || "");
+setMinAmount(carDetails.minPrice?.toString() || "");
+setMaxAmount(carDetails.maxPrice?.toString() || "");
+      setValue("mileage", carDetails.mileage);
+      setValue("transmission", carDetails.transmission);
+      setValue("description", carDetails.description);
+
+      toast.success("Successfully extracted car details", {
+        description: `Detected ${carDetails.year} ${carDetails.make} ${
+          carDetails.model
+        } with ${Math.round(carDetails.confidence * 100)}% confidence`,
+      });
+
+      // Switch to manual tab for the user to review and fill in missing details
+      setActiveTab("manual");
+    }
+  }, [processImageData, setValue]);
+
+  const {
+    data: addCarData,
+    loading: addCarLoading,
+    fn: addCarFn,
+  } = useFetch(addCar);
+
+  useEffect(() => {
+    if (addCarData?.success) {
+      toast.success("Vehicle added successfully");
+      router.push("/admin/cars");
+    }
+  }, [addCarData, router]);
+
+    const onSubmit = async (data) => {
+   
     // ...rest of your submit logic
-    if (uploadedImages.length === 0) {
+    if (manualUploadedImages.length === 0 && aiUploadedImages.length === 0) {
       setImageError("Please upload at least one image");
       return;
     }
+
+    // Prepare data for server action
+    const carData = {
+      ...data,
+      year: parseInt(data.year),
+      minPrice: data.minPrice ? parseFloat(data.minPrice) : null,
+      maxPrice: data.maxPrice ? parseFloat(data.maxPrice) : null,
+      mileage: parseInt(data.mileage),
+      seats: data.seats ? parseInt(data.seats) : null,
+    };
+
+    // Combine manual and AI images for upload
+    const allImages = [...manualUploadedImages, ...aiUploadedImages];
+
+    await addCarFn({
+      carData,
+      images: allImages,
+    });
   };
 
   useEffect(() => {
@@ -347,31 +488,68 @@ const AddCarForm = () => {
                     )}
                   </div>
 
-                  {/* Price */}
+                  {/* Min Price */}
                   <div className="space-y-3 group">
                     <Label
-                      htmlFor="price"
+                      htmlFor="minPrice"
                       className="text-sm font-semibold text-black group-hover:text-red-600 transition-colors"
                     >
-                      Price (Rs)
+                      Min Price (Rs)
                     </Label>
                     <Input
-                      id="price"
-                      value={amount}
-                      onChange={handleAmountChange}
+                      id="minPrice"
+                      {...register("minPrice")}
+                      value={minAmount}
+                      onChange={handleMinAmountChange}
                       placeholder="e.g. 2,500,000"
                       className={`h-12 text-base border-0 hover-lift transition-all duration-300 ${
-                        errors.price
+                        errors.minPrice
                           ? "ring-2 ring-red-600"
                           : "focus:ring-2 focus:ring-red-600"
                       }`}
                     />
-                    {errors.price && (
+                    {errors.minPrice && (
                       <div className="flex items-center gap-2 text-red-600">
                         <AlertCircle className="w-4 h-4" />
-                        <span className="text-sm">{errors.price.message}</span>
+                        <span className="text-sm">{errors.minPrice.message}</span>
                       </div>
                     )}
+                  </div>
+
+                  {/* Max Price */}
+                  <div className="space-y-3 group">
+                    <Label
+                      htmlFor="maxPrice"
+                      className="text-sm font-semibold text-black group-hover:text-red-600 transition-colors"
+                    >
+                      Max Price (Rs)
+                    </Label>
+                    <Input
+                      id="maxPrice"
+                      {...register("maxPrice")}
+                      value={maxAmount}
+                      onChange={handleMaxAmountChange}
+                      placeholder="e.g. 3,000,000"
+                      className={`h-12 text-base border-0 hover-lift transition-all duration-300 ${
+                        errors.maxPrice
+                          ? "ring-2 ring-red-600"
+                          : "focus:ring-2 focus:ring-red-600"
+                      }`}
+                    />
+                    {errors.maxPrice && (
+                      <div className="flex items-center gap-2 text-red-600">
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="text-sm">{errors.maxPrice.message}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Display formatted price range */}
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500">Formatted Price Range</Label>
+                    <div className="font-semibold">
+                      {minAmount && maxAmount ? require('@/components/utils/FormatCurrency').formatPriceRange(minAmount, maxAmount) : "—"}
+                    </div>
                   </div>
 
                   {/* Mileage */}
@@ -579,11 +757,12 @@ const AddCarForm = () => {
 
                   {/* Status */}
                   <div className="space-y-3 group">
-                    <Label className="text-sm font-semibold text-black group-hover:text-red-600 transition-colors">
-                      Availability Status
-                    </Label>
+                    <Label
+                      htmlFor="status"
+                      className="text-sm font-semibold text-black group-hover:text-red-600 transition-colors"
+                    ></Label>
                     <Select
-                      onValueChange={(value) => setValue("status")}
+                      onValueChange={(value) => setValue("status", value)}
                       defaultValue={getValues("status")}
                     >
                       <SelectTrigger
@@ -661,7 +840,9 @@ const AddCarForm = () => {
                     <Checkbox
                       id="featured"
                       checked={watch("featured")}
-                      onCheckedChange={(checked) => setValue("featured")}
+                      onCheckedChange={(checked) =>
+                        setValue("featured", checked)
+                      }
                       className="mt-1 w-5 h-5 border-2 border-red-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                     />
                     <div className="flex-1">
@@ -739,17 +920,17 @@ const AddCarForm = () => {
                 </div>
 
                 {/* Image Previews */}
-                {uploadedImages.length > 0 && (
+                {(manualUploadedImages.length > 0 || aiUploadedImages.length > 0) && (
                   <div className="space-y-6 animate-fade-in">
                     <div className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-green-500" />
                       <h3 className="text-lg font-semibold text-black">
-                        Uploaded Images ({uploadedImages.length})
+                        Uploaded Images ({manualUploadedImages.length + aiUploadedImages.length})
                       </h3>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {uploadedImages.map((image, index) => (
-                        <div key={index} className="relative group hover-lift">
+                      {manualUploadedImages.map((image, index) => (
+                        <div key={`manual-${index}`} className="relative group hover-lift">
                           <img
                             src={image}
                             alt={`Vehicle image ${index + 1}`}
@@ -760,7 +941,25 @@ const AddCarForm = () => {
                             size="icon"
                             variant="destructive"
                             className="absolute -top-2 -right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
-                            onClick={() => removeImage(index)}
+                            onClick={() => removeManualImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      {aiUploadedImages.map((image, index) => (
+                        <div key={`ai-${index}`} className="relative group hover-lift">
+                          <img
+                            src={image}
+                            alt={`AI Vehicle image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:shadow-lg"
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+                            onClick={() => removeAiImage(index)}
                           >
                             <X className="h-3 w-3" />
                           </Button>
@@ -839,6 +1038,7 @@ const AddCarForm = () => {
                           onClick={() => {
                             setImagePreview(null);
                             setUploadedAiImage(null);
+                           
                           }}
                           className="px-6 border-2 hover:border-red-600 hover-lift"
                         >
@@ -866,17 +1066,6 @@ const AddCarForm = () => {
                     </div>
                   ) : (
                     <>
-                      {/* Dummy image preview if no image is uploaded */}
-                      <div className="flex flex-col items-center animate-fade-in mb-8">
-                        <img
-                          src="/car-showroom.jpg"
-                          alt="Sample Vehicle Preview"
-                          className="max-h-80 max-w-full object-contain mb-4 rounded-xl shadow-lg border border-gray-200"
-                        />
-                        <span className="text-xs text-gray-400 mb-2">
-                          Preview (Sample Image)
-                        </span>
-                      </div>
                       <div {...getAiRootProps()} className="cursor-pointer">
                         <input {...getAiInputProps()} />
                         <div className="flex flex-col items-center justify-center">
