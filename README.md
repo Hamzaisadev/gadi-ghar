@@ -1,36 +1,163 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🚗 Gadi Ghar — Car Marketplace
 
-## Getting Started
+## 📊 Repo Stats & Demo
 
-First, run the development server:
+<p align="center">
+  <img src="https://img.shields.io/github/stars/hamzaisadev/gadi-ghar?style=for-the-badge" alt="GitHub stars"/>
+  <img src="https://img.shields.io/github/forks/hamzaisadev/gadi-ghar?style=for-the-badge" alt="GitHub forks"/>
+  <img src="https://img.shields.io/github/issues/hamzaisadev/gadi-ghar?style=for-the-badge" alt="GitHub issues"/>
+  <img src="https://img.shields.io/github/last-commit/hamzaisadev/gadi-ghar?style=for-the-badge" alt="Last commit"/>
+  <img src="https://img.shields.io/github/commit-activity/m/hamzaisadev/gadi-ghar?style=for-the-badge" alt="Commit activity"/>
+  <img src="https://komarev.com/ghpvc/?username=hamzaisadev&repo=gadi-ghar&color=blue&style=for-the-badge" alt="Repo views"/>
+</p>
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+<p align="center">
+
+  <h1 align="center">PAKISTANS FIRST AI CAR MARKETPLACE</h1>
+</p>
+
+---
+
+Welcome to **Gadi Ghar**, a modern car marketplace for Pakistan, built with 💎 Next.js, Prisma, and PostgreSQL. This project is designed to showcase both technical depth and beautiful user experience, supporting PKR price ranges (crores/lakhs) and advanced admin/user flows.
+
+---
+
+## 📋 Table of Contents
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Database Schema](#database-schema)
+- [Price Filtering Logic](#price-filtering-logic)
+- [Getting Started](#getting-started)
+- [Development Scripts](#development-scripts)
+- [Project Structure](#project-structure)
+- [Notes on Filtering Approach](#notes-on-filtering-approach)
+- [License](#license)
+
+---
+
+## 🌟 Overview
+
+**Gadi Ghar** is a full-featured web app for buying, selling, and managing cars. It’s tailored for the Pakistani market, supporting price ranges in PKR, and features:
+- Admin and user flows
+- Image uploads (manual & AI)
+- Wishlisting, filtering, and more!
+
+---
+
+## 🚀 Features
+
+- 🔎 **Browse & Filter:** Search cars by make, model, year, body type, and **price range**
+- 🛠️ **Admin Panel:** Add, edit, and manage car listings
+- 🖼️ **Image Uploads:** Manual & AI-generated options
+- ❤️ **User Auth & Wishlists:** Save your favorite cars
+- 📱 **Responsive UI:** Built with Tailwind CSS
+- 🏢 **Dealership Info:** Manage working hours & details
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js (App Router), React, Tailwind CSS
+- **Backend:** Next.js API routes, Prisma ORM, PostgreSQL
+- **Auth:** Clerk
+- **Image Storage:** Supabase
+- **Quality:** ESLint, Prettier
+
+---
+
+## 🗄️ Database Schema
+
+The core `Car` model supports a price range:
+
+```prisma
+model Car {
+  id         String   @id @default(uuid())
+  make       String
+  model      String
+  year       Int
+  minPrice   Decimal  @db.Decimal(10, 2)
+  maxPrice   Decimal  @db.Decimal(10, 2)
+  // ...other fields...
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- **minPrice** and **maxPrice** capture the price range in PKR.
+- Multiple indexes for efficient filtering.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 💸 Price Filtering Logic
 
-## Learn More
+### Real-World Filtering (Best Practice)
+Users expect to see cars whose price range overlaps with their filter range. The best practice is:
 
-To learn more about Next.js, take a look at the following resources:
+```sql
+SELECT * FROM Car
+WHERE minPrice <= userMaxFilter AND maxPrice >= userMinFilter
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+This ensures all relevant cars are shown, even for wide ranges.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ⚡ Getting Started
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Clone the repository:**
+   ```bash
+   git clone <repo-url>
+   cd gadi-ghar
+   ```
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+3. **Set up your environment:**
+   - Copy `.env.example` to `.env` and fill in your secrets
+4. **Run database migrations:**
+   ```bash
+   npx prisma migrate dev
+   ```
+5. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+6. **Open:** [http://localhost:3000](http://localhost:3000)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🧰 Development Scripts
+
+- `npm run dev` — Start the development server
+- `npm run lint` — Lint code with ESLint
+- `npx prisma studio` — Open Prisma Studio to view/edit your database
+
+---
+
+## 🗂️ Project Structure
+
+- `/app` — Next.js app directory (routes, pages, admin panel)
+- `/components` — Reusable UI components, sections, and utilities
+- `/lib` — Server-side utilities, Prisma client, and data helpers
+- `/prisma` — Prisma schema and migrations
+- `/public` — Static assets
+
+---
+
+## 📝 Notes on Filtering Approach
+
+> **Why use a single price field for filtering?**
+>
+> This project uses a hidden `price` field (average of minPrice and maxPrice) for filtering, to simplify the filtering logic and make it easier to understand.  
+> In a real production system, always filter using the min/max range overlap logic for accurate and user-friendly results.  
+> This design decision is documented here for transparency and to demonstrate awareness of best practices.
+
+---
+
+## 📄 License
+
+MIT (or your chosen license)
+
+---
+
+### Made with ❤️ for the Pakistani car market!

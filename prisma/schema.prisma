@@ -41,6 +41,7 @@ model Car {
   year                 Int
   minPrice             Decimal             @db.Decimal(10, 2)
   maxPrice             Decimal             @db.Decimal(10, 2)
+  price                Decimal?            @db.Decimal(10, 2) // Hidden average price for filtering (min+max/2)
   mileage              Int
   color                String
   fuelType            String
@@ -59,6 +60,7 @@ model Car {
   @@index([make, model])
   @@index([bodyType])
   @@index([minPrice, maxPrice])
+  @@index([price])
   @@index([year])
   @@index([status])
   @@index([fuelType])

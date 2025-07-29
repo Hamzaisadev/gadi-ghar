@@ -182,6 +182,7 @@ export async function addCar({ carData, images }) {
         year: carData.year,
         minPrice: carData.minPrice,
         maxPrice: carData.maxPrice,
+        price: ((parseFloat(carData.minPrice) + parseFloat(carData.maxPrice)) / 2).toFixed(2), // Store average price
         mileage: carData.mileage,
         color: carData.color,
         fuelType: carData.fuelType,
