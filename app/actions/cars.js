@@ -1,5 +1,6 @@
 "use server";
 
+import { serializeCarData } from "@/lib/helper";
 import { db } from "@/lib/prisma";
 import { createClient } from "@/lib/server";
 import { auth } from "@clerk/nextjs/server";
@@ -182,7 +183,6 @@ export async function addCar({ carData, images }) {
         year: carData.year,
         minPrice: carData.minPrice,
         maxPrice: carData.maxPrice,
-        price: ((parseFloat(carData.minPrice) + parseFloat(carData.maxPrice)) / 2).toFixed(2), // Store average price
         mileage: carData.mileage,
         color: carData.color,
         fuelType: carData.fuelType,
@@ -204,5 +204,145 @@ export async function addCar({ carData, images }) {
   } catch (error) {
     console.error("Error adding car:", error);
     throw new Error("Error adding car: " + error.message);
+  }
+}
+
+
+export async function getCars(search = "") {
+  try {
+    const {userId} = await auth()
+    if (!userId) throw new Error("Unauthorized")
+
+    const user = await db.user.findUnique({
+      where: {clerkUserId: userId}
+    })
+    if (!user) throw new Error("User not found")
+
+    let where = { }
+    if (search) {
+      where.OR = [
+        { make: { contains: search, mode: "insensitive" } },
+        { model: { contains: search, mode: "insensitive" } },
+        { year: { contains: search, mode: "insensitive" } },
+        { color: { contains: search, mode: "insensitive" } },
+        { bodyType: { contains: search, mode: "insensitive" } },
+      ]
+    }
+
+    const cars = await db.car.findMany({
+      where,
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+
+
+    const serializedCars = cars.map(serializeCarData)
+    return {
+      success: true,
+      data: serializedCars
+    }
+  } catch (error) {
+    console.error("Error fetching cars:", error)
+    throw new Error("Error fetching cars: " + error.message)
+  }
+}
+
+
+export async function deleteCar(id) {
+  try {
+    const { userId } = await auth()
+    if (!userId) throw new Error("Unauthorized")
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId }
+    })
+    if (!user) throw new Error("User not found")
+    
+    const car = await db.car.findUnique({
+      where: { id },
+      select: {
+        images: true,
+      }
+
+    })
+
+    if (!car) throw new Error("Car not found")
+
+    await db.car.delete({ where: { id } })
+
+    try {
+
+    const cookieStore = await cookies()
+    const supabase = createClient(cookieStore)
+      
+    const filePaths = car.images.map((image) => {
+      const url = new URL(imageUrl)
+      const pathMatch = url.pathname.match(/\/car-images\/(.*)/)
+      return pathMatchMatch ? pathMatch[1] : null
+    }).filter(Boolean)
+
+    if (filePaths.length > 0) {
+      const {error} = await supabase.storage.from("car-images").remove(filePaths)
+    }
+    
+      if (error) throw new Error("Error deleting files: " + error.message)
+
+      } catch (storageError) {
+      console.error("Error with storage :", storageError)
+      throw new Error("Error with storage: " + storageError.message)
+    }
+    
+    revalidatePath("/admin/cars")
+    return {
+      success: true,
+    }
+
+  } catch (error) {
+    console.error("Error deleting car:", error)
+   return {
+    success: false,
+    error: "Error deleting car: " + error.message
+   }
+  }
+}
+
+
+export async function updateCarStatus(id, {status , featured}) {
+  try {
+    const { userId } = await auth()
+    if (!userId) throw new Error("Unauthorized")
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId }
+    })
+    if (!user) throw new Error("User not found")
+
+    
+    const updateData ={}
+    if (status !== undefined)  {
+      updateData.status = status
+    }
+    
+    if (featured !== undefined) {
+      updateData.featured = featured
+    }
+    
+    await db.car.update({
+      where: { id },
+      data: updateData,
+    })
+
+    revalidatePath("/admin/cars")
+    return {
+      success: true,
+    }
+
+  } catch (error) {
+    console.error("Error updating car status:", error)
+   return {
+    success: false,
+    error: "Error updating car status: " + error.message
+   }
   }
 }
