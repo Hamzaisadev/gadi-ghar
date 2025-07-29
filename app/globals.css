@@ -54,6 +54,31 @@
     --chart-5: 27 87% 67%;
 
     --radius: 0.5rem;
+
+
+    --car-red: 0 84% 50%;
+  --car-red-light: 0 84% 60%;
+  --car-red-dark: 0 84% 40%;
+  --car-black: 0 0% 5%;
+  --car-gray: 0 0% 20%;
+  --car-gray-light: 0 0% 85%;
+  
+  /* Card specific colors */
+  --card-border: 0 0% 85%;
+  --card-shadow: 0 0% 0% / 0.1;
+  --card-hover-shadow: 0 0% 0% / 0.25;
+  
+  /* Status colors */
+  --status-available: 0 84% 50%;
+  --status-sold: 0 0% 5%;
+  --status-pending: 45 84% 50%;
+  
+  /* Gradients */
+  --gradient-red: linear-gradient(135deg, hsl(0 84% 50%), hsl(0 84% 40%));
+  --gradient-black: linear-gradient(135deg, hsl(0 0% 5%), hsl(0 0% 15%));
+  --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 98%));
+
+}
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -104,16 +129,10 @@
 
     --chart-5: 340 75% 55%;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+
+  
+
 
 @layer utilities {
   .gradient {

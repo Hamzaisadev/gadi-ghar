@@ -16,7 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { parseCurrency } from "@/components/utils/FormatCurrency";
+import { formatPriceRange, parseCurrency } from "@/components/utils/FormatCurrency";
 import {
   Select,
   SelectContent,
@@ -356,8 +356,15 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
   };
 
   useEffect(() => {
-    Object.values(errors).forEach((error) => {
-      if (error?.message) {
+    const errorFields = [
+      'make', 'model', 'year', 'price', 'mileage', 'color', 
+      'fuelType', 'transmission', 'bodyType', 'seats', 
+      'status', 'description', 'featured'
+    ];
+    
+    errorFields.forEach(field => {
+      const error = errors[field];
+      if (error) {
         toast.error(error.message);
       }
     });
@@ -548,7 +555,7 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                   <div className="space-y-1">
                     <Label className="text-xs text-gray-500">Formatted Price Range</Label>
                     <div className="font-semibold">
-                      {minAmount && maxAmount ? require('@/components/utils/FormatCurrency').formatPriceRange(minAmount, maxAmount) : "—"}
+                      {minAmount && maxAmount ? formatPriceRange(minAmount, maxAmount) : "—"}
                     </div>
                   </div>
 

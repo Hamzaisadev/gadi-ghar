@@ -249,7 +249,7 @@ export async function getCars(search = "") {
 }
 
 
-export async function deleteCar(id) {
+export async function deleteCars(id) {
   try {
     const { userId } = await auth()
     if (!userId) throw new Error("Unauthorized")
