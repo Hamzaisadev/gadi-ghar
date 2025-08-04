@@ -41,19 +41,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 
 const CarList = () => {
   const [search, setSearch] = useState("");
   const router = useRouter();
 
-  // State for search and dialogs
+  // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [carToDelete, setCarToDelete] = useState(null);
 
-  // Global lock for async actions
-  const [pendingAction, setPendingAction] = useState(false);
-  // Track which cars have pending actions
-  const [pendingCarActions, setPendingCarActions] = useState(new Set());
+  // Per-card loading state
+  const [loadingFeature, setLoadingFeature] = useState({}); // { [carId]: boolean }
+  const [loadingStatus, setLoadingStatus] = useState({}); // { [carId]: boolean }
+
+  // Local cars state for optimistic updates
+  const [localCars, setLocalCars] = useState([]);
 
   const {
     loading: loadingCars,
@@ -76,6 +79,13 @@ const CarList = () => {
     error: updateError,
   } = useFetch(updateCarStatus);
 
+  // Sync localCars with fetched data
+  useEffect(() => {
+    if (carsData?.data) setLocalCars(carsData.data);
+  }, [carsData]);
+
+  
+
   // Local state for instant UI updates
   const [cars, setCars] = useState([]);
 
@@ -84,21 +94,15 @@ const CarList = () => {
     fetchCars(search);
   }, [search]);
 
-  // Sync local cars with fetched data
-  useEffect(() => {
-    if (Array.isArray(carsData?.data)) {
-      setCars(carsData.data);
-    }
-  }, [carsData]);
-
-  // Handle errors
   useEffect(() => {
     if (carsError) {
       toast.error("Failed to load cars");
     }
+
     if (deleteError) {
       toast.error("Failed to delete car");
     }
+
     if (updateError) {
       toast.error("Failed to update car");
     }
@@ -108,7 +112,6 @@ const CarList = () => {
   useEffect(() => {
     if (deleteResult?.success) {
       toast.success("Car deleted successfully");
-      setCars((prev) => prev.filter((c) => c.id !== deleteResult.id));
       setDeleteDialogOpen(false);
       setCarToDelete(null);
       fetchCars(search);
@@ -127,87 +130,76 @@ const CarList = () => {
 
   // Handle delete car (with loading state in dialog)
   const handleDeleteCar = async () => {
-    if (!carToDelete || deletingCar || pendingAction) return;
+    if (!carToDelete) return;
 
-    setDeletingCar(true);
-    setPendingAction(true);
-    setPendingCarActions((prev) => new Set([...prev, carToDelete.id]));
-
-    try {
-      const result = await deleteCarFn(carToDelete.id);
-      if (result?.success) {
-        toast.success("Car deleted successfully");
-        setCars((prev) => prev.filter((c) => c.id !== carToDelete.id));
-        setDeleteDialogOpen(false);
-        setCarToDelete(null);
-      } else {
-        toast.error("Failed to delete car");
-      }
-    } catch (error) {
-      toast.error("Failed to delete car");
-    } finally {
-      setDeletingCar(false);
-      setPendingAction(false);
-      setPendingCarActions((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(carToDelete.id);
-        return newSet;
-      });
-    }
+    await deleteCarFn(carToDelete.id);
+    setDeleteDialogOpen(false);
+    setCarToDelete(null);
   };
 
-  // Handle toggle featured status (promise + block UI)
+  // Optimistic toggle featured
   const handleToggleFeatured = async (car) => {
-    if (pendingAction || pendingCarActions.has(car.id)) return;
-
-    setPendingAction(true);
-    setPendingCarActions((prev) => new Set([...prev, car.id]));
-
+    setLoadingFeature((prev) => ({ ...prev, [car.id]: true }));
+    // Optimistically update UI
+    setLocalCars((prev) =>
+      prev.map((c) => (c.id === car.id ? { ...c, featured: !c.featured } : c))
+    );
     try {
-      await toast.promise(
-        updateCarStatusFn(car.id, { featured: !car.featured }),
-        {
-          loading: car.featured ? "Unfeaturing car..." : "Featuring car...",
-          success: car.featured ? "Car unfeatured" : "Car featured",
-          error: "Failed to update featured state",
-        }
+      await updateCarStatusFn(car.id, { featured: !car.featured });
+      toast.success(car.featured ? "Car unfeatured" : "Car featured");
+    } catch (error) {
+      // Rollback
+      setLocalCars((prev) =>
+        prev.map((c) => (c.id === car.id ? { ...c, featured: car.featured } : c))
       );
-      setCars((prev) =>
-        prev.map((c) => (c.id === car.id ? { ...c, featured: !c.featured } : c))
-      );
+      toast.error("Failed to update featured state");
     } finally {
-      setPendingAction(false);
-      setPendingCarActions((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(car.id);
-        return newSet;
-      });
+      setLoadingFeature((prev) => ({ ...prev, [car.id]: false }));
     }
   };
 
-  // Handle status change (promise + block UI)
+  // Optimistic status update
   const handleStatusUpdate = async (car, newStatus) => {
-    if (pendingAction || pendingCarActions.has(car.id)) return;
-
-    setPendingAction(true);
-    setPendingCarActions((prev) => new Set([...prev, car.id]));
-
+    setLoadingStatus((prev) => ({ ...prev, [car.id]: true }));
+    const oldStatus = car.status;
+    setLocalCars((prev) =>
+      prev.map((c) => (c.id === car.id ? { ...c, status: newStatus } : c))
+    );
     try {
-      await toast.promise(updateCarStatusFn(car.id, { status: newStatus }), {
-        loading: "Updating status...",
-        success: "Status updated",
-        error: "Failed to update status",
-      });
-      setCars((prev) =>
-        prev.map((c) => (c.id === car.id ? { ...c, status: newStatus } : c))
+      await updateCarStatusFn(car.id, { status: newStatus });
+      toast.success("Status updated");
+    } catch (error) {
+      setLocalCars((prev) =>
+        prev.map((c) => (c.id === car.id ? { ...c, status: oldStatus } : c))
       );
+      toast.error("Failed to update status");
     } finally {
-      setPendingAction(false);
-      setPendingCarActions((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(car.id);
-        return newSet;
-      });
+      setLoadingStatus((prev) => ({ ...prev, [car.id]: false }));
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "AVAILABLE":
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            Available
+          </Badge>
+        );
+      case "UNAVAILABLE":
+        return (
+          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+            Unavailable
+          </Badge>
+        );
+      case "SOLD":
+        return (
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+            Sold
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
   if (loadingCars) {
@@ -353,238 +345,232 @@ const CarList = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
-        {Array.isArray(cars) &&
-          cars.map((car) => {
-            return (
-              <Card
-                key={car.id}
-                className="border-2 border-car-gray-light overflow-hidden shadow-lg hover:shadow-2xl hover:border-car-red transition-all duration-300 group relative bg-gradient-to-br from-white to-card rounded-2xl transform hover:scale-105"
-              >
-                {/* Featured Badge */}
-                <div className="absolute top-4 left-4 z-20">
-                  {car.featured ? (
-                    <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-car-black text-sm font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-                      <Star className="h-4 w-4 fill-yellow-600" />
-                      FEATURED
-                    </div>
-                  ) : (
-                    <div className="bg-car-gray-light text-car-gray text-sm font-semibold px-4 py-2 rounded-full shadow-md">
-                      Standard
-                    </div>
-                  )}
+        {localCars.map((car) => (
+          <Card
+            key={car.id}
+            className="border-2 border-car-gray-light overflow-hidden shadow-lg hover:shadow-2xl hover:border-car-red transition-all duration-300 group relative bg-gradient-to-br from-white to-card rounded-2xl transform hover:scale-105"
+          >
+            {/* Featured Badge */}
+            <div className="absolute top-4 left-4 z-20">
+              {car.featured ? (
+                <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-car-black text-sm font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                  <Star className="h-4 w-4 fill-yellow-600" />
+                  FEATURED
                 </div>
+              ) : (
+                <div className="bg-car-gray-light text-car-gray text-sm font-semibold px-4 py-2 rounded-full shadow-md">
+                  Standard
+                </div>
+              )}
+            </div>
 
-                {/* Car Image */}
-                <div className="relative aspect-video bg-gradient-to-br from-car-gray-light to-muted rounded-t-2xl flex items-center justify-center overflow-hidden">
-                  {car.images && car.images.length > 0 ? (
-                    <img
-                      src={car.images[0]}
-                      alt={car.make + " " + (car.model || "")}
-                      className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                    />
-                  ) : (
-                    <span className="text-8xl text-car-gray opacity-30">
-                      🚗
+            {/* Car Image */}
+            <div className="relative aspect-video bg-gradient-to-br from-car-gray-light to-muted rounded-t-2xl flex items-center justify-center overflow-hidden">
+              {car.images && car.images.length > 0 ? (
+                <Image
+                  width={500}
+                  height={500}
+                  src={car.images[0]}
+                  alt={car.make + " " + (car.model || "")}
+                  className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                />
+              ) : (
+                <span className="text-8xl text-car-gray opacity-30">🚗</span>
+              )}
+
+              {/* Status overlay */}
+              <div className="absolute top-4 right-4">
+                <span>{getStatusBadge(car.status)}</span>
+              </div>
+            </div>
+
+            <CardHeader className="pb-3 px-6 pt-6">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-2xl font-bold flex flex-col gap-2">
+                  <span className="text-car-black">
+                    {car.make}{" "}
+                    {car.model && (
+                      <span className="text-car-red font-extrabold">
+                        {car.model}
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-4 text-base text-car-gray font-medium">
+                    <span className="bg-car-gray-light px-3 py-1 rounded-full">
+                      {car.year || "N/A"}
+                    </span>
+                    <span className="bg-car-gray-light px-3 py-1 rounded-full">
+                      {car.color || "Color N/A"}
+                    </span>
+                  </div>
+                  {car.vin && (
+                    <span className="text-xs text-car-gray font-normal bg-car-gray-light px-3 py-1 rounded-full max-w-fit">
+                      VIN: {car.vin}
                     </span>
                   )}
+                </CardTitle>
+              </div>
+            </CardHeader>
 
-                  {/* Status overlay */}
-                  <div className="absolute top-4 right-4">
-                    <span
-                      className={`flex items-center gap-2 px-4 py-2 text-sm rounded-full font-bold shadow-lg uppercase tracking-wide ${
-                        car.status === "Available"
-                          ? "bg-car-red text-white border-2 border-white"
-                          : car.status === "Sold"
-                          ? "bg-car-black text-white border-2 border-white"
-                          : "bg-status-pending text-white border-2 border-white"
-                      }`}
-                    >
-                      <span className="inline-block w-3 h-3 rounded-full bg-white"></span>
-                      {car.status || "Available"}
-                    </span>
-                  </div>
+            <CardContent className="pt-0 px-6 pb-6">
+              {/* Price */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-3xl font-black text-car-red">
+                  {formatPriceRange(car.minPrice || car.price, car.maxPrice)}
                 </div>
+                <div className="flex items-center gap-2 text-car-gray font-semibold">
+                  <Gauge className="h-5 w-5" />
+                  <span>
+                    {car.mileage ? `${car.mileage.toLocaleString()} mi` : "N/A"}
+                  </span>
+                </div>
+              </div>
 
-                <CardHeader className="pb-3 px-6 pt-6">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-2xl font-bold flex flex-col gap-2">
-                      <span className="text-car-black">
-                        {car.make}{" "}
-                        {car.model && (
-                          <span className="text-car-red font-extrabold">
-                            {car.model}
-                          </span>
-                        )}
-                      </span>
-                      <div className="flex items-center gap-4 text-base text-car-gray font-medium">
-                        <span className="bg-car-gray-light px-3 py-1 rounded-full">
-                          {car.year || "N/A"}
-                        </span>
-                        <span className="bg-car-gray-light px-3 py-1 rounded-full">
-                          {car.color || "Color N/A"}
-                        </span>
-                      </div>
-                      {car.vin && (
-                        <span className="text-xs text-car-gray font-normal bg-car-gray-light px-3 py-1 rounded-full max-w-fit">
-                          VIN: {car.vin}
-                        </span>
-                      )}
-                    </CardTitle>
-                  </div>
-                </CardHeader>
+              {/* Car Details Row */}
+              <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-car-gray-light to-muted rounded-xl">
+                <div className="flex items-center gap-2 text-car-gray">
+                  <Users className="h-5 w-5 text-car-red" />
+                  <span className="font-semibold">
+                    {car.seats || car.seating || "N/A"}{" "}
+                    {car.seats > 1 || !car.seats ? "Seats" : "Seat"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-car-gray">
+                  <Fuel className="h-5 w-5 text-car-red" />
+                  <span className="font-semibold capitalize">
+                    {car.fuelType || car.fuel_type || car.engineType || "N/A"}
+                  </span>
+                </div>
+              </div>
 
-                <CardContent className="pt-0 px-6 pb-6">
-                  {/* Price */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-3xl font-black text-car-red">
-                      {formatPriceRange(
-                        car.minPrice || car.price,
-                        car.maxPrice
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-car-gray font-semibold">
-                      <Gauge className="h-5 w-5" />
-                      <span>
-                        {car.mileage
-                          ? `${car.mileage.toLocaleString()} mi`
-                          : "N/A"}
-                      </span>
-                    </div>
-                  </div>
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-car-red text-car-red hover:bg-car-red hover:text-white transition-all duration-200 font-semibold"
+                  title="View details"
+                  onClick={() => router.push(`/admin/cars/${car.id}`)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View
+                </Button>
 
-                  {/* Car Details Row */}
-                  <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-car-gray-light to-muted rounded-xl">
-                    <div className="flex items-center gap-2 text-car-gray">
-                      <Users className="h-5 w-5 text-car-red" />
-                      <span className="font-semibold">
-                        {car.seats || car.seating || "N/A"}{" "}
-                        {car.seats > 1 || !car.seats ? "Seats" : "Seat"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-car-gray">
-                      <Fuel className="h-5 w-5 text-car-red" />
-                      <span className="font-semibold capitalize">
-                        {car.fuelType ||
-                          car.fuel_type ||
-                          car.engineType ||
-                          "N/A"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="border-2 border-car-red text-car-red hover:bg-car-red hover:text-white transition-all duration-200 font-semibold"
-                      title="View details"
-                      onClick={() => onViewCar && onViewCar(car.id)}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View
-                    </Button>
-
-                    <Button
-                      variant={car.featured ? "default" : "outline"}
-                      size="lg"
-                      className={
-                        car.featured
-                          ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-300 border-2 border-yellow-500 font-semibold"
-                          : "border-2 border-yellow-400 text-yellow-600 hover:bg-yellow-400 hover:text-yellow-900 font-semibold"
-                      }
-                      title={car.featured ? "Unfeature" : "Feature"}
-                      onClick={() => handleToggleFeatured(car)}
-                      disabled={pendingAction}
-                    >
+                <Button
+                  variant={car.featured ? "default" : "outline"}
+                  size="lg"
+                  className={
+                    car.featured
+                      ? "bg-yellow-400 text-yellow-900 hover:bg-yellow-300 border-2 border-yellow-500 font-semibold"
+                      : "border-2 border-yellow-400 text-yellow-600 hover:bg-yellow-400 hover:text-yellow-900 font-semibold"
+                  }
+                  title={car.featured ? "Unfeature" : "Feature"}
+                  onClick={() => handleToggleFeatured(car)}
+                  disabled={!!loadingFeature[car.id]}
+                >
+                  {loadingFeature[car.id] ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {car.featured ? "Unfeaturing..." : "Featuring..."}
+                    </>
+                  ) : (
+                    <>
                       <Star
-                        className={`h-4 w-4 mr-2 ${
-                          car.featured ? "fill-yellow-600" : ""
-                        }`}
+                        className={`h-4 w-4 mr-2 ${car.featured ? "fill-yellow-600" : ""}`}
                       />
                       {car.featured ? "Featured" : "Feature"}
-                    </Button>
+                    </>
+                  )}
+                </Button>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          disabled={pendingAction}
-                          className="border-2 border-car-gray text-car-gray hover:bg-car-gray hover:text-white font-semibold"
-                        >
-                          Status
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-56 bg-white border-2 border-car-gray-light shadow-xl rounded-xl">
-                        <DropdownMenuLabel className="text-car-black font-semibold">
-                          Update Status
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuRadioGroup
-                          value={car.status?.toUpperCase()}
-                          onValueChange={(val) =>
-                            handleStatusUpdate(
-                              car,
-                              val.charAt(0) + val.slice(1).toLowerCase()
-                            )
-                          }
-                        >
-                          <DropdownMenuRadioItem
-                            value="AVAILABLE"
-                            className="text-car-gray hover:bg-car-red hover:text-white"
-                          >
-                            <span className="flex items-center justify-between w-full">
-                              <span>Available</span>
-                              {car.status?.toUpperCase() === "AVAILABLE" && (
-                                <span className="text-car-red">✔</span>
-                              )}
-                            </span>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="UNAVAILABLE"
-                            className="text-car-gray hover:bg-car-red hover:text-white"
-                          >
-                            <span className="flex items-center justify-between w-full">
-                              <span>Unavailable</span>
-                              {car.status?.toUpperCase() === "UNAVAILABLE" && (
-                                <span className="text-car-red">✔</span>
-                              )}
-                            </span>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="SOLD"
-                            className="text-car-gray hover:bg-car-red hover:text-white"
-                          >
-                            <span className="flex items-center justify-between w-full">
-                              <span>Sold</span>
-                              {car.status?.toUpperCase() === "SOLD" && (
-                                <span className="text-car-red">✔</span>
-                              )}
-                            </span>
-                          </DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button
                       variant="outline"
-                      size="lg"
-                      className="border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition-all duration-200 font-semibold"
-                      title="Delete car"
-                      onClick={() => {
-                        setCarToDelete(car);
-                        setDeleteDialogOpen(true);
-                      }}
-                      disabled={pendingAction}
+                      disabled={updatingCar}
+                      className="border-2 border-car-gray text-car-gray hover:bg-car-gray hover:text-white font-semibold"
                     >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                      Status
                     </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 bg-white border-2 border-car-gray-light shadow-xl rounded-xl"
+                  >
+                    <DropdownMenuLabel className="text-car-black font-semibold">
+                      Update Status
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup
+                      value={car.status?.toUpperCase()}
+                      onValueChange={(val) =>
+                        handleStatusUpdate(
+                          car,
+                          val.charAt(0) + val.slice(1).toLowerCase()
+                        )
+                      }
+                    >
+                      <DropdownMenuRadioItem
+                        value="AVAILABLE"
+                        className="text-car-gray hover:bg-car-red hover:text-white"
+                        onClick={() => handleStatusUpdate(car, "AVAILABLE")}
+                        disabled={car.status === "AVAILABLE" || !!loadingStatus[car.id]}
+                      >
+                        <span className="flex items-center justify-between w-full">
+                          <span>Available</span>
+                          {car.status?.toUpperCase() === "AVAILABLE" && (
+                            <span className="text-car-red">✔</span>
+                          )}
+                        </span>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="UNAVAILABLE"
+                        className="text-car-gray hover:bg-car-red hover:text-white"
+                        onClick={() => handleStatusUpdate(car, "UNAVAILABLE")}
+                        disabled={car.status === "UNAVAILABLE" || !!loadingStatus[car.id]}
+                      >
+                        <span className="flex items-center justify-between w-full">
+                          <span>Unavailable</span>
+                          {car.status?.toUpperCase() === "UNAVAILABLE" && (
+                            <span className="text-car-red">✔</span>
+                          )}
+                        </span>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="SOLD"
+                        className="text-car-gray hover:bg-car-red hover:text-white"
+                        onClick={() => handleStatusUpdate(car, "SOLD")}
+                        disabled={car.status === "SOLD" || !!loadingStatus[car.id]}
+                      >
+                        <span className="flex items-center justify-between w-full">
+                          <span>Sold</span>
+                          {car.status?.toUpperCase() === "SOLD" && (
+                            <span className="text-car-red">✔</span>
+                          )}
+                        </span>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white transition-all duration-200 font-semibold"
+                  title="Delete car"
+                  onClick={() => {
+                    setCarToDelete(car);
+                    setDeleteDialogOpen(true);
+                  }}
+                  disabled={updatingCar}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -605,7 +591,7 @@ const CarList = () => {
             <Button
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
-              disabled={pendingAction}
+              disabled={updatingCar}
               className="border-2 border-car-gray text-car-gray hover:bg-car-gray hover:text-white"
             >
               Cancel
@@ -613,10 +599,10 @@ const CarList = () => {
             <Button
               variant="destructive"
               onClick={handleDeleteCar}
-              disabled={pendingAction}
+              disabled={deletingCar}
               className="bg-red-500 hover:bg-red-600 text-white border-2 border-red-500"
             >
-              {pendingAction ? (
+              {deletingCar ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
