@@ -309,6 +309,7 @@ export async function deleteCars(id) {
 
 
 export async function updateCarStatus(id, {status , featured}) {
+  console.log("updateCarStatus CALLED", id, status, featured);
   try {
     const { userId } = await auth()
     if (!userId) throw new Error("Unauthorized")
@@ -316,18 +317,19 @@ export async function updateCarStatus(id, {status , featured}) {
     const user = await db.user.findUnique({
       where: { clerkUserId: userId }
     })
+
     if (!user) throw new Error("User not found")
 
-    
-    const updateData ={}
-    if (status !== undefined)  {
-      updateData.status = status
+    const updateData = {};
+    if (status !== undefined) {
+      console.log("Received status:", status, "type:", typeof status);
+      updateData.status = status;
     }
-    
+
     if (featured !== undefined) {
-      updateData.featured = featured
+      updateData.featured = featured;
     }
-    
+
     await db.car.update({
       where: { id },
       data: updateData,

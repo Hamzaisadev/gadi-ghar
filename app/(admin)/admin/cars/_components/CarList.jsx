@@ -15,6 +15,11 @@ import {
   Users,
   Fuel,
   Gauge,
+  Share2,
+  Calendar,
+  Palette,
+  Zap,
+  Car,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -23,6 +28,48 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPriceRange } from "@/components/utils/FormatCurrency";
 import Image from "next/image";
+
+// Loader overlay for image
+const ImageWithLoader = ({ src, alt, width, height, className }) => {
+  const [loading, setLoading] = useState(true);
+  return (
+    <div className="relative w-full h-full">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+          <svg
+            className="animate-spin h-8 w-8 text-car-red"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            ></path>
+          </svg>
+        </div>
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        className={className}
+        onLoadingComplete={() => setLoading(false)}
+        onLoad={() => setLoading(false)}
+      />
+    </div>
+  );
+};
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,55 +176,48 @@ const CarList = () => {
   // Handle delete car (with loading state in dialog)
   const handleDeleteCar = async () => {
     if (!carToDelete) return;
-
-    await deleteCarFn(carToDelete.id);
+    await deleteCarFn(carToDelete.id); // Show loading while waiting
     setDeleteDialogOpen(false);
     setCarToDelete(null);
+    // Remove from UI after loading finishes (API call completes)
+    setLocalCars((prev) => prev.filter((car) => car.id !== carToDelete.id));
+    // Optionally, refetch for consistency
+    // fetchCars(search);
   };
 
   // Optimistic toggle featured
   const handleToggleFeatured = async (car) => {
     setLoadingFeature((prev) => ({ ...prev, [car.id]: true }));
-    // Optimistically update UI
-    setLocalCars((prev) =>
-      prev.map((c) => (c.id === car.id ? { ...c, featured: !c.featured } : c))
-    );
     try {
       await updateCarStatusFn(car.id, { featured: !car.featured });
-      // toast.success(car.featured ? "Car unfeatured" : "Car featured");
-    } catch (error) {
-      // Rollback
+      // Update local state after API call
       setLocalCars((prev) =>
         prev.map((c) =>
-          c.id === car.id ? { ...c, featured: car.featured } : c
+          c.id === car.id ? { ...c, featured: !car.featured } : c
         )
       );
-      // toast.error("Failed to update featured state");
-    } finally {
-      setLoadingFeature((prev) => ({ ...prev, [car.id]: false }));
+    } catch (error) {
+      // handle error, maybe show a toast
     }
+    setLoadingFeature((prev) => ({ ...prev, [car.id]: false }));
   };
 
   // Optimistic status update
   const handleStatusUpdate = async (car, newStatus) => {
     setLoadingStatus((prev) => ({ ...prev, [car.id]: true }));
-    const oldStatus = car.status;
-    setLocalCars((prev) =>
-      prev.map((c) => (c.id === car.id ? { ...c, status: newStatus } : c))
-    );
     try {
-      await updateCarStatusFn(car.id, { status: newStatus });
-      // toast.success("Status updated");
-    } catch (error) {
+      await updateCarStatusFn(car.id, { status: newStatus.toUpperCase() });
+      // Update local state after API call
       setLocalCars((prev) =>
-        prev.map((c) => (c.id === car.id ? { ...c, status: oldStatus } : c))
+        prev.map((c) =>
+          c.id === car.id ? { ...c, status: newStatus.toUpperCase() } : c
+        )
       );
-      // toast.error("Failed to update status");
-    } finally {
-      setLoadingStatus((prev) => ({ ...prev, [car.id]: false }));
+    } catch (err) {
+      // handle error, maybe show a toast
     }
+    setLoadingStatus((prev) => ({ ...prev, [car.id]: false }));
   };
-
   const getStatusBadge = (status) => {
     switch (status) {
       case "AVAILABLE":
@@ -202,96 +242,96 @@ const CarList = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
-  if (loadingCars) {
-    return (
-      <>
-        <div className="space-y-6 p-6 bg-gradient-to-br from-background via-card to-car-gray-light/20">
-          <div className="flex justify-between items-center">
-            <div>
-              <div className="h-10 w-64 bg-gradient-to-r from-car-gray-light to-muted rounded-lg animate-pulse mb-2"></div>
-              <div className="h-6 w-48 bg-car-gray-light rounded-lg animate-pulse"></div>
-            </div>
-            <div className="h-12 w-36 bg-car-gray-light rounded-xl animate-pulse"></div>
-          </div>
+  // if (loadingCars) {
+  //   return (
+  //     <>
+  //       <div className="space-y-6 p-6 bg-gradient-to-br from-background via-card to-car-gray-light/20">
+  //         <div className="flex justify-between items-center">
+  //           <div>
+  //             <div className="h-10 w-64 bg-gradient-to-r from-car-gray-light to-muted rounded-lg animate-pulse mb-2"></div>
+  //             <div className="h-6 w-48 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //           </div>
+  //           <div className="h-12 w-36 bg-car-gray-light rounded-xl animate-pulse"></div>
+  //         </div>
 
-          {/* Search bar skeleton */}
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1 max-w-md">
-              <div className="h-14 w-full bg-white border-2 border-car-gray-light rounded-xl animate-pulse shadow-md"></div>
-            </div>
-          </div>
-        </div>
+  //         {/* Search bar skeleton */}
+  //         <div className="flex items-center space-x-4">
+  //           <div className="relative flex-1 max-w-md">
+  //             <div className="h-14 w-full bg-white border-2 border-car-gray-light rounded-xl animate-pulse shadow-md"></div>
+  //           </div>
+  //         </div>
+  //       </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
-          {[...Array(6)].map((_, i) => (
-            <Card
-              key={i}
-              className="border-2 border-car-gray-light overflow-hidden shadow-lg bg-gradient-to-br from-white to-card rounded-2xl"
-            >
-              {/* Featured badge skeleton */}
-              <div className="absolute top-4 left-4 z-20">
-                <div className="h-8 w-24 bg-car-gray-light rounded-full animate-pulse"></div>
-              </div>
+  //       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
+  //         {[...Array(6)].map((_, i) => (
+  //           <Card
+  //             key={i}
+  //             className="border-2 border-car-gray-light overflow-hidden shadow-lg bg-gradient-to-br from-white to-card rounded-2xl"
+  //           >
+  //             {/* Featured badge skeleton */}
+  //             <div className="absolute top-4 left-4 z-20">
+  //               <div className="h-8 w-24 bg-car-gray-light rounded-full animate-pulse"></div>
+  //             </div>
 
-              {/* Status badge skeleton */}
-              <div className="absolute top-4 right-4 z-20">
-                <div className="h-8 w-20 bg-car-gray-light rounded-full animate-pulse"></div>
-              </div>
+  //             {/* Status badge skeleton */}
+  //             <div className="absolute top-4 right-4 z-20">
+  //               <div className="h-8 w-20 bg-car-gray-light rounded-full animate-pulse"></div>
+  //             </div>
 
-              {/* Image skeleton */}
-              <div className="aspect-video bg-gradient-to-br from-car-gray-light to-muted rounded-t-2xl animate-pulse flex items-center justify-center">
-                <div className="text-6xl text-car-gray opacity-20">🚗</div>
-              </div>
+  //             {/* Image skeleton */}
+  //             <div className="aspect-video bg-gradient-to-br from-car-gray-light to-muted rounded-t-2xl animate-pulse flex items-center justify-center">
+  //               <div className="text-6xl text-car-gray opacity-20">🚗</div>
+  //             </div>
 
-              <CardHeader className="pb-3 px-6 pt-6">
-                <div className="space-y-3">
-                  {/* Car name skeleton */}
-                  <div className="h-8 w-3/4 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //             <CardHeader className="pb-3 px-6 pt-6">
+  //               <div className="space-y-3">
+  //                 {/* Car name skeleton */}
+  //                 <div className="h-8 w-3/4 bg-car-gray-light rounded-lg animate-pulse"></div>
 
-                  {/* Year and color badges skeleton */}
-                  <div className="flex items-center gap-4">
-                    <div className="h-7 w-16 bg-car-gray-light rounded-full animate-pulse"></div>
-                    <div className="h-7 w-20 bg-car-gray-light rounded-full animate-pulse"></div>
-                  </div>
+  //                 {/* Year and color badges skeleton */}
+  //                 <div className="flex items-center gap-4">
+  //                   <div className="h-7 w-16 bg-car-gray-light rounded-full animate-pulse"></div>
+  //                   <div className="h-7 w-20 bg-car-gray-light rounded-full animate-pulse"></div>
+  //                 </div>
 
-                  {/* VIN skeleton */}
-                  <div className="h-6 w-32 bg-car-gray-light rounded-full animate-pulse"></div>
-                </div>
-              </CardHeader>
+  //                 {/* VIN skeleton */}
+  //                 <div className="h-6 w-32 bg-car-gray-light rounded-full animate-pulse"></div>
+  //               </div>
+  //             </CardHeader>
 
-              <CardContent className="pt-0 px-6 pb-6">
-                {/* Price and mileage skeleton */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="h-10 w-32 bg-gradient-to-r from-car-red/20 to-car-red-dark/20 rounded-lg animate-pulse"></div>
-                  <div className="h-6 w-24 bg-car-gray-light rounded-lg animate-pulse"></div>
-                </div>
+  //             <CardContent className="pt-0 px-6 pb-6">
+  //               {/* Price and mileage skeleton */}
+  //               <div className="flex items-center justify-between mb-4">
+  //                 <div className="h-10 w-32 bg-gradient-to-r from-car-red/20 to-car-red-dark/20 rounded-lg animate-pulse"></div>
+  //                 <div className="h-6 w-24 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //               </div>
 
-                {/* Car details row skeleton */}
-                <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-car-gray-light to-muted rounded-xl">
-                  <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 bg-car-red/30 rounded animate-pulse"></div>
-                    <div className="h-5 w-16 bg-car-gray-light rounded animate-pulse"></div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-5 w-5 bg-car-red/30 rounded animate-pulse"></div>
-                    <div className="h-5 w-20 bg-car-gray-light rounded animate-pulse"></div>
-                  </div>
-                </div>
+  //               {/* Car details row skeleton */}
+  //               <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-car-gray-light to-muted rounded-xl">
+  //                 <div className="flex items-center gap-2">
+  //                   <div className="h-5 w-5 bg-car-red/30 rounded animate-pulse"></div>
+  //                   <div className="h-5 w-16 bg-car-gray-light rounded animate-pulse"></div>
+  //                 </div>
+  //                 <div className="flex items-center gap-2">
+  //                   <div className="h-5 w-5 bg-car-red/30 rounded animate-pulse"></div>
+  //                   <div className="h-5 w-20 bg-car-gray-light rounded animate-pulse"></div>
+  //                 </div>
+  //               </div>
 
-                {/* Action buttons skeleton */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-                  <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-                  <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-                  <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </>
-    );
-  }
+  //               {/* Action buttons skeleton */}
+  //               <div className="grid grid-cols-2 gap-3">
+  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
+  //               </div>
+  //             </CardContent>
+  //           </Card>
+  //         ))}
+  //       </div>
+  //     </>
+  //   );
+  // }
 
   if (carsError) {
     return (
@@ -348,98 +388,129 @@ const CarList = () => {
         {localCars.map((car) => (
           <Card
             key={car.id}
-            className="border-2 border-car-gray-light overflow-hidden shadow-lg hover:shadow-2xl hover:border-car-red transition-all duration-300 group relative bg-gradient-to-br from-white to-card rounded-2xl transform hover:scale-105"
+            className="border-2 p-0 border-car-gray-light overflow-hidden shadow-lg hover:shadow-2xl hover:border-car-red transition-all duration-300 group relative bg-gradient-to-br from-white to-card rounded-2xl transform hover:scale-105"
           >
             {/* Featured Badge */}
-            <div className="absolute top-4 left-4 z-20">
-              {car.featured ? (
-                <div className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-car-black text-sm font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-                  <Star className="h-4 w-4 fill-yellow-600" />
-                  FEATURED
-                </div>
-              ) : (
-                <div className="bg-car-gray-light text-car-gray text-sm font-semibold px-4 py-2 rounded-full shadow-md">
-                  Standard
-                </div>
-              )}
-            </div>
 
             {/* Car Image */}
-            <div className="relative aspect-video bg-gradient-to-br from-car-gray-light to-muted rounded-t-2xl flex items-center justify-center overflow-hidden">
-              {car.images && car.images.length > 0 ? (
-                <Image
-                  width={500}
-                  height={500}
-                  src={car.images[0]}
-                  alt={car.make + " " + (car.model || "")}
-                  className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                />
-              ) : (
-                <span className="text-8xl text-car-gray opacity-30">🚗</span>
-              )}
+            <div className="relative h-80 overflow-hidden">
+              <ImageWithLoader
+                width={600}
+                height={600}
+                src={car.images[0]}
+                alt={`${car.make} ${car.model}`}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              />
 
-              {/* Status overlay */}
-              <div className="absolute top-4 right-4">
-                <span>{getStatusBadge(car.status)}</span>
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+
+              {/* Floating badges */}
+              <div className="absolute top-6 left-6">
+                {car.featured && (
+                  <div className="bg-gradient-to-r from-yellow-400 to-amber-500 text-yellow-900 text-sm font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-float">
+                    <Star className="h-4 w-4 fill-current" />
+                    FEATURED
+                  </div>
+                )}
+              </div>
+
+              <div className="absolute top-6 right-6">
+                {getStatusBadge(car.status)}
+              </div>
+
+              {/* Quick actions */}
+              <div className="absolute bottom-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors">
+                  <Share2 className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              {/* Price overlay */}
+              <div className="absolute bottom-6 left-6">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-lg">
+                  <div className="text-2xl font-bold text-red-600 font-playfair">
+                    {formatPriceRange(car.minPrice || car.price, car.maxPrice)}
+                  </div>
+                </div>
               </div>
             </div>
+            {/* Card Content */}
+            <CardContent className="py-0 space-y-6">
+              {/* Header */}
+              <div className="space-y-3 flex justify-between ">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900 font-playfair leading-tight">
+                      {car.make}
+                    </h3>
+                    <p className="text-xl text-red-600 font-medium">
+                      {car.model}
+                    </p>
+                  </div>
+                </div>
 
-            <CardHeader className="pb-3 px-6 pt-6">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-2xl font-bold flex flex-col gap-2">
-                  <span className="text-car-black">
-                    {car.make}{" "}
-                    {car.model && (
-                      <span className="text-car-red font-extrabold">
-                        {car.model}
-                      </span>
-                    )}
-                  </span>
-                  <div className="flex items-center gap-4 text-base text-car-gray font-medium">
-                    <span className="bg-car-gray-light px-3 py-1 rounded-full">
-                      {car.year || "N/A"}
-                    </span>
-                    <span className="bg-car-gray-light px-3 py-1 rounded-full">
-                      {car.color || "Color N/A"}
+                {/* Year and Color */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                    <Calendar className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">
+                      {car.year}
                     </span>
                   </div>
-                  {car.vin && (
-                    <span className="text-xs text-car-gray font-normal bg-car-gray-light px-3 py-1 rounded-full max-w-fit">
-                      VIN: {car.vin}
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
+                    <Palette className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-700">
+                      {car.color}
                     </span>
-                  )}
-                </CardTitle>
-              </div>
-            </CardHeader>
-
-            <CardContent className="pt-0 px-6 pb-6">
-              {/* Price */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-3xl font-black text-car-red">
-                  {formatPriceRange(car.minPrice || car.price, car.maxPrice)}
-                </div>
-                <div className="flex items-center gap-2 text-car-gray font-semibold">
-                  <Gauge className="h-5 w-5" />
-                  <span>
-                    {car.mileage ? `${car.mileage.toLocaleString()} mi` : "N/A"}
-                  </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Car Details Row */}
-              <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-car-gray-light to-muted rounded-xl">
-                <div className="flex items-center gap-2 text-car-gray">
-                  <Users className="h-5 w-5 text-car-red" />
-                  <span className="font-semibold">
-                    {car.seats || car.seating || "N/A"}{" "}
-                    {car.seats > 1 || !car.seats ? "Seats" : "Seat"}
-                  </span>
+              {/* Performance specs */}
+              <div className="grid grid-cols-3 gap-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100/80 rounded-2xl">
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-red-100 rounded-full mx-auto mb-2">
+                    <Fuel className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {car.fuelType}
+                  </div>
+                  <div className="text-xs text-gray-500">Fuel Type</div>
                 </div>
-                <div className="flex items-center gap-2 text-car-gray">
-                  <Fuel className="h-5 w-5 text-car-red" />
-                  <span className="font-semibold capitalize">
-                    {car.fuelType || car.fuel_type || car.engineType || "N/A"}
-                  </span>
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full mx-auto mb-2">
+                    <Car className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {car.bodyType}
+                  </div>
+                  <div className="text-xs text-gray-500">Body Type</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full mx-auto mb-2">
+                    <Users className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {car.seats ? car.seats : "N/A"}
+                  </div>
+                  <div className="text-xs text-gray-500">Seats</div>
+                </div>
+              </div>
+
+              {/* Additional details */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Mileage</span>
+                    <span className="font-medium">{car.mileage} mi</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Transmission</span>
+                    <span className="font-medium">{car.transmission}</span>
+                  </div>
                 </div>
               </div>
 
