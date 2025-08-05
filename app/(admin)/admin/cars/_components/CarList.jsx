@@ -40,7 +40,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+
 import { Badge } from "@/components/ui/badge";
 
 const CarList = () => {
@@ -84,8 +84,6 @@ const CarList = () => {
     if (carsData?.data) setLocalCars(carsData.data);
   }, [carsData]);
 
-  
-
   // Local state for instant UI updates
   const [cars, setCars] = useState([]);
 
@@ -96,28 +94,28 @@ const CarList = () => {
 
   useEffect(() => {
     if (carsError) {
-      toast.error("Failed to load cars");
+      // toast.error("Failed to load cars");
     }
 
     if (deleteError) {
-      toast.error("Failed to delete car");
+      // toast.error("Failed to delete car");
     }
 
     if (updateError) {
-      toast.error("Failed to update car");
+      // toast.error("Failed to update car");
     }
   }, [carsError, deleteError, updateError]);
 
   // Handle successful operations
   useEffect(() => {
     if (deleteResult?.success) {
-      toast.success("Car deleted successfully");
+      // toast.success("Car deleted successfully");
       setDeleteDialogOpen(false);
       setCarToDelete(null);
       fetchCars(search);
     }
     if (updateResult?.success) {
-      toast.success("Car updated successfully");
+      // toast.success("Car updated successfully");
       fetchCars(search);
     }
   }, [deleteResult, updateResult, search]);
@@ -146,13 +144,15 @@ const CarList = () => {
     );
     try {
       await updateCarStatusFn(car.id, { featured: !car.featured });
-      toast.success(car.featured ? "Car unfeatured" : "Car featured");
+      // toast.success(car.featured ? "Car unfeatured" : "Car featured");
     } catch (error) {
       // Rollback
       setLocalCars((prev) =>
-        prev.map((c) => (c.id === car.id ? { ...c, featured: car.featured } : c))
+        prev.map((c) =>
+          c.id === car.id ? { ...c, featured: car.featured } : c
+        )
       );
-      toast.error("Failed to update featured state");
+      // toast.error("Failed to update featured state");
     } finally {
       setLoadingFeature((prev) => ({ ...prev, [car.id]: false }));
     }
@@ -167,12 +167,12 @@ const CarList = () => {
     );
     try {
       await updateCarStatusFn(car.id, { status: newStatus });
-      toast.success("Status updated");
+      // toast.success("Status updated");
     } catch (error) {
       setLocalCars((prev) =>
         prev.map((c) => (c.id === car.id ? { ...c, status: oldStatus } : c))
       );
-      toast.error("Failed to update status");
+      // toast.error("Failed to update status");
     } finally {
       setLoadingStatus((prev) => ({ ...prev, [car.id]: false }));
     }
@@ -476,7 +476,9 @@ const CarList = () => {
                   ) : (
                     <>
                       <Star
-                        className={`h-4 w-4 mr-2 ${car.featured ? "fill-yellow-600" : ""}`}
+                        className={`h-4 w-4 mr-2 ${
+                          car.featured ? "fill-yellow-600" : ""
+                        }`}
                       />
                       {car.featured ? "Featured" : "Feature"}
                     </>
@@ -486,11 +488,20 @@ const CarList = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
+                      asChild={false}
                       variant="outline"
-                      disabled={updatingCar}
+                      size="md"
+                      disabled={updatingCar || !!loadingStatus[car.id]}
                       className="border-2 border-car-gray text-car-gray hover:bg-car-gray hover:text-white font-semibold"
                     >
-                      Status
+                      {loadingStatus[car.id] ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        "Status"
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
@@ -514,7 +525,9 @@ const CarList = () => {
                         value="AVAILABLE"
                         className="text-car-gray hover:bg-car-red hover:text-white"
                         onClick={() => handleStatusUpdate(car, "AVAILABLE")}
-                        disabled={car.status === "AVAILABLE" || !!loadingStatus[car.id]}
+                        disabled={
+                          car.status === "AVAILABLE" || !!loadingStatus[car.id]
+                        }
                       >
                         <span className="flex items-center justify-between w-full">
                           <span>Available</span>
@@ -527,7 +540,10 @@ const CarList = () => {
                         value="UNAVAILABLE"
                         className="text-car-gray hover:bg-car-red hover:text-white"
                         onClick={() => handleStatusUpdate(car, "UNAVAILABLE")}
-                        disabled={car.status === "UNAVAILABLE" || !!loadingStatus[car.id]}
+                        disabled={
+                          car.status === "UNAVAILABLE" ||
+                          !!loadingStatus[car.id]
+                        }
                       >
                         <span className="flex items-center justify-between w-full">
                           <span>Unavailable</span>
@@ -540,7 +556,9 @@ const CarList = () => {
                         value="SOLD"
                         className="text-car-gray hover:bg-car-red hover:text-white"
                         onClick={() => handleStatusUpdate(car, "SOLD")}
-                        disabled={car.status === "SOLD" || !!loadingStatus[car.id]}
+                        disabled={
+                          car.status === "SOLD" || !!loadingStatus[car.id]
+                        }
                       >
                         <span className="flex items-center justify-between w-full">
                           <span>Sold</span>
