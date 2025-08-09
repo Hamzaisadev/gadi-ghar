@@ -134,12 +134,9 @@ const CarList = () => {
   // Local state for instant UI updates
   const [cars, setCars] = useState([]);
 
-  // Initial fetch and refetch on search changes (debounced)
+  // Initial fetch and refetch on search changes
   useEffect(() => {
-    const handler = setTimeout(() => {
-      fetchCars(search);
-    }, 300); // 300ms debounce
-    return () => clearTimeout(handler);
+    fetchCars(search);
   }, [search]);
 
   useEffect(() => {
@@ -162,11 +159,9 @@ const CarList = () => {
       // toast.success("Car deleted successfully");
       setDeleteDialogOpen(false);
       setCarToDelete(null);
-      fetchCars(search);
     }
     if (updateResult?.success) {
       // toast.success("Car updated successfully");
-      fetchCars(search);
     }
   }, [deleteResult, updateResult, search]);
 
@@ -217,7 +212,8 @@ const CarList = () => {
         )
       );
     } catch (err) {
-      // handle error, maybe show a toast
+      
+      toast.error("Failed to update car status");
     }
     setLoadingStatus((prev) => ({ ...prev, [car.id]: false }));
   };
@@ -382,6 +378,7 @@ const CarList = () => {
                   className="pl-12 pr-4 py-3 text-lg border-2 border-car-gray-light hover:border-car-red focus:border-car-red transition-colors duration-200 rounded-xl bg-white shadow-md"
                 />
               </div>
+             
             </form>
           </div>
         </div>
