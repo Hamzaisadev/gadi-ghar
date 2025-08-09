@@ -218,15 +218,19 @@ export async function getCars(search = "") {
     })
     if (!user) throw new Error("User not found")
 
-    let where = { }
+    let where = {}
     if (search) {
+      // Check if search is a number (for year)
+      const yearNumber = Number(search)
       where.OR = [
         { make: { contains: search, mode: "insensitive" } },
         { model: { contains: search, mode: "insensitive" } },
-        { year: { contains: search, mode: "insensitive" } },
         { color: { contains: search, mode: "insensitive" } },
         { bodyType: { contains: search, mode: "insensitive" } },
       ]
+      if (!isNaN(yearNumber)) {
+        where.OR.push({ year: yearNumber })
+      }
     }
 
     const cars = await db.car.findMany({
@@ -235,7 +239,6 @@ export async function getCars(search = "") {
         createdAt: "desc",
       },
     })
-
 
     const serializedCars = cars.map(serializeCarData)
     return {

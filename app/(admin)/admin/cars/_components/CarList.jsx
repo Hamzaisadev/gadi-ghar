@@ -134,9 +134,12 @@ const CarList = () => {
   // Local state for instant UI updates
   const [cars, setCars] = useState([]);
 
-  // Initial fetch and refetch on search changes
+  // Initial fetch and refetch on search changes (debounced)
   useEffect(() => {
-    fetchCars(search);
+    const handler = setTimeout(() => {
+      fetchCars(search);
+    }, 300); // 300ms debounce
+    return () => clearTimeout(handler);
   }, [search]);
 
   useEffect(() => {
@@ -333,16 +336,16 @@ const CarList = () => {
   //   );
   // }
 
-  if (carsError) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-red-500 text-lg mb-4">Failed to load cars</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
-        </div>
-      </div>
-    );
-  }
+  // if (carsError) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-[400px]">
+  //       <div className="text-center">
+  //         <p className="text-red-500 text-lg mb-4">Failed to load cars</p>
+  //         <Button onClick={() => window.location.reload()}>Try Again</Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <>
@@ -388,7 +391,7 @@ const CarList = () => {
         {localCars.map((car) => (
           <Card
             key={car.id}
-            className="border-2 p-0 border-car-gray-light overflow-hidden shadow-lg hover:shadow-2xl hover:border-car-red transition-all duration-300 group relative bg-gradient-to-br from-white to-card rounded-2xl transform hover:scale-105"
+            className="border-2 p-0 pb-6 border-car-gray-light overflow-hidden shadow-lg hover:shadow-2xl hover:border-car-red transition-all duration-300 group relative bg-gradient-to-br from-white to-card rounded-2xl transform hover:scale-105"
           >
             {/* Featured Badge */}
 
