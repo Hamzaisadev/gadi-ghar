@@ -212,7 +212,6 @@ const CarList = () => {
         )
       );
     } catch (err) {
-      
       toast.error("Failed to update car status");
     }
     setLoadingStatus((prev) => ({ ...prev, [car.id]: false }));
@@ -368,8 +367,8 @@ const CarList = () => {
         <div className="flex items-center space-x-4">
           <div className="relative flex-1 max-w-md">
             <form onSubmit={handleSearchSubmit} className="flex w-full">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-3.5 h-5 w-5 text-car-gray" />
+              <div className="relative flex-1 flex items-center justify-center">
+                <Search className="absolute left-4  h-5 w-5 text-car-gray" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -378,7 +377,6 @@ const CarList = () => {
                   className="pl-12 pr-4 py-3 text-lg border-2 border-car-gray-light hover:border-car-red focus:border-car-red transition-colors duration-200 rounded-xl bg-white shadow-md"
                 />
               </div>
-             
             </form>
           </div>
         </div>
