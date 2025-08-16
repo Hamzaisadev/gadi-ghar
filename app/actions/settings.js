@@ -99,6 +99,8 @@ export async function getDealershipInfo() {
 
 export async function saveWorkingHours(workingHours) {
   try {
+    console.log('Starting saveWorkingHours with data:', JSON.stringify(workingHours, null, 2));
+    
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
@@ -107,41 +109,62 @@ export async function saveWorkingHours(workingHours) {
     });
    
     if (!user || user.role !== "ADMIN") {
-      throw new Error("Unauthorized: Admin access required")
+      throw new Error("Unauthorized: Admin access required");
     }
-      const dealerShip = await db.dealerShipInfo.findFirst()
-
-      if (!dealerShip) {
-        throw new Error("Dealership not found")
-      }
-
-      await db.deleteMany({
-        where: {dealerShipId: dealerShip.id}
-      })
     
-    for (const hour of workingHours) {
-      await db.workingHours.create({
+    // Find or create dealership
+    let dealership = await db.dealershipInfo.findFirst();
+    
+    if (!dealership) {
+      console.log('No dealership found, creating a new one');
+      dealership = await db.dealershipInfo.create({
+        data: {
+          name: 'Gadi Ghar',
+          address: 'Clifton Block 8, Karachi, Pakistan',
+          phone: '03343149433',
+          email: 'hamzaisadev@gmail.com'
+        }
+      });
+    }
+
+    console.log('Using dealership:', dealership.id);
+
+    // Delete existing working hours for this dealership
+    console.log('Deleting existing working hours...');
+    const deleteResult = await db.workingHour.deleteMany({
+      where: { dealershipId: dealership.id }
+    });
+    console.log(`Deleted ${deleteResult.count} existing working hours`);
+    
+    // Create new working hours
+    console.log('Creating new working hours...');
+    const createPromises = workingHours.map(hour => 
+      db.workingHour.create({
         data: {
           dayOfWeek: hour.dayOfWeek,
           openTime: hour.openTime,
           closeTime: hour.closeTime,
           isOpen: hour.isOpen,
-          dealerShipId: dealerShip.id
+          dealershipId: dealership.id
         }
       })
-    }
+    );
+    
+    await Promise.all(createPromises);
+    console.log('Successfully created all working hours');
 
-    revalidatePath("/admin/settings")
-    revalidatePath("/")
+    revalidatePath("/admin/settings");
+    revalidatePath("/");
 
-    return {
-      success: true,
-    }
+    return { success: true, message: "Working hours saved successfully!" };
     
   } catch (error) {
+    console.error('Error in saveWorkingHours:', error);
     return {
-      error: "Error saving working hours: " + error.message
-    }
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    };
   }
 }
 

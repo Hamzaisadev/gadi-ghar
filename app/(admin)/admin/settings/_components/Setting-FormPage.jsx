@@ -108,8 +108,7 @@ const SettingFormPage = () => {
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-    if (settingsData?.success && settingsData.data) {
+      if (settingsData?.success && settingsData.data) {
       const dealership = settingsData.data;
 
       if (dealership.workingHours.length > 0) {
@@ -135,11 +134,11 @@ const SettingFormPage = () => {
           };
         });
 
-        if (isMounted) setWorkingHours(mappedHours);
+        setWorkingHours(mappedHours);
       }
     }
     return () => {
-      isMounted = false;
+      
     };
   }, [settingsData]);
 
@@ -159,7 +158,7 @@ const SettingFormPage = () => {
   }, [settingsError, saveError, usersError, updateRoleError]);
 
   useEffect(() => {
-    let isMounted = true;
+   
     if (saveResult?.success) {
       toast.success("Working hours saved successfully");
       fetchDealershipInfo();
@@ -167,13 +166,11 @@ const SettingFormPage = () => {
     if (updateRoleResult?.success) {
       toast.success("User role updated successfully");
       fetchUsers();
-      if (isMounted) {
-        setConfirmAdminDialog(false);
-        setConfirmRemoveDialog(false);
-      }
+      setConfirmAdminDialog(false);
+      setConfirmRemoveDialog(false);
     }
     return () => {
-      isMounted = false;
+      
     };
   }, [saveResult, updateRoleResult]);
 
@@ -187,7 +184,18 @@ const SettingFormPage = () => {
   };
 
   const handleSaveHours = async () => {
-    await saveHours(workingHours);
+    try {
+      const result = await saveHours(workingHours);
+      if (result?.error) {
+        console.error('Error saving hours:', result.error);
+        toast.error(`Failed to save working hours: ${result.error}`);
+      } else if (result?.success) {
+        toast.success(result.message || "Working hours saved successfully!");
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast.error("An unexpected error occurred while saving working hours");
+    }
   };
 
   const handleMakeAdmin = async () => {
@@ -261,6 +269,7 @@ const SettingFormPage = () => {
 
                           <div className="flex items-center gap-4">
                             <Switch
+                              id={`is-open-${day.value}`}
                               checked={!!workingHours[index]?.isOpen}
                               onCheckedChange={(checked) =>
                                 handleWorkingHourChange(
