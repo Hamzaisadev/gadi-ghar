@@ -156,7 +156,7 @@ export async function saveWorkingHours(workingHours) {
     revalidatePath("/admin/settings");
     revalidatePath("/");
 
-    return { success: true, message: "Working hours saved successfully!" };
+    return { success: true, };
     
   } catch (error) {
     console.error('Error in saveWorkingHours:', error);
