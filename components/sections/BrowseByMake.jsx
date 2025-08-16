@@ -7,18 +7,26 @@ import { ArrowUpRight } from "lucide-react";
 
 const BrowseByMake = () => {
   return (
-    <section className="py-12 bg-gray-50">
+    <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold">Browse by Make</h2>
-          <Button variant="ghost" className="flex items-center" asChild>
-            <Link href="/cars">
-              View all <ArrowUpRight className="ml-1 h-4 w-4" />
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-10 gap-6">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            Browse by Make
+          </h2>
+
+          <Button
+            variant="ghost"
+            className="flex items-center text-lg font-medium hover:text-red-600 transition"
+            asChild
+          >
+            <Link href="/cars" className="flex items-center gap-2">
+              View all
+              <ArrowUpRight className="h-6 w-6 md:h-7 md:w-7" />
             </Link>
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
           {carMakes.map((make) => {
             return (
               <Link

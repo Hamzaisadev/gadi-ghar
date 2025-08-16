@@ -1,18 +1,18 @@
-import Link from "next/link";
+    import Link from "next/link";
 import React from "react";
 import { Button } from "../ui/button";
 import { ArrowUpRight } from "lucide-react";
 
 import CarCard from "../car-card";
-import { getFeaturedCars } from "@/app/actions/home";
+import { electricCars } from "@/app/actions/home";
 
-const FeaturedCars = async () => {
-  const cars = await getFeaturedCars();
+const ElectricCarsSection = async () => {
+  const cars = await electricCars();
 
   if (cars?.isLoading) {
     return (
       <div className="flex justify-center items-center py-20 text-lg font-medium text-gray-600">
-        Loading featured cars...
+        Loading electric cars...
       </div>
     );
   }
@@ -29,7 +29,7 @@ const FeaturedCars = async () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-10 gap-6">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-            Featured Cars
+            Electric Cars Collection
           </h2>
 
           <Button
@@ -54,4 +54,4 @@ const FeaturedCars = async () => {
   );
 };
 
-export default FeaturedCars;
+export default ElectricCarsSection;

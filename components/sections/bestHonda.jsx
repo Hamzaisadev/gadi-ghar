@@ -4,15 +4,15 @@ import { Button } from "../ui/button";
 import { ArrowUpRight } from "lucide-react";
 
 import CarCard from "../car-card";
-import { getFeaturedCars } from "@/app/actions/home";
+import { bestHonda } from "@/app/actions/home";
 
-const FeaturedCars = async () => {
-  const cars = await getFeaturedCars();
+const BestHonda = async () => {
+  const cars = await bestHonda();
 
   if (cars?.isLoading) {
     return (
       <div className="flex justify-center items-center py-20 text-lg font-medium text-gray-600">
-        Loading featured cars...
+        Loading Honda cars...
       </div>
     );
   }
@@ -24,12 +24,14 @@ const FeaturedCars = async () => {
       </div>
     );
   }
+
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
+        {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-10 gap-6">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-            Featured Cars
+            Honda Collection
           </h2>
 
           <Button
@@ -44,6 +46,7 @@ const FeaturedCars = async () => {
           </Button>
         </div>
 
+        {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
           {cars?.map((car) => (
             <CarCard key={car.id} car={car} />
@@ -54,4 +57,4 @@ const FeaturedCars = async () => {
   );
 };
 
-export default FeaturedCars;
+export default BestHonda;
