@@ -14,7 +14,13 @@ import { Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CarFilterControls from "./CarFilterControl";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CarFilters = ({ filters }) => {
   const router = useRouter();
@@ -177,7 +183,7 @@ const CarFilters = ({ filters }) => {
   return (
     <div>
       {/* MobileFilters */}
-      <div>
+      <div className="lg:hidden mb-4">
         <div className="flex items-center">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
@@ -228,21 +234,42 @@ const CarFilters = ({ filters }) => {
         </div>
       </div>
       {/* SortSelection */}
-      <Select value={sortBy}
+      <Select
+        value={sortBy}
         onValueChange={(value) => {
-        setSortBy(value)
-        setTimeout(() => {applyFilters();}, 0);
-      }}>
+          // Create new params object
+          const params = new URLSearchParams(searchParams.toString());
+          
+          // Update the sort parameter
+          if (value === 'newest') {
+            params.delete('sortBy');
+          } else {
+            params.set('sortBy', value);
+          }
+          
+          // Reset to first page when changing sort
+          params.delete('page');
+          
+          // Build the new URL
+          const query = params.toString();
+          const url = query ? `${pathname}?${query}` : pathname;
+          
+          // Update the URL and scroll to top
+          router.push(url, { scroll: false });
+          
+          // Update local state
+          setSortBy(value);
+        }}
+      >
         <SelectTrigger className="w-[180px] lg:w-full">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>
           {[
-           {value:"newest",label:"Newest First"},
-           {value:"price-asc",label:"Price: Low to High"},
-            { value: "price-desc", label: "Price: High to Low" },
-           
-          ].map((option) => (
+            { value: "newest", label: "Newest First" },
+            { value: "priceAsc", label: "Price: Low to High" },
+            { value: "priceDesc", label: "Price: High to Low" },
+            ].map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>

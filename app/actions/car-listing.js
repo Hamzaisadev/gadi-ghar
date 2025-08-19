@@ -9,80 +9,86 @@ export async function getCarFilters() {
   try {
     console.time("getCarFilters.total");
 
-    console.time("getCarFilters.makes");
-    const makes = await db.car.findMany({
-      where: { status: "AVAILABLE" },
-      select: { make: true },
-      distinct: ["make"],
-      orderBy: { make: "asc" },
-    });
-    console.timeEnd("getCarFilters.makes");
+    // Run all queries in parallel
+    const [
+      makes,
+      bodyTypes,
+      fuelTypes,
+      transmissions,
+      colors,
+      priceAggregations
+    ] = await Promise.all([
+      // Makes query
+      db.car.findMany({
+        where: { status: "AVAILABLE" },
+        select: { make: true },
+        distinct: ["make"],
+        orderBy: { make: "asc" },
+      }),
       
-    console.time("getCarFilters.bodyTypes");
-    const bodyTypes = await db.car.findMany({
-      where: { status: "AVAILABLE" },
-      select: { bodyType: true },
-      distinct: ["bodyType"],
-      orderBy: { bodyType: "asc" },
-    });
-    console.timeEnd("getCarFilters.bodyTypes");
+      // Body types query
+      db.car.findMany({
+        where: { status: "AVAILABLE" },
+        select: { bodyType: true },
+        distinct: ["bodyType"],
+        orderBy: { bodyType: "asc" },
+      }),
+      
+      // Fuel types query
+      db.car.findMany({
+        where: { status: "AVAILABLE" },
+        select: { fuelType: true },
+        distinct: ["fuelType"],
+        orderBy: { fuelType: "asc" },
+      }),
+      
+      // Transmissions query
+      db.car.findMany({
+        where: { status: "AVAILABLE" },
+        select: { transmission: true },
+        distinct: ["transmission"],
+        orderBy: { transmission: "asc" },
+      }),
+      
+      // Colors query
+      db.car.findMany({
+        where: { status: "AVAILABLE" },
+        select: { color: true },
+        distinct: ["color"],
+        orderBy: { color: "asc" },
+      }),
+      
+      // Price aggregations
+      db.car.aggregate({
+        where: { status: "AVAILABLE" },
+        _min: { minPrice: true },
+        _max: { maxPrice: true },
+      })
+    ]);
 
-    console.time("getCarFilters.fuelTypes");
-    const fuelTypes = await db.car.findMany({
-      where: { status: "AVAILABLE" },
-      select: { fuelType: true },
-      distinct: ["fuelType"],
-      orderBy: { fuelType: "asc" },
-    });
-    console.timeEnd("getCarFilters.fuelTypes");
+    console.timeEnd("getCarFilters.total");
 
-    console.time("getCarFilters.transmissions");
-    const transmissions = await db.car.findMany({
-      where: { status: "AVAILABLE" },
-      select: { transmission: true },
-      distinct: ["transmission"],
-      orderBy: { transmission: "asc" },
-    });
-    console.timeEnd("getCarFilters.transmissions");
-
-    console.time("getCarFilters.colors");
-    const colors = await db.car.findMany({
-      where: { status: "AVAILABLE" },
-      select: { color: true },
-      distinct: ["color"],
-      orderBy: { color: "asc" },
-    });
-    console.timeEnd("getCarFilters.colors");
-
-    console.time("getCarFilters.priceAggregations");
-    const priceAggregations = await db.car.aggregate({
-      where: { status: "AVAILABLE" },
-      _min: { minPrice: true },
-      _max: { maxPrice: true },
-    });
-    console.timeEnd("getCarFilters.priceAggregations");
     return {
       success: true,
       data: {
-        makes: makes.map((item) => item.make),
-        bodyTypes: bodyTypes.map((item) => item.bodyType),
-        fuelTypes: fuelTypes.map((item) => item.fuelType),
-        transmissions: transmissions.map((item) => item.transmission),
-        colors: colors.map((item) => item.color),
+        makes: makes.map((item) => item.make).filter(Boolean),
+        bodyTypes: bodyTypes.map((item) => item.bodyType).filter(Boolean),
+        fuelTypes: fuelTypes.map((item) => item.fuelType).filter(Boolean),
+        transmissions: transmissions.map((item) => item.transmission).filter(Boolean),
+        colors: colors.map((item) => item.color).filter(Boolean),
         priceRange: {
-          min: priceAggregations._min.minPrice
-            ? parseFloat(priceAggregations._min.minPrice.toString())
-            : 0,
-          max: priceAggregations._max.maxPrice
-            ? parseFloat(priceAggregations._max.maxPrice.toString())
-            : 100000,
+          min: priceAggregations._min.minPrice ? Number(priceAggregations._min.minPrice) : 0,
+          max: priceAggregations._max.maxPrice ? Number(priceAggregations._max.maxPrice) : 100000,
         },
       },
     };
   } catch (error) {
-    console.log(error);
-  } finally {
+    console.error("Error in getCarFilters:", error);
     console.timeEnd("getCarFilters.total");
+    return {
+      success: false,
+      error: "Failed to fetch car filters"
+    };
   }
 }
 
