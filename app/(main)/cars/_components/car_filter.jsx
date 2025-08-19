@@ -10,7 +10,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Filter } from "lucide-react";
+import { Filter, Sliders } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CarFilterControls from "./CarFilterControl";
@@ -239,24 +239,24 @@ const CarFilters = ({ filters }) => {
         onValueChange={(value) => {
           // Create new params object
           const params = new URLSearchParams(searchParams.toString());
-          
+
           // Update the sort parameter
-          if (value === 'newest') {
-            params.delete('sortBy');
+          if (value === "newest") {
+            params.delete("sortBy");
           } else {
-            params.set('sortBy', value);
+            params.set("sortBy", value);
           }
-          
+
           // Reset to first page when changing sort
-          params.delete('page');
-          
+          params.delete("page");
+
           // Build the new URL
           const query = params.toString();
           const url = query ? `${pathname}?${query}` : pathname;
-          
+
           // Update the URL and scroll to top
           router.push(url, { scroll: false });
-          
+
           // Update local state
           setSortBy(value);
         }}
@@ -269,13 +269,51 @@ const CarFilters = ({ filters }) => {
             { value: "newest", label: "Newest First" },
             { value: "priceAsc", label: "Price: Low to High" },
             { value: "priceDesc", label: "Price: High to Low" },
-            ].map((option) => (
+          ].map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+
+      {/* DesktopFilters */}
+      <div className="hidden lg:block sticky top-24">
+        <div className="border rounded-lg overflow-hidden bg-white">
+          <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
+            <h3 className="font-medium flex items-center">
+              <Sliders className="mr-2 h-4 w-4" />
+              Filters
+            </h3>
+
+            {activeFilterCount > 0 && (
+              <Button
+                variant="ghost"
+                onClick={clearFilter}
+                size="sm"
+                className="h-8 text-sm text-gray-600"
+              >
+                Clear All
+              </Button>
+            )}
+          </div>
+
+          <div className="p-4">
+            <CarFilterControls
+              filters={filters}
+              currentFilters={currentFilters}
+              onFilterChange={handleFilterChange}
+              onClearFilter={handleClearFilter}
+            />
+          </div>
+
+          <div className="px-4 py-4 border-t">
+          <Button variant="default" onClick={applyFilters} className="w-full">
+            Apply Filters
+          </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

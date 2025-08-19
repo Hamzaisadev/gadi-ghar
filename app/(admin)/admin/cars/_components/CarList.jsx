@@ -20,7 +20,11 @@ import {
   Palette,
   Zap,
   Car,
+  Copy,
+  MessageSquare,
 } from "lucide-react";
+import { toast } from "sonner";
+
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import useFetch from "@/hooks/use-fetch";
@@ -30,6 +34,108 @@ import { formatPriceRange } from "@/components/utils/FormatCurrency";
 import Image from "next/image";
 
 // Loader overlay for image
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import { Badge } from "@/components/ui/badge";
+
+
+
+
+
+const ShareDialog = ({ open, onOpenChange, carToShare, onShare }) => {
+  if (!carToShare) return null;
+  
+  const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/cars/${carToShare.id}`;
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Share {carToShare.make} {carToShare.model}</DialogTitle>
+          <DialogDescription>
+            Share this car listing with others
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-1.5">
+              <Input
+                id="share-link"
+                value={shareUrl}
+                readOnly
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Anyone with this link can view this car listing
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="shrink-0"
+              onClick={() => {
+                navigator.clipboard.writeText(shareUrl);
+                toast.success("Link copied to clipboard!");
+              }}
+            >
+              <Copy className="h-4 w-4" />
+              <span className="sr-only">Copy link</span>
+            </Button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => onShare(carToShare)}
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              Share via...
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                window.open(`https://wa.me/?text=Check out this ${encodeURIComponent(carToShare.make + ' ' + carToShare.model)} on GadiGhar: ${shareUrl}`, '_blank');
+              }}
+            >
+              <MessageSquare className="mr-2 h-4 w-4" />
+              WhatsApp
+            </Button>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 const ImageWithLoader = ({ src, alt, width, height, className }) => {
   const [loading, setLoading] = useState(true);
   return (
@@ -70,25 +176,9 @@ const ImageWithLoader = ({ src, alt, width, height, className }) => {
     </div>
   );
 };
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
-import { Badge } from "@/components/ui/badge";
+
+
 
 const CarList = () => {
   const [search, setSearch] = useState("");
@@ -96,6 +186,8 @@ const CarList = () => {
 
   // State for delete dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [carToShare, setCarToShare] = useState(null);
   const [carToDelete, setCarToDelete] = useState(null);
 
   // Per-card loading state
@@ -104,6 +196,32 @@ const CarList = () => {
 
   // Local cars state for optimistic updates
   const [localCars, setLocalCars] = useState([]);
+
+  const handleShare = async (car) => {
+    try {
+      const shareUrl = `${window.location.origin}/cars/${car.id}`;
+      if (navigator.share) {
+        await navigator.share({
+          title: `${car.make} ${car.model} - GadiGhar`,
+          text: `Check out this ${car.make} ${car.model} ${car.year} on GadiGhar`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success("Link copied to clipboard!");
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        console.error('Error sharing:', err);
+        toast.error("Failed to share. Please try again.");
+      }
+    } finally {
+      setShareDialogOpen(false);
+      setCarToShare(null);
+    }
+  };
+  
+
 
   const {
     loading: loadingCars,
@@ -419,9 +537,17 @@ const CarList = () => {
 
               {/* Quick actions */}
               <div className="absolute bottom-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors">
+                <Button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCarToShare(car);
+                    setShareDialogOpen(true);
+                  }} 
+                  className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                  title="Share this car"
+                >
                   <Share2 className="w-5 h-5 text-white" />
-                </button>
+                </Button>
               </div>
 
               {/* Price overlay */}
@@ -701,6 +827,12 @@ const CarList = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ShareDialog 
+        open={shareDialogOpen} 
+        onOpenChange={setShareDialogOpen}
+        carToShare={carToShare}
+        onShare={handleShare}
+      />
     </>
   );
 };
