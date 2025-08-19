@@ -7,42 +7,60 @@ import { serializeCarData } from "@/lib/helper";
 
 export async function getCarFilters() {
   try {
+    console.time("getCarFilters.total");
+
+    console.time("getCarFilters.makes");
     const makes = await db.car.findMany({
       where: { status: "AVAILABLE" },
       select: { make: true },
       distinct: ["make"],
       orderBy: { make: "asc" },
     });
+    console.timeEnd("getCarFilters.makes");
       
+    console.time("getCarFilters.bodyTypes");
     const bodyTypes = await db.car.findMany({
       where: { status: "AVAILABLE" },
       select: { bodyType: true },
       distinct: ["bodyType"],
       orderBy: { bodyType: "asc" },
     });
+    console.timeEnd("getCarFilters.bodyTypes");
+
+    console.time("getCarFilters.fuelTypes");
     const fuelTypes = await db.car.findMany({
       where: { status: "AVAILABLE" },
       select: { fuelType: true },
       distinct: ["fuelType"],
       orderBy: { fuelType: "asc" },
     });
+    console.timeEnd("getCarFilters.fuelTypes");
+
+    console.time("getCarFilters.transmissions");
     const transmissions = await db.car.findMany({
       where: { status: "AVAILABLE" },
       select: { transmission: true },
       distinct: ["transmission"],
       orderBy: { transmission: "asc" },
     });
+    console.timeEnd("getCarFilters.transmissions");
+
+    console.time("getCarFilters.colors");
     const colors = await db.car.findMany({
       where: { status: "AVAILABLE" },
       select: { color: true },
       distinct: ["color"],
       orderBy: { color: "asc" },
     });
+    console.timeEnd("getCarFilters.colors");
+
+    console.time("getCarFilters.priceAggregations");
     const priceAggregations = await db.car.aggregate({
       where: { status: "AVAILABLE" },
       _min: { minPrice: true },
       _max: { maxPrice: true },
     });
+    console.timeEnd("getCarFilters.priceAggregations");
     return {
       success: true,
       data: {
@@ -63,6 +81,8 @@ export async function getCarFilters() {
     };
   } catch (error) {
     console.log(error);
+  } finally {
+    console.timeEnd("getCarFilters.total");
   }
 }
 
@@ -79,6 +99,7 @@ export async function getCars({
   limit = 6,
 }) {
   try {
+    console.time("getCars.total");
     // Get current user if authenticated
     const { userId } = await auth();
     let dbUser = null;
@@ -139,15 +160,19 @@ export async function getCars({
     }
 
     // Get total count for pagination
+    console.time("getCars.count");
     const totalCars = await db.car.count({ where });
+    console.timeEnd("getCars.count");
 
     // Execute the main query
+    console.time("getCars.findMany");
     const cars = await db.car.findMany({
       where,
       take: limit,
       skip,
       orderBy,
     });
+    console.timeEnd("getCars.findMany");
 
     // If we have a user, check which cars are wishlisted
     let wishlisted = new Set();
@@ -165,7 +190,7 @@ export async function getCars({
       serializeCarData(car, wishlisted.has(car.id))
     );
 
-    return {
+    const result = {
       success: true,
       data: serializedCars,
       pagination: {
@@ -175,8 +200,12 @@ export async function getCars({
         pages: Math.ceil(totalCars / limit),
       },
     };
+    return result;
   } catch (error) {
     throw new Error("Error fetching cars:" + error.message);
+  }
+  finally {
+    console.timeEnd("getCars.total");
   }
 }
 

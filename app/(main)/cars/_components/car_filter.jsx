@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Sheet,
   SheetContent,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -13,6 +14,7 @@ import { Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import CarFilterControls from "./CarFilterControl";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CarFilters = ({ filters }) => {
   const router = useRouter();
@@ -46,6 +48,7 @@ const CarFilters = ({ filters }) => {
   const [bodyType, setBodyType] = useState(currentBodyType);
   const [fuelType, setFuelType] = useState(currentFuelType);
   const [transmission, setTransmission] = useState(currentTransmission);
+  const [color, setColor] = useState(currentColor);
   const [priceRange, setPriceRange] = useState([
     currentMinPrice,
     currentMaxPrice,
@@ -58,6 +61,7 @@ const CarFilters = ({ filters }) => {
     setBodyType(currentBodyType);
     setFuelType(currentFuelType);
     setTransmission(currentTransmission);
+    setColor(currentColor);
     setPriceRange([currentMinPrice, currentMaxPrice]);
     setSortBy(currentSortBy);
   }, [
@@ -65,6 +69,7 @@ const CarFilters = ({ filters }) => {
     currentBodyType,
     currentFuelType,
     currentTransmission,
+    currentColor,
     currentMinPrice,
     currentMaxPrice,
     currentSortBy,
@@ -76,6 +81,7 @@ const CarFilters = ({ filters }) => {
     bodyType,
     fuelType,
     transmission,
+    color,
     currentMinPrice > filters.priceRange.min ||
       currentMaxPrice < filters.priceRange.max,
   ].filter(Boolean).length;
@@ -85,38 +91,89 @@ const CarFilters = ({ filters }) => {
     bodyType,
     fuelType,
     transmission,
+    color,
     priceRange,
     priceRangeMin: filters.priceRange.min,
     priceRangeMax: filters.priceRange.max,
   };
-    
+
   const handleFilterChange = (filterName, value) => {
-        
-      switch (filterName) {
-        case "make":
-          setMake(value);
-          break;
-        case "bodyType":
-          setBodyType(value);
-          break;
-        case "fuelType":
-          setFuelType(value);
-          break;
-        case "transmission":
-          setTransmission(value);
-          break;
-        case "priceRange":
-          setPriceRange(value);
-          break;
-        
-         
-      }
-  }
-  const  handleClearFilter = (filterName) => {
-        handleFilterChange(filterName, "");
-  }
-    
-   
+    switch (filterName) {
+      case "make":
+        setMake(value);
+        break;
+      case "bodyType":
+        setBodyType(value);
+        break;
+      case "fuelType":
+        setFuelType(value);
+        break;
+      case "transmission":
+        setTransmission(value);
+        break;
+      case "color":
+        setColor(value);
+        break;
+      case "priceRange":
+        setPriceRange(value);
+        break;
+    }
+  };
+
+  const handleClearFilter = (filterName) => {
+    handleFilterChange(filterName, "");
+  };
+
+  const clearFilter = () => {
+    setMake("");
+    setBodyType("");
+    setFuelType("");
+    setTransmission("");
+    setPriceRange([filters.priceRange.min, filters.priceRange.max]);
+    setSortBy("newest");
+
+    const params = new URLSearchParams();
+    const search = searchParams.get("search");
+    if (search) params.set("search", search);
+
+    const query = params.toString();
+    const url = query ? `${pathname}?${query}` : pathname;
+
+    router.push(url);
+
+    setIsSheetOpen(false);
+  };
+
+  const applyFilters = () => {
+    const params = new URLSearchParams();
+
+    if (make) params.set("make", make);
+    if (bodyType) params.set("bodyType", bodyType);
+    if (fuelType) params.set("fuelType", fuelType);
+    if (transmission) params.set("transmission", transmission);
+    if (
+      priceRange[0] !== filters.priceRange.min ||
+      priceRange[1] !== filters.priceRange.max
+    ) {
+      params.set("minPrice", priceRange[0].toString());
+      params.set("maxPrice", priceRange[1].toString());
+    }
+    if (sortBy) params.set("sortBy", sortBy);
+
+    const search = searchParams.get("search");
+    const page = searchParams.get("page");
+
+    if (search) params.set("search", search);
+
+    if (page && page !== "1") params.set("page", page);
+    const query = params.toString();
+    const url = query ? `${pathname}?${query}` : pathname;
+
+    router.push(url);
+
+    setIsSheetOpen(false);
+  };
+
   return (
     <div>
       {/* MobileFilters */}
@@ -149,10 +206,49 @@ const CarFilters = ({ filters }) => {
                   onClearFilter={handleClearFilter}
                 />
               </div>
+
+              <SheetFooter className="flex sm:justify-between flex-row pt-2 border-t space-x-4 mt-auto">
+                <Button
+                  variant="outline"
+                  onClick={clearFilter}
+                  className="flex-1"
+                >
+                  Reset
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={applyFilters}
+                  className="flex-1"
+                >
+                  Show Results
+                </Button>
+              </SheetFooter>
             </SheetContent>
           </Sheet>
         </div>
       </div>
+      {/* SortSelection */}
+      <Select value={sortBy}
+        onValueChange={(value) => {
+        setSortBy(value)
+        setTimeout(() => {applyFilters();}, 0);
+      }}>
+        <SelectTrigger className="w-[180px] lg:w-full">
+          <SelectValue placeholder="Sort by" />
+        </SelectTrigger>
+        <SelectContent>
+          {[
+           {value:"newest",label:"Newest First"},
+           {value:"price-asc",label:"Price: Low to High"},
+            { value: "price-desc", label: "Price: High to Low" },
+           
+          ].map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 };
