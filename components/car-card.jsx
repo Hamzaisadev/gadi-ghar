@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "./ui/card";
 import Image from "next/image";
 import { CarIcon, Heart, Gauge, Fuel, Settings, Users } from "lucide-react";
@@ -7,12 +7,48 @@ import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { Badge } from "./ui/badge";
 import { formatPriceRange } from "./utils/FormatCurrency";
+import useFetch from "@/hooks/use-fetch";
+import { toggleSavedCar } from "@/app/actions/car-listing";
+import { useAuth } from "@clerk/nextjs";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const CarCard = ({ car }) => {
   const [isSaved, setIsSaved] = useState(car.wishlisted);
   const router = useRouter();
+  const { isSignedIn } = useAuth();
 
-  const handleToggleClick = () => setIsSaved(!isSaved);
+  const {
+    loading: isToggling,
+    fn: toggleSavedCarfn,
+    data: toggleResult,
+    error: toggleError,
+  } = useFetch(toggleSavedCar);
+
+  useEffect(() => {
+    if (toggleResult?.success && toggleResult?.saved !== isSaved) {
+      setIsSaved(toggleResult.saved);
+      toast.success(toggleResult.message);
+    }
+  }, [toggleResult, isSaved]);
+
+  useEffect(() => {
+    if (toggleError) {
+      toast.error("Failed to toggle saved car");
+    }
+  }, [toggleError]);
+  const handleToggleClick = async (e) => {
+    e.preventDefault();
+    if (!isSignedIn) {
+      toast.error("Please sign in to save a car");
+      router.push("/sign-in");
+      return;
+    }
+
+    if (isToggling) return;
+
+    await toggleSavedCarfn(car.id);
+  };
 
   return (
     <Card className="group overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:scale-[1.02] transition-transform duration-300">
@@ -42,10 +78,16 @@ const CarCard = ({ car }) => {
           className={`absolute top-3 right-3 rounded-full p-2 bg-white/90 backdrop-blur-md shadow-md transition transform hover:scale-110
             ${isSaved ? "text-red-600" : "text-gray-700 hover:text-black"}`}
         >
-          <Heart
-            className={`transition ${isSaved ? "fill-current scale-110" : ""}`}
-            size={24}
-          />
+          {isToggling ? (
+            <Loader2 className="h-4 w-4 animate-spin  " />
+          ) : (
+            <Heart
+              className={`transition ${
+                isSaved ? "fill-current scale-110" : ""
+              }`}
+              size={24}
+            />
+          )}
         </button>
       </div>
 
@@ -69,7 +111,9 @@ const CarCard = ({ car }) => {
           </div>
           <div className="flex items-center gap-2">
             <Gauge size={20} className="text-red-600" />
-            <span className="font-medium">{car.mileage.toLocaleString()} mi</span>
+            <span className="font-medium">
+              {car.mileage.toLocaleString()} mi
+            </span>
           </div>
           {car.seat != null && (
             <div className="flex items-center gap-2">

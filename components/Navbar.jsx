@@ -36,6 +36,10 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
 
   const pathname = usePathname();
   const isAdminPage = isAdminPageProp || pathname.startsWith("/admin");
+  const isWishlistedPage =
+    isAdminPageProp || pathname.startsWith("/saved-cars");
+  const isReservationPage =
+    isAdminPageProp || pathname.startsWith("/reservations");
 
   useEffect(() => {
     // initialize lastScrollY on mount
@@ -66,7 +70,7 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
       <nav
         className={`
         fixed top-0 left-0 w-full z-50
-        transform transition-transform duration-1000
+        transform transition-transform duration-300
         py-4 md:py-5               ← add some vertical padding!
         ${
           isVisible
@@ -108,21 +112,26 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 <SignedIn>
                   {!isAdmin && (
                     <TransitionLink
-                      href="/reservations"
-                      className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+                      href={isReservationPage ? "/cars" : "/reservations"}
                     >
                       <Button variant="outline">
                         <CarFront size={18} />
                         <span className="hidden md:inline">
-                          My Reservations
+                          {isReservationPage
+                            ? "Browse Cars"
+                            : "My Reservations"}
                         </span>
                       </Button>
                     </TransitionLink>
                   )}
-                  <TransitionLink href="/saved-cars">
+                  <TransitionLink
+                    href={isWishlistedPage ? "/cars" : "/saved-cars"}
+                  >
                     <Button>
                       <Heart size={18} />
-                      <span className="hidden md:inline">Saved Cars</span>
+                      <span className="hidden md:inline">
+                        {isWishlistedPage ? "Browse Cars" : "Saved Cars"}
+                      </span>
                     </Button>
                   </TransitionLink>
 
@@ -180,21 +189,21 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 <SignedIn>
                   {!isAdmin && (
                     <TransitionLink
-                      href="/reservations"
+                      href={isReservationPage ? "/cars" : "/reservations"}
                       className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
                     >
                       <Button variant="outline">
                         <CarFront size={18} />
                         <span className="hidden md:inline">
-                          My Reservations
+                          {isReservationPage ? "Browse Cars" : "My Reservations"}
                         </span>
                       </Button>
                     </TransitionLink>
                   )}
-                  <TransitionLink href="/saved-cars">
+                  <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
                     <Button>
                       <Heart size={18} />
-                      <span className="hidden md:inline">Saved Cars</span>
+                      <span className="hidden md:inline">{isWishlistedPage ? "Browse Cars" : "Saved Cars"}</span>
                     </Button>
                   </TransitionLink>
                   <MobNavbarMenu />

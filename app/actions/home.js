@@ -6,7 +6,7 @@ import { db } from "@/lib/prisma";
 import { request } from "@arcjet/next";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-export async function getFeaturedCars(limit = 4) {
+export async function getFeaturedCars(limit = 3) {
   try {
     const cars = await db.car.findMany({
       where: {
@@ -27,7 +27,7 @@ export async function getFeaturedCars(limit = 4) {
   }
 }
 
-export async function getLatestSuv(limit = 4) {
+export async function getLatestSuv(limit = 3) {
   try {
     const cars = await db.car.findMany({
       where: {
@@ -48,7 +48,7 @@ export async function getLatestSuv(limit = 4) {
   }
 }
 
-export async function bestHonda(limit = 4) {
+export async function bestHonda(limit = 3) {
   try {
     const cars = await db.car.findMany({
       where: {
@@ -69,7 +69,7 @@ export async function bestHonda(limit = 4) {
   }
 }
 
-export async function electricCars(limit = 4) {
+export async function electricCars(limit = 3) {
   try {
     const cars = await db.car.findMany({
       where: {
@@ -159,22 +159,22 @@ export async function processImageSearch(file) {
     const text = await response.text();
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
     try {
-        const carDetails = JSON.parse(cleanedText);
-  
-        // Return success response with data
-        return {
-          success: true,
-          data: carDetails,
-        };
-      } catch (parseError) {
-        console.error("Failed to parse AI response:", parseError);
-        console.log("Raw response:", text);
-        return {
-          success: false,
-          error: "Failed to parse AI response",
-        };
-      }
-    } catch (error) {
-      throw new Error("AI Search error:" + error.message);
+      const carDetails = JSON.parse(cleanedText);
+
+      // Return success response with data
+      return {
+        success: true,
+        data: carDetails,
+      };
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      console.log("Raw response:", text);
+      return {
+        success: false,
+        error: "Failed to parse AI response",
+      };
     }
+  } catch (error) {
+    throw new Error("AI Search error:" + error.message);
   }
+}
