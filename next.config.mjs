@@ -38,8 +38,13 @@ const nextConfig = withPWA({
     },
   ],
 })({
+  // Performance optimizations
   images: {
     dangerouslyAllowSVG: true,
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 31536000, // 1 year
     remotePatterns: [
       {
         protocol: 'https',
@@ -57,10 +62,79 @@ const nextConfig = withPWA({
         protocol: 'https',
         hostname: 'ilmkrxcimwdjjvrzxlkd.supabase.co',
       },
+      // Allow all HTTPS images for development flexibility
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
     ],
   },
+
+  // Compression
+  compress: true,
+
+  // Experimental features for performance
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-collapsible',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-label',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-slider',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-tabs',
+    ],
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
+  },
+
+  // Webpack optimizations
+  webpack: (config, { dev, isServer }) => {
+    // SVG handling
+    config.module.rules.push({
+      test: /\.svg$/i,
+      issuer: /\.[jt]sx?$/,
+      use: ['@svgr/webpack'],
+    })
+
+    // Tree shaking optimizations
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        usedExports: true,
+        sideEffects: false,
+      }
+    }
+
+    return config
+  },
+
+  // Headers for caching, security, and CSP
   async headers() {
     return [
+      // Static assets caching
+      {
+        source: '/:all*(svg|jpg|jpeg|png|gif|webp|avif|ico|css|js)',
+        locale: false,
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Content Security Policy
       {
         source: "/:path*",
         headers: [
@@ -93,6 +167,20 @@ const nextConfig = withPWA({
         ],
       },
     ];
+  },
+
+  // Redirects for SEO
+  async redirects() {
+    return [
+      // Add any necessary redirects here
+    ]
+  },
+
+  // Rewrites for API optimization
+  async rewrites() {
+    return [
+      // Add any necessary rewrites here
+    ]
   },
 });
 
