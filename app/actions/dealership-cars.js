@@ -24,8 +24,9 @@ async function getDealershipUser() {
 
   if (!user) throw new Error("User not found");
   
-  if (user.role !== 'DEALERSHIP' || !user.dealership) {
-    throw new Error("Unauthorized: Only dealership users can perform this action");
+  const allowedRoles = ['DEALERSHIP_ADMIN', 'DEALERSHIP'];
+  if (!allowedRoles.includes(user.role) || !user.dealership) {
+    throw new Error("Unauthorized: Only dealership admins can perform this action");
   }
 
   return user;
@@ -37,10 +38,24 @@ async function getDealershipUser() {
 export async function addDealershipCar({ carData, images }) {
   try {
     const user = await getDealershipUser();
-    const dealershipId = user.dealership.id;
+    const dealershipId = user.dealership?.id;
+
+    if (!dealershipId) {
+      return {
+        success: false,
+        error: "No dealership found for this user. Please ensure your account is linked to a dealership.",
+      };
+    }
 
     if (!images || images.length === 0) {
-      throw new Error("At least one image is required");
+      return { success: false, error: "At least one image is required" };
+    }
+
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      return {
+        success: false,
+        error: "Supabase configuration missing. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.",
+      };
     }
 
     const carId = uuidv4();
@@ -68,7 +83,7 @@ export async function addDealershipCar({ carData, images }) {
       const filename = `image-${Date.now()}-${i}.${fileExtension}`;
       const filePath = `${folderPath}/${filename}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from("car-images")
         .upload(filePath, imageBuffer, {
           contentType: `image/${fileExtension}`,
@@ -76,7 +91,7 @@ export async function addDealershipCar({ carData, images }) {
 
       if (error) {
         console.error("Error uploading image:", error);
-        throw new Error(`Failed to upload image ${i + 1}: ${error.message}`);
+        return { success: false, error: `Failed to upload image ${i + 1}: ${error.message}` };
       }
 
       const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-images/${filePath}`;
@@ -84,7 +99,7 @@ export async function addDealershipCar({ carData, images }) {
     }
 
     if (imageUrls.length === 0) {
-      throw new Error("No images were successfully uploaded");
+      return { success: false, error: "No images were successfully uploaded" };
     }
 
     // Create car in database
@@ -128,11 +143,11 @@ export async function addDealershipCar({ carData, images }) {
     return {
       success: true,
       data: serializeCarData(car),
-      message: "Car added successfully"
+      message: "Car added successfully",
     };
   } catch (error) {
     console.error("Error adding dealership car:", error);
-    throw new Error("Error adding car: " + error.message);
+    return { success: false, error: error.message || "Failed to add car" };
   }
 }
 

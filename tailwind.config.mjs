@@ -63,25 +63,43 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "headlight-sweep": {
+          "0%": { transform: "translateX(-120%)" },
+          "100%": { transform: "translateX(120%)" },
+        },
+        speedometer: {
+          "0%": { transform: "translate(-50%, -100%) rotate(-35deg)" },
+          "50%": { transform: "translate(-50%, -100%) rotate(35deg)" },
+          "100%": { transform: "translate(-50%, -100%) rotate(-35deg)" },
+        },
+        "dashboard-blink": {
+          "0%, 100%": { opacity: "0.3" },
+          "50%": { opacity: "1" },
+        },
+        "particle-fall": {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(60vh)" },
+        },
+        "neon-pulse": {
+          "0%, 100%": { filter: "drop-shadow(0 0 0px rgba(255,255,255,0.0))" },
+          "50%": { filter: "drop-shadow(0 0 16px rgba(255,255,255,0.25))" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "headlight-sweep": "headlight-sweep 2.4s linear infinite",
+        speedometer: "speedometer 2.2s ease-in-out infinite",
+        "dashboard-blink": "dashboard-blink 1.2s ease-in-out infinite",
+        "particle-fall": "particle-fall 4.5s linear infinite",
+        "neon-pulse": "neon-pulse 2s ease-in-out infinite",
       },
     },
   },

@@ -280,42 +280,53 @@ export async function deleteCars(id) {
 
     const car = await db.car.findUnique({
       where: { id },
-      select: {
-        images: true,
-      },
+      select: { images: true },
     });
 
     if (!car) throw new Error("Car not found");
 
+    // Extract storage file paths before deleting DB row
+    const filePaths = (car.images || [])
+      .map((image) => {
+        try {
+          const u = new URL(image);
+          const match = u.pathname.match(/\/car-images\/(.+)$/);
+          return match && match[1] ? match[1] : null;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    // Delete the car from DB
     await db.car.delete({ where: { id } });
 
+    // Best-effort: remove images from Supabase storage
+    let warning = null;
     try {
-      const cookieStore = await cookies();
-      const supabase = createClient(cookieStore);
-
-      const filePaths = car.images
-        .map((image) => {
-          const url = new URL(imageUrl);
-          const pathMatch = url.pathname.match(/\/car-images\/(.*)/);
-          return pathMatchMatch ? pathMatch[1] : null;
-        })
-        .filter(Boolean);
-
       if (filePaths.length > 0) {
+        const cookieStore = await cookies();
+        const supabase = createClient(cookieStore);
         const { error } = await supabase.storage
           .from("car-images")
           .remove(filePaths);
+        if (error) {
+          console.error("Supabase remove error:", error);
+          warning = "Some images could not be removed from storage";
+        }
       }
-
-      if (error) throw new Error("Error deleting files: " + error.message);
     } catch (storageError) {
-      console.error("Error with storage :", storageError);
-      throw new Error("Error with storage: " + storageError.message);
+      console.error("Storage cleanup failed:", storageError);
+      warning = "Storage cleanup failed";
     }
 
     revalidatePath("/admin/cars");
+    revalidatePath("/dealership/cars");
+    revalidatePath("/cars");
+
     return {
       success: true,
+      warning: warning || undefined,
     };
   } catch (error) {
     console.error("Error deleting car:", error);
@@ -408,9 +419,11 @@ export async function getCarsByDealership(dealershipId) {
       orderBy: { createdAt: 'desc' },
     });
 
+    const serialized = cars.map(serializeCarData);
+
     return {
       success: true,
-      data: cars,
+      data: serialized,
     };
   } catch (error) {
     console.error("Error fetching cars by dealership:", error);

@@ -1,73 +1,26 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  Calendar,
-  Car,
-  Cog,
-  LayoutDashboard,
-  User,
-  Building2,
-} from "lucide-react";
+import { Building2, Car, Settings, Users, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React from "react";
 
-const Sidebar = () => {
+const DealershipSidebar = () => {
   const pathname = usePathname();
 
   const routes = [
-    {
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      href: "/admin",
-    },
-    {
-      label: "Cars",
-      icon: Car,
-      href: "/admin/cars",
-    },
-    {
-      label: "Dealerships",
-      icon: Building2,
-      href: "/admin/dealerships",
-    },
-    {
-      label: "Test Drives",
-      icon: Calendar,
-      href: "/admin/test-drives",
-    },
-    {
-      label: "Settings",
-      icon: Cog,
-      href: "/admin/settings",
-    },
-    // New: quick access to the user's own dealership portal
-    {
-      label: "Dealership Portal",
-      icon: Building2,
-      href: "/dealership",
-    },
-  ];
-
-  const mobileRoutes = [
-    ...routes,
-    {
-      label: "Profile",
-      icon: User,
-      href: "/admin/profile",
-    },
+    { label: "Overview", icon: LayoutDashboard, href: "/dealership" },
+    { label: "Manage Cars", icon: Car, href: "/dealership/cars" },
+    { label: "Team", icon: Users, href: "/dealership/team" },
+    { label: "Settings", icon: Settings, href: "/dealership/settings" },
   ];
 
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex max-h-screen flex-col overflow-y-auto bg-background shadow-elegant border-r border-border">
+      <div className="hidden md:flex max-h-screen flex-col overflow-y-auto bg-background shadow-elegant border-r border-border w-64">
         <div className="p-6 border-b border-border">
-          <h2 className="text-xl pt-10 font-bold text-foreground">
-            Admin Dashboard
-          </h2>
+          <h2 className="text-xl pt-10 font-bold text-foreground">Dealership Admin</h2>
         </div>
 
         <nav className="flex-1 py-4">
@@ -87,9 +40,7 @@ const Sidebar = () => {
                 <route.icon
                   className={cn(
                     "h-5 w-5 transition-transform duration-200",
-                    isActive
-                      ? "text-primary-foreground"
-                      : "group-hover:scale-110"
+                    isActive ? "text-primary-foreground" : "group-hover:scale-110"
                   )}
                 />
                 {route.label}
@@ -102,7 +53,7 @@ const Sidebar = () => {
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-elegant">
         <div className="flex justify-around items-center h-16">
-          {mobileRoutes.map((route) => {
+          {routes.map((route) => {
             const isActive = pathname === route.href;
             return (
               <Link
@@ -118,9 +69,7 @@ const Sidebar = () => {
                 <route.icon
                   className={cn(
                     "h-5 w-5 mb-1 transition-all duration-200",
-                    isActive
-                      ? "text-primary scale-110"
-                      : "group-hover:scale-105"
+                    isActive ? "text-primary scale-110" : "group-hover:scale-105"
                   )}
                 />
                 <span className="truncate">{route.label}</span>
@@ -133,4 +82,5 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar;
+export default DealershipSidebar;
+

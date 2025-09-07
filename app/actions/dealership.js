@@ -3,6 +3,8 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { generatePlaceholderLogo } from "@/lib/utils";
+import { cookies } from "next/headers";
+import { createClient } from "@/lib/server";
 
 export async function getDealership() {
   const { userId } = await auth();
@@ -625,41 +627,116 @@ export async function deactivateDealership(dealershipId) {
       };
     }
 
-    // Check if user is admin
+    // Fetch user and determine permissions
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
     });
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user) {
+      return {
+        success: false,
+        error: "User not found"
+      };
+    }
+
+    const isAdmin = user.role === 'ADMIN';
+    const isDealershipAdmin = user.role === 'DEALERSHIP_ADMIN' && user.dealershipId === dealershipId;
+
+    // Admins can deactivate any dealership; dealership admins can only deactivate their own
+    if (!isAdmin && !isDealershipAdmin) {
       return { 
         success: false, 
         error: "Unauthorized: Admin access required" 
       };
     }
 
+    // Collect file paths for Supabase image cleanup BEFORE DB deletion
+    const carsWithImages = await db.car.findMany({
+      where: { dealershipId },
+      select: { id: true, images: true },
+    });
+
+    const filePathSet = new Set();
+    for (const car of carsWithImages) {
+      if (Array.isArray(car.images)) {
+        for (const imageUrl of car.images) {
+          try {
+            const u = new URL(imageUrl);
+            const match = u.pathname.match(/\/car-images\/(.+)$/);
+            if (match && match[1]) filePathSet.add(match[1]);
+          } catch (e) {
+            // ignore invalid URL
+          }
+        }
+      }
+    }
+    const filePaths = Array.from(filePathSet);
+
     // Use transaction to ensure data consistency
     const result = await db.$transaction(async (tx) => {
-      // Delete the dealership - this will cascade delete all related data
-      // including cars, working hours, and user associations
-      const deletedDealership = await tx.dealershipInfo.delete({
-        where: { id: dealershipId },
-      });
+      // Ensure the dealership exists
+      const target = await tx.dealershipInfo.findUnique({ where: { id: dealershipId } });
+      if (!target) {
+        throw new Error("Dealership not found");
+      }
 
-      // Update all users associated with this dealership to remove their dealership admin role
+      // Find all cars (ids) for cascading deletes
+      const cars = await tx.car.findMany({
+        where: { dealershipId },
+        select: { id: true },
+      });
+      const carIds = cars.map((c) => c.id);
+
+      // Delete dependent records first to satisfy FK constraints
+      if (carIds.length > 0) {
+        await tx.testDriveBooking.deleteMany({ where: { carId: { in: carIds } } });
+        await tx.userSavedCar.deleteMany({ where: { carId: { in: carIds } } });
+      }
+
+      // Delete cars belonging to this dealership
+      await tx.car.deleteMany({ where: { dealershipId } });
+
+      // Delete working hours explicitly (in case DB doesn't cascade)
+      await tx.workingHour.deleteMany({ where: { dealershipId } });
+
+      // Remove admin role and association from users of this dealership
       await tx.user.updateMany({
-        where: { dealershipId: dealershipId },
-        data: { 
+        where: { dealershipId },
+        data: {
           role: 'USER',
           dealershipId: null,
         },
       });
 
+      // Finally delete the dealership
+      const deletedDealership = await tx.dealershipInfo.delete({
+        where: { id: dealershipId },
+      });
+
       return deletedDealership;
     });
+
+    // After successful DB deletion, attempt to remove Supabase storage files (best-effort)
+    let storageWarning = null;
+    try {
+      if (filePaths.length > 0) {
+        const cookieStore = await cookies();
+        const supabase = createClient(cookieStore);
+        const { error } = await supabase.storage.from('car-images').remove(filePaths);
+        if (error) {
+          console.error('Supabase storage removal error:', error);
+          storageWarning = 'Some images could not be removed from storage';
+        }
+      }
+    } catch (storageErr) {
+      console.error('Supabase storage cleanup failed:', storageErr);
+      storageWarning = 'Storage cleanup failed';
+    }
 
     return {
       success: true,
       data: result,
+      warning: storageWarning || undefined,
     };
   } catch (error) {
     console.error('Error deactivating dealership:', error);
@@ -726,6 +803,8 @@ export async function updateDealershipInfo(dealershipData) {
 }
 
 // New function to add car to dealership
+import { serializeCarData } from "@/lib/helper";
+
 export async function addCarToDealership(carData) {
   try {
     const { userId } = await auth();
@@ -780,7 +859,7 @@ export async function addCarToDealership(carData) {
 
     return {
       success: true,
-      data: car,
+      data: serializeCarData(car),
     };
   } catch (error) {
     console.error('Error adding car to dealership:', error);

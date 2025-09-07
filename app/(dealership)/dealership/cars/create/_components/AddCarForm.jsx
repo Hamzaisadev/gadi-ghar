@@ -746,18 +746,123 @@ export const AddCarForm = () => {
 
                 </div>
 
-                <div className="flex items-center justify-between pt-6">
-                  <div className="text-sm text-gray-500">Upload clear images of the vehicle in the next step.</div>
-                  <Button type="submit" disabled={addCarLoading}>
+                {/* Image Upload */}
+                <div className="space-y-6">
+                  <Label
+                    htmlFor="images"
+                    className={`text-base font-semibold ${
+                      imageError ? "text-red-600" : "text-black"
+                    }`}
+                  >
+                    Vehicle Images
+                    {imageError && <span className="text-red-600 ml-1">*</span>}
+                  </Label>
+
+                  <div
+                    {...getMultiImageRootProps()}
+                    className={`border-0 shadow-lg rounded-2xl p-12 text-center cursor-pointer hover-scale transition-all duration-500 ${
+                      imageError
+                        ? "ring-2 ring-red-600 bg-red-50"
+                        : "hover:bg-red-50"
+                    }`}
+                  >
+                    <input {...getMultiImageInputProps()} />
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="p-4 bg-gradient-to-r from-red-700 via-red-600 to-red-500 rounded-2xl shadow-red mb-6">
+                        <Upload className="h-8 w-8 text-white" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-black mb-2">
+                        Upload Vehicle Images
+                      </h3>
+                      <p className="text-gray-500 mb-4 max-w-md">
+                        Drag and drop multiple high-quality images or click to browse. Great photos significantly improve listing performance.
+                      </p>
+                      <div className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-lg">
+                        <Info className="w-4 h-4" />
+                        JPG, PNG, WebP • Max 5MB each
+                      </div>
+                    </div>
+                  </div>
+
+                  {imageError && (
+                    <div className="flex items-center gap-2 text-red-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm">{imageError}</span>
+                    </div>
+                  )}
+
+                  {uploadProgress > 0 && (
+                    <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-red-700 via-red-600 to-red-500 h-full transition-all duration-300 rounded-full"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Image Previews */}
+                {(manualUploadedImages.length > 0 || aiUploadedImages.length > 0) && (
+                  <div className="space-y-6 animate-fade-in">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <h3 className="text-lg font-semibold text-black">
+                        Uploaded Images ({manualUploadedImages.length + aiUploadedImages.length})
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      {manualUploadedImages.map((image, index) => (
+                        <div key={`manual-${index}`} className="relative group hover-lift">
+                          <img
+                            src={image}
+                            alt={`Vehicle image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:shadow-lg"
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+                            onClick={() => removeManualImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      {aiUploadedImages.map((image, index) => (
+                        <div key={`ai-${index}`} className="relative group hover-lift">
+                          <img
+                            src={image}
+                            alt={`AI Vehicle image ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-xl shadow-md transition-all duration-300 group-hover:shadow-lg"
+                          />
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-7 w-7 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+                            onClick={() => removeAiImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <div className="flex justify-center pt-8">
+                  <Button type="submit" size="lg" className="px-12 py-4 text-lg font-semibold bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:shadow-red hover:scale-105 active:scale-95 transition-all duration-300" disabled={addCarLoading}>
                     {addCarLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
+                        <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+                        Adding Vehicle...
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Add Vehicle
+                        <CheckCircle className="mr-3 h-5 w-5" />
+                        Add Vehicle to Inventory
                       </>
                     )}
                   </Button>
