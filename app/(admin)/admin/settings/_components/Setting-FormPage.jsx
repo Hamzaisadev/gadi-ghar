@@ -189,24 +189,16 @@ const SettingFormPage = () => {
   };
 
   const handleSaveHours = async () => {
-    console.log("handleSaveHours called");
     try {
-      console.log("Calling saveHours with:", workingHours);
       const result = await saveHours(workingHours);
-      console.log("Save result:", result);
-
-      if (result?.success) {
-        console.log("Showing success toast");
+      
+      if (result.success) {
         toast.success("Working hours saved successfully!");
-        fetchDealershipInfo(); // Refresh the data
-      } else if (result?.error) {
-        console.log("Showing error toast:", result.error);
-        toast.error(`Error: ${result.error}`);
+      } else {
+        toast.error(result.error || "Failed to save working hours");
       }
     } catch (error) {
-      console.error("Error in handleSaveHours:", error);
-      console.log("Showing exception toast");
-      toast.error("Failed to save working hours. Please try again.");
+      toast.error("An error occurred while saving working hours");
     }
   };
 
@@ -318,18 +310,16 @@ const SettingFormPage = () => {
                                 className={`text-xs font-medium ${
                                   workingHours[index]?.isOpen
                                     ? "text-green-600"
-                                    : "text-destructive"
+                                    : "text-red-600"
                                 }`}
                               >
-                                {workingHours[index]?.isOpen
-                                  ? "Open"
-                                  : "Closed"}
+                                {workingHours[index]?.isOpen ? "Open" : "Closed"}
                               </span>
                             </div>
                           </div>
 
-                          <div className="hidden sm:flex items-center gap-4 w-full sm:col-start-2">
-                            <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
+                            <div className="flex items-center gap-3">
                               <Switch
                                 id={`is-open-${day.value}`}
                                 checked={!!workingHours[index]?.isOpen}
@@ -352,219 +342,68 @@ const SettingFormPage = () => {
                                 className={`text-sm font-medium ${
                                   workingHours[index]?.isOpen
                                     ? "text-green-600"
-                                    : "text-destructive"
+                                    : "text-red-600"
                                 }`}
                               >
-                                {workingHours[index]?.isOpen
-                                  ? "Open"
-                                  : "Closed"}
+                                {workingHours[index]?.isOpen ? "Open" : "Closed"}
                               </span>
                             </div>
 
-                            {workingHours[index]?.isOpen ? (
-                              <div className="flex items-center gap-4 ml-auto flex-1">
-                                <div className="relative flex-1 min-w-[160px]">
-                                  <Input
-                                    type="time"
-                                    value={workingHours[index]?.openTime}
-                                    onChange={(e) =>
-                                      handleWorkingHourChange(
-                                        index,
-                                        "openTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    onClick={(e) => {
-                                      if (
-                                        typeof e.currentTarget.showPicker ===
-                                        "function"
-                                      ) {
-                                        e.currentTarget.showPicker();
-                                      } else {
-                                        e.currentTarget.focus();
-                                      }
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        const t = e.currentTarget;
-                                        if (
-                                          typeof t.showPicker === "function"
-                                        ) {
-                                          t.showPicker();
-                                        } else {
-                                          t.focus();
-                                        }
-                                      }
-                                    }}
-                                    className="border-2 rounded-lg focus:border-destructive focus:ring-destructive text-center font-medium w-full text-sm py-2 cursor-pointer appearance-none"
-                                  />
-                                </div>
-                                <span className="text-sm font-medium text-muted-foreground shrink-0">
+                            {workingHours[index]?.isOpen && (
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <Input
+                                  type="time"
+                                  value={workingHours[index]?.openTime}
+                                  onChange={(e) =>
+                                    handleWorkingHourChange(
+                                      index,
+                                      "openTime",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-24 sm:w-28 text-sm sm:text-base border-0 bg-white/50 hover:bg-white/70 focus:bg-white transition-colors"
+                                  aria-label={`${day.label} opening time`}
+                                />
+                                <span className="text-sm sm:text-base text-muted-foreground font-medium">
                                   to
                                 </span>
-                                <div className="relative flex-1 min-w-[160px]">
-                                  <Input
-                                    type="time"
-                                    value={workingHours[index]?.closeTime}
-                                    onChange={(e) =>
-                                      handleWorkingHourChange(
-                                        index,
-                                        "closeTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    onClick={(e) => {
-                                      if (
-                                        typeof e.currentTarget.showPicker ===
-                                        "function"
-                                      ) {
-                                        e.currentTarget.showPicker();
-                                      } else {
-                                        e.currentTarget.focus();
-                                      }
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        const t = e.currentTarget;
-                                        if (
-                                          typeof t.showPicker === "function"
-                                        ) {
-                                          t.showPicker();
-                                        } else {
-                                          t.focus();
-                                        }
-                                      }
-                                    }}
-                                    className="border-2 rounded-lg focus:border-destructive focus:ring-destructive text-center font-medium w-full text-sm py-2 cursor-pointer appearance-none"
-                                  />
-                                </div>
+                                <Input
+                                  type="time"
+                                  value={workingHours[index]?.closeTime}
+                                  onChange={(e) =>
+                                    handleWorkingHourChange(
+                                      index,
+                                      "closeTime",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-24 sm:w-28 text-sm sm:text-base border-0 bg-white/50 hover:bg-white/70 focus:bg-white transition-colors"
+                                  aria-label={`${day.label} closing time`}
+                                />
                               </div>
-                            ) : (
-                              <Badge
-                                variant="destructive"
-                                className="w-[160px] inline-flex justify-center items-center gap-1 text-sm px-2 py-1 ml-auto"
-                              >
-                                <XCircle className="h-4 w-4" />
-                                Closed all day
-                              </Badge>
                             )}
                           </div>
-
-                          {!workingHours[index]?.isOpen && (
-                            <div className="w-full col-span-full sm:col-span-1">
-                              <Badge
-                                variant="destructive"
-                                className="inline-flex items-center gap-1 text-xs sm:text-sm px-2 py-1 sm:hidden"
-                                role="status"
-                                aria-live="polite"
-                              >
-                                <XCircle className="h-3.5 w-3.5" />
-                                Closed all day
-                              </Badge>
-                            </div>
-                          )}
-                          {workingHours[index]?.isOpen && (
-                            <div className="grid grid-cols-2 sm:hidden items-center gap-2 w-full col-span-full sm:col-span-1">
-                              <div className="relative flex-1">
-                                <div className="relative">
-                                  <Input
-                                    type="time"
-                                    value={workingHours[index]?.openTime}
-                                    onChange={(e) =>
-                                      handleWorkingHourChange(
-                                        index,
-                                        "openTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    onClick={(e) => {
-                                      if (
-                                        typeof e.currentTarget.showPicker ===
-                                        "function"
-                                      ) {
-                                        e.currentTarget.showPicker();
-                                      } else {
-                                        e.currentTarget.focus();
-                                      }
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        const t = e.currentTarget;
-                                        if (
-                                          typeof t.showPicker === "function"
-                                        ) {
-                                          t.showPicker();
-                                        } else {
-                                          t.focus();
-                                        }
-                                      }
-                                    }}
-                                    className="border-2 rounded-lg focus:border-destructive focus:ring-destructive text-center font-medium w-full text-sm sm:text-base py-2 sm:py-2.5 cursor-pointer appearance-none"
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-end pr-3 pointer-events-none"></div>
-                                </div>
-                              </div>
-                              <span className="text-xs sm:text-sm font-medium text-muted-foreground text-center">
-                                to
-                              </span>
-                              <div className="relative flex-1">
-                                <div className="relative">
-                                  <Input
-                                    type="time"
-                                    value={workingHours[index]?.closeTime}
-                                    onChange={(e) =>
-                                      handleWorkingHourChange(
-                                        index,
-                                        "closeTime",
-                                        e.target.value
-                                      )
-                                    }
-                                    onClick={(e) => {
-                                      if (
-                                        typeof e.currentTarget.showPicker ===
-                                        "function"
-                                      ) {
-                                        e.currentTarget.showPicker();
-                                      } else {
-                                        e.currentTarget.focus();
-                                      }
-                                    }}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        const t = e.currentTarget;
-                                        if (
-                                          typeof t.showPicker === "function"
-                                        ) {
-                                          t.showPicker();
-                                        } else {
-                                          t.focus();
-                                        }
-                                      }
-                                    }}
-                                    className="border-2 rounded-lg focus:border-destructive focus:ring-destructive text-center font-medium w-full text-sm sm:text-base py-2 sm:py-2.5 cursor-pointer appearance-none"
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-end pr-3 pointer-events-none"></div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
-                    <div className="pt-4 sm:pt-6 md:pt-8 flex justify-end">
+
+                    <div className="mt-8 sm:mt-12 flex justify-center">
                       <Button
                         onClick={handleSaveHours}
                         disabled={savingHours}
-                        className="bg-destructive hover:bg-destructive/90 text-primary-foreground px-4 sm:px-6 md:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base md:text-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 w-full sm:w-auto min-h-[44px]"
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground px-8 py-3 rounded-xl font-semibold text-base sm:text-lg min-h-[48px] sm:min-h-[56px] shadow-lg hover:shadow-xl transition-all duration-300"
                       >
-                        {savingHours && (
-                          <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                        {savingHours ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                            Save Working Hours
+                          </>
                         )}
-                        Save Changes
                       </Button>
                     </div>
                   </>
@@ -573,30 +412,29 @@ const SettingFormPage = () => {
             </Card>
           </TabsContent>
 
-          {/* Users */}
+          {/* Admin Users */}
           <TabsContent value="users" className="mt-6 sm:mt-8">
             <Card className="bg-card shadow-lg sm:shadow-xl border-2 border-destructive/20 rounded-xl sm:rounded-2xl overflow-hidden">
               <CardHeader className="bg-destructive text-primary-foreground p-4 sm:p-6 md:p-8">
-                <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2 sm:gap-3">
-                  <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
-                  Admin Users
-                </CardTitle>
+                <div className="flex items-start justify-between">
+                  <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2 sm:gap-3">
+                    <Shield className="h-5 w-5 sm:h-6 sm:w-6" />
+                    Admin Users
+                  </CardTitle>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-primary-foreground/90 hover:text-white transition-colors"
+                    title="Manage admin privileges for users. Admins can access the admin dashboard and manage cars."
+                    aria-label="Admin users help"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                </div>
                 <CardDescription className="text-primary-foreground/80 text-sm sm:text-base">
-                  Manage users with admin privileges.
+                  Manage admin privileges for users.
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-3 sm:p-6 md:p-8">
-                <div className="mb-4 sm:mb-6 relative">
-                  <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Search users..."
-                    className="pl-10 sm:pl-12 h-12 sm:h-14 border-2 rounded-xl focus:border-primary focus:ring-primary text-base sm:text-lg"
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                  />
-                </div>
-
                 {fetchingUsers ? (
                   <div className="py-12 sm:py-16 text-center">
                     <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 animate-spin text-primary mx-auto" />
@@ -604,17 +442,28 @@ const SettingFormPage = () => {
                       Loading users...
                     </p>
                   </div>
-                ) : usersData?.success && filteredUsers.length > 0 ? (
-                  <div className="w-full">
+                ) : filteredUsers.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        placeholder="Search users by name or email..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        className="pl-10 border-0 bg-white/50 hover:bg-white/70 focus:bg-white transition-colors"
+                      />
+                    </div>
+
                     {/* Mobile Card Layout */}
-                    <div className="block sm:hidden space-y-3">
+                    <div className="sm:hidden space-y-4">
                       {filteredUsers.map((user) => (
                         <div
                           key={user.id}
-                          className="border rounded-lg p-4 bg-card hover:border-primary/20 transition-colors"
+                          className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-all"
                         >
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 overflow-hidden shadow-md flex-shrink-0">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 overflow-hidden shadow-md">
                               {user.imageUrl ? (
                                 <img
                                   src={user.imageUrl}
@@ -719,12 +568,14 @@ const SettingFormPage = () => {
                                   </span>
                                 </div>
                               </TableCell>
-                              <TableCell className="py-3 sm:py-4 px-4 sm:px-6 text-muted-foreground font-medium text-sm sm:text-base">
-                                {user.email}
+                              <TableCell className="py-3 sm:py-4 px-4 sm:px-6">
+                                <span className="text-muted-foreground text-sm sm:text-base">
+                                  {user.email}
+                                </span>
                               </TableCell>
                               <TableCell className="py-3 sm:py-4 px-4 sm:px-6">
                                 <Badge
-                                  className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
                                     user.role === "ADMIN"
                                       ? "bg-green-100 text-green-800 border border-green-200"
                                       : "bg-muted text-muted-foreground border"
@@ -733,34 +584,32 @@ const SettingFormPage = () => {
                                   {user.role}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-right py-3 sm:py-4 px-4 sm:px-6">
+                              <TableCell className="py-3 sm:py-4 px-4 sm:px-6 text-right">
                                 {user.role === "ADMIN" ? (
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30 rounded-lg px-3 sm:px-4 py-2 font-medium text-sm"
+                                    className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30 rounded-lg px-3 py-2 font-medium text-sm min-h-[36px]"
                                     onClick={() => {
                                       setUserToDemote(user);
                                       setConfirmRemoveDialog(true);
                                     }}
                                     disabled={updatingRole}
                                   >
-                                    <UserX className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />{" "}
-                                    Remove
+                                    <UserX className="h-3 w-3 mr-1" /> Remove
                                   </Button>
                                 ) : (
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/30 rounded-lg px-3 sm:px-4 py-2 font-medium text-sm"
+                                    className="text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/30 rounded-lg px-3 py-2 font-medium text-sm min-h-[36px]"
                                     onClick={() => {
                                       setUserToPromote(user);
                                       setConfirmAdminDialog(true);
                                     }}
                                     disabled={updatingRole}
                                   >
-                                    <Shield className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />{" "}
-                                    Make Admin
+                                    <Shield className="h-3 w-3 mr-1" /> Make Admin
                                   </Button>
                                 )}
                               </TableCell>

@@ -1,0 +1,8 @@
+Contact: mailto:hamzaisadev@gmail.com
+Contact: tel:+923343149433
+Expires: 2025-12-31T23:59:59.000Z
+Encryption: https://gadi-ghar.vercel.app/pgp-key.txt
+Acknowledgments: https://gadi-ghar.vercel.app/security-acknowledgments
+Preferred-Languages: en, ur
+Canonical: https://gadi-ghar.vercel.app/.well-known/security.txt
+Policy: https://gadi-ghar.vercel.app/security-policy

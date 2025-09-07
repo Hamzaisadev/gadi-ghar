@@ -72,7 +72,7 @@ mileage (estimated **fuel efficiency in KM/L**, providing a realistic range base
     }
     
     Only return the JSON object. Do not include any explanation, formatting, or extra content. All information should strictly reflect Pakistani market trends and pricing, not international or dollar-based data.
-    `
+    `;
 
     // Get response from Gemini
     const result = await model.generateContent([imagePart, prompt]);
@@ -110,11 +110,8 @@ mileage (estimated **fuel efficiency in KM/L**, providing a realistic range base
         data: carDetails,
       };
     } catch (error) {
-      console.log("Failed to parse AI Response: ", error);
-      return {
-        success: false,
-        error: "Failed to parse AI Response",
-      };
+      console.error("Failed to parse AI Response: ", error);
+      return null;
     }
   } catch (error) {
     throw new Error("Gemini API Error: " + error.message);
@@ -128,9 +125,25 @@ export async function addCar({ carData, images }) {
 
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
+      include: {
+        dealership: true
+      }
     });
 
     if (!user) throw new Error("User not found");
+    
+    // Determine dealershipId based on user role
+    let dealershipId = carData.dealershipId;
+    
+    if (user.role === 'DEALERSHIP' && user.dealership) {
+      // For dealership users, always use their own dealership
+      dealershipId = user.dealership.id;
+    } else if (user.role === 'ADMIN') {
+      // For admin users, use the provided dealershipId or null
+      dealershipId = carData.dealershipId || null;
+    } else {
+      throw new Error("Unauthorized: Only admin and dealership users can add cars");
+    }
 
     const carId = uuidv4();
     const folderPath = `cars/${carId}`;
@@ -163,8 +176,8 @@ export async function addCar({ carData, images }) {
         });
 
       if (error) {
-        console.log("Error uploading image:", error);
-        throw new Error("Error uploading image" + error.message);
+        console.error("Error uploading image:", error);
+        throw new Error("Failed to upload image");
       }
 
       const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-images/${filePath}`;
@@ -192,11 +205,16 @@ export async function addCar({ carData, images }) {
         description: carData.description,
         status: carData.status,
         featured: carData.featured,
+        dealershipId: dealershipId,
         images: imageUrls, // Store the array of image URLs
       },
     });
 
+    // Revalidate relevant paths
     revalidatePath("/admin/cars");
+    revalidatePath("/dealership/cars");
+    revalidatePath("/dealership");
+    revalidatePath("/cars");
 
     return {
       success: true,
@@ -207,29 +225,28 @@ export async function addCar({ carData, images }) {
   }
 }
 
-
 export async function getCars(search = "") {
   try {
-    const {userId} = await auth()
-    if (!userId) throw new Error("Unauthorized")
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
 
     const user = await db.user.findUnique({
-      where: {clerkUserId: userId}
-    })
-    if (!user) throw new Error("User not found")
+      where: { clerkUserId: userId },
+    });
+    if (!user) throw new Error("User not found");
 
-    let where = {}
+    let where = {};
     if (search) {
       // Check if search is a number (for year)
-      const yearNumber = Number(search)
+      const yearNumber = Number(search);
       where.OR = [
         { make: { contains: search, mode: "insensitive" } },
         { model: { contains: search, mode: "insensitive" } },
         { color: { contains: search, mode: "insensitive" } },
         { bodyType: { contains: search, mode: "insensitive" } },
-      ]
+      ];
       if (!isNaN(yearNumber)) {
-        where.OR.push({ year: yearNumber })
+        where.OR.push({ year: yearNumber });
       }
     }
 
@@ -238,116 +255,168 @@ export async function getCars(search = "") {
       orderBy: {
         createdAt: "desc",
       },
-    })
+    });
 
-    const serializedCars = cars.map(serializeCarData)
+    const serializedCars = cars.map(serializeCarData);
     return {
       success: true,
-      data: serializedCars
-    }
+      data: serializedCars,
+    };
   } catch (error) {
-    console.error("Error fetching cars:", error)
-    throw new Error("Error fetching cars: " + error.message)
+    console.error("Error fetching cars:", error);
+    throw new Error("Error fetching cars: " + error.message);
   }
 }
 
-
 export async function deleteCars(id) {
   try {
-    const { userId } = await auth()
-    if (!userId) throw new Error("Unauthorized")
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
 
     const user = await db.user.findUnique({
-      where: { clerkUserId: userId }
-    })
-    if (!user) throw new Error("User not found")
-    
+      where: { clerkUserId: userId },
+    });
+    if (!user) throw new Error("User not found");
+
     const car = await db.car.findUnique({
       where: { id },
       select: {
         images: true,
-      }
+      },
+    });
 
-    })
+    if (!car) throw new Error("Car not found");
 
-    if (!car) throw new Error("Car not found")
-
-    await db.car.delete({ where: { id } })
+    await db.car.delete({ where: { id } });
 
     try {
+      const cookieStore = await cookies();
+      const supabase = createClient(cookieStore);
 
-    const cookieStore = await cookies()
-    const supabase = createClient(cookieStore)
-      
-    const filePaths = car.images.map((image) => {
-      const url = new URL(imageUrl)
-      const pathMatch = url.pathname.match(/\/car-images\/(.*)/)
-      return pathMatchMatch ? pathMatch[1] : null
-    }).filter(Boolean)
+      const filePaths = car.images
+        .map((image) => {
+          const url = new URL(imageUrl);
+          const pathMatch = url.pathname.match(/\/car-images\/(.*)/);
+          return pathMatchMatch ? pathMatch[1] : null;
+        })
+        .filter(Boolean);
 
-    if (filePaths.length > 0) {
-      const {error} = await supabase.storage.from("car-images").remove(filePaths)
+      if (filePaths.length > 0) {
+        const { error } = await supabase.storage
+          .from("car-images")
+          .remove(filePaths);
+      }
+
+      if (error) throw new Error("Error deleting files: " + error.message);
+    } catch (storageError) {
+      console.error("Error with storage :", storageError);
+      throw new Error("Error with storage: " + storageError.message);
     }
-    
-      if (error) throw new Error("Error deleting files: " + error.message)
 
-      } catch (storageError) {
-      console.error("Error with storage :", storageError)
-      throw new Error("Error with storage: " + storageError.message)
-    }
-    
-    revalidatePath("/admin/cars")
+    revalidatePath("/admin/cars");
     return {
       success: true,
-    }
-
+    };
   } catch (error) {
-    console.error("Error deleting car:", error)
-   return {
-    success: false,
-    error: "Error deleting car: " + error.message
-   }
+    console.error("Error deleting car:", error);
+    return {
+      success: false,
+      error: "Error deleting car: " + error.message,
+    };
   }
 }
 
-
-export async function updateCarStatus(id, {status , featured}) {
-  console.log("updateCarStatus CALLED", id, status, featured);
+export async function updateCarStatus(id, status, featured) {
   try {
-    const { userId } = await auth()
-    if (!userId) throw new Error("Unauthorized")
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return { 
+        success: false, 
+        error: "Unauthorized: You must be logged in to update car status" 
+      };
+    }
 
+    // Check if user is admin
     const user = await db.user.findUnique({
-      where: { clerkUserId: userId }
-    })
+      where: { clerkUserId: userId },
+    });
 
-    if (!user) throw new Error("User not found")
-
-    const updateData = {};
-    if (status !== undefined) {
-      console.log("Received status:", status, "type:", typeof status);
-      updateData.status = status;
+    if (!user || user.role !== 'ADMIN') {
+      return { 
+        success: false, 
+        error: "Unauthorized: Admin access required" 
+      };
     }
 
-    if (featured !== undefined) {
-      updateData.featured = featured;
+    // Validate status
+    if (!['AVAILABLE', 'UNAVAILABLE', 'SOLD'].includes(status)) {
+      return {
+        success: false,
+        error: "Invalid status value"
+      };
     }
 
-    await db.car.update({
+    // Update the car
+    const updatedCar = await db.car.update({
       where: { id },
-      data: updateData,
-    })
+      data: { 
+        status,
+        featured: featured !== undefined ? featured : undefined
+      },
+    });
 
-    revalidatePath("/admin/cars")
     return {
       success: true,
+      data: updatedCar,
+    };
+  } catch (error) {
+    console.error('Error updating car status:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to update car status',
+    };
+  }
+}
+
+export async function getCarsByDealership(dealershipId) {
+  try {
+    const { userId } = await auth();
+    if (!userId) throw new Error("Unauthorized");
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) throw new Error("User not found");
+
+    // Check if user is dealership admin and owns this dealership
+    if (user.role === 'DEALERSHIP_ADMIN') {
+      // Get the user with their dealership info
+      const userWithDealership = await db.user.findUnique({
+        where: { id: user.id },
+        include: { dealership: true }
+      });
+      
+      if (!userWithDealership?.dealership || userWithDealership.dealership.id !== dealershipId) {
+        throw new Error("Unauthorized: You can only view your own dealership's cars");
+      }
     }
 
+    const cars = await db.car.findMany({
+      where: { dealershipId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      success: true,
+      data: cars,
+    };
   } catch (error) {
-    console.error("Error updating car status:", error)
-   return {
-    success: false,
-    error: "Error updating car status: " + error.message
-   }
+    console.error("Error fetching cars by dealership:", error);
+    return {
+      success: false,
+      error: "Error fetching cars: " + error.message,
+    };
   }
 }

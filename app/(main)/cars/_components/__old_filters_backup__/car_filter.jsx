@@ -27,6 +27,16 @@ const CarFilters = ({ filters }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // Ensure filters has the expected structure
+  if (!filters || !filters.priceRange) {
+    console.warn('CarFilters: filters prop is missing or malformed:', filters);
+    return (
+      <div className="p-4 border rounded-lg bg-gray-50">
+        <p className="text-gray-500 text-sm">Filters are loading...</p>
+      </div>
+    );
+  }
+
   // Simple, integer-only params with safe fallbacks
   const currentMake = searchParams.get("make") ?? "";
   const currentBodyType = searchParams.get("bodyType") ?? "";
@@ -37,8 +47,8 @@ const CarFilters = ({ filters }) => {
   const spMin = searchParams.get("minPrice");
   const spMax = searchParams.get("maxPrice");
 
-  const defaultMin = filters.priceRange.min;
-  const defaultMax = filters.priceRange.max;
+  const defaultMin = filters?.priceRange?.min || 0;
+  const defaultMax = filters?.priceRange?.max || 10000000;
 
   const parsedMin = spMin ? parseInt(spMin, 10) : defaultMin;
   const parsedMax = spMax ? parseInt(spMax, 10) : defaultMax;
@@ -88,8 +98,8 @@ const CarFilters = ({ filters }) => {
     fuelType,
     transmission,
     color,
-    currentMinPrice > filters.priceRange.min ||
-      currentMaxPrice < filters.priceRange.max,
+    currentMinPrice > (filters?.priceRange?.min || 0) ||
+      currentMaxPrice < (filters?.priceRange?.max || 10000000),
   ].filter(Boolean).length;
 
   const currentFilters = {
@@ -99,8 +109,8 @@ const CarFilters = ({ filters }) => {
     transmission,
     color,
     priceRange,
-    priceRangeMin: filters.priceRange.min,
-    priceRangeMax: filters.priceRange.max,
+    priceRangeMin: filters?.priceRange?.min || 0,
+    priceRangeMax: filters?.priceRange?.max || 10000000,
   };
 
   const handleFilterChange = (filterName, value) => {
@@ -135,7 +145,7 @@ const CarFilters = ({ filters }) => {
     setBodyType("");
     setFuelType("");
     setTransmission("");
-    setPriceRange([filters.priceRange.min, filters.priceRange.max]);
+    setPriceRange([filters?.priceRange?.min || 0, filters?.priceRange?.max || 10000000]);
     setSortBy("newest");
 
     const params = new URLSearchParams();
@@ -158,8 +168,8 @@ const CarFilters = ({ filters }) => {
     if (fuelType) params.set("fuelType", fuelType);
     if (transmission) params.set("transmission", transmission);
     if (
-      priceRange[0] !== filters.priceRange.min ||
-      priceRange[1] !== filters.priceRange.max
+      priceRange[0] !== (filters?.priceRange?.min || 0) ||
+      priceRange[1] !== (filters?.priceRange?.max || 10000000)
     ) {
       params.set("minPrice", priceRange[0].toString());
       params.set("maxPrice", priceRange[1].toString());

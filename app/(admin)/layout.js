@@ -5,6 +5,7 @@ import NotAdmin from "./admin/_components/NotAdmin";
 import Sidebar from "./admin/_components/Sidebar";
 import NavbarServer from "@/components/NavbarServer";
 import PageWrapper from "@/components/utils/pageWrapper";
+import { getDealership } from "../actions/dealership";
 
 export const metadata = {
   title: "Admin | Gadi Ghar",
@@ -13,8 +14,10 @@ export const metadata = {
 
 export default async function AdminLayout({ children }) {
   const admin = await getAdmin();
+  const dealership = await getDealership();
 
-  if (!admin.authorized) {
+  // Allow access if either admin or dealership admin is authorized
+  if (!admin.authorized && !dealership.authorized) {
     return <NotAdmin />;
   }
   return (

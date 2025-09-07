@@ -2,7 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Calendar, Car, Cog, LayoutDashboard, User } from "lucide-react";
+import {
+  Calendar,
+  Car,
+  Cog,
+  LayoutDashboard,
+  User,
+  Building2,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -20,6 +27,11 @@ const Sidebar = () => {
       label: "Cars",
       icon: Car,
       href: "/admin/cars",
+    },
+    {
+      label: "Dealerships",
+      icon: Building2,
+      href: "/admin/dealerships",
     },
     {
       label: "Test Drives",

@@ -9,6 +9,7 @@ import {
 } from "@clerk/nextjs";
 import {
   ArrowLeft,
+  Car,
   CarFront,
   Heart,
   Layout,
@@ -25,11 +26,18 @@ import MenuButton from "./utils/MenuButton";
 import PageWrapper from "./utils/pageWrapper";
 import { NavbarMenu, MobNavbarMenu } from "./utils/Menu";
 import { usePathname } from "next/navigation";
+import { checkUserApplicationStatus } from "@/app/actions/dealership";
+import DealerButton from "./DealerButton";
+import Notification from "./ui/notification";
 
 const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
   // true = navbar visible; false = navbar hidden
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(true); // Set to true to always show navbar
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showDealerButton, setShowDealerButton] = useState(true);
+  const [applicationStatus, setApplicationStatus] = useState(null);
+  const [previousStatus, setPreviousStatus] = useState(null);
+  const [notification, setNotification] = useState({ isVisible: false, type: "info", title: "", message: "" });
 
   // hold the last scroll position to detect direction
   const lastScrollY = useRef(0);
@@ -63,7 +71,101 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Check if user has already applied for dealership
+  useEffect(() => {
+    const checkDealerStatus = async () => {
+      if (user) {
+        try {
+          const result = await checkUserApplicationStatus();
+          if (result.success) {
+            const newStatus = result.data.status;
+            setApplicationStatus(newStatus);
+            
+            // Check if status changed and show notification
+            if (previousStatus && previousStatus !== newStatus) {
+              showStatusChangeNotification(previousStatus, newStatus);
+            }
+            
+            setPreviousStatus(newStatus);
+            // Show button for all users except admins
+            setShowDealerButton(true);
+          }
+        } catch (error) {
+          console.error('Error checking dealer status:', error);
+        }
+      }
+    };
+
+    checkDealerStatus();
+    
+    // Set up polling every 30 seconds
+    const interval = setInterval(checkDealerStatus, 30000);
+    
+    return () => clearInterval(interval);
+  }, [user, previousStatus]);
+
+  const showStatusChangeNotification = (oldStatus, newStatus) => {
+    let type = "info";
+    let title = "Application Status Updated";
+    let message = "";
+
+    switch (newStatus) {
+      case "APPROVED":
+        type = "success";
+        message = "🎉 Your dealership application has been approved!";
+        break;
+      case "REJECTED":
+        type = "error";
+        message = "Your dealership application has been rejected.";
+        break;
+      case "REQUIRES_CHANGES":
+        type = "warning";
+        message = "Your application needs changes before approval.";
+        break;
+      case "UNDER_REVIEW":
+        type = "pending";
+        message = "Your application is now under review.";
+        break;
+      default:
+        message = `Application status changed from ${oldStatus} to ${newStatus}`;
+    }
+
+    setNotification({
+      isVisible: true,
+      type,
+      title,
+      message
+    });
+  };
+
   const isAdmin = user?.role === "ADMIN";
+  const isDealershipAdmin = user?.role === "DEALERSHIP_ADMIN";
+  
+  // Temporary fallback for testing - remove this later
+  if (!user) {
+    console.log('Navbar: No user found, showing login button only');
+  }
+  
+  // Debug logging
+  console.log('Navbar Debug:', {
+    isVisible,
+    isAdmin,
+    isDealershipAdmin,
+    user: user ? { id: user.id, role: user.role } : null,
+    showDealerButton,
+    applicationStatus,
+    isAdminPage,
+    pathname,
+    isWishlistedPage,
+    isReservationPage,
+    // Check which buttons should show
+    shouldShowReservations: (!isAdmin && !isDealershipAdmin),
+    shouldShowDealerButton: showDealerButton,
+    shouldShowAdminPortal: (isAdmin || isDealershipAdmin),
+    shouldShowSavedCars: true // Always show for signed in users
+  });
+
+
 
   return (
     <PageWrapper>
@@ -110,19 +212,25 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 </>
               ) : (
                 <SignedIn>
-                  {!isAdmin && (
-                    <TransitionLink
-                      href={isReservationPage ? "/cars" : "/reservations"}
-                    >
-                      <Button variant="outline">
-                        <CarFront size={18} />
-                        <span className="hidden md:inline">
-                          {isReservationPage
-                            ? "Browse Cars"
-                            : "My Reservations"}
-                        </span>
-                      </Button>
-                    </TransitionLink>
+                  {(!isAdmin && !isDealershipAdmin) && (
+                    <>
+                      <TransitionLink
+                        href={isReservationPage ? "/cars" : "/reservations"}
+                      >
+                        <Button variant="outline">
+                          <CarFront size={18} />
+                          <span className="hidden md:inline">
+                            {isReservationPage
+                              ? "Browse Cars"
+                              : "My Reservations"}
+                          </span>
+                        </Button>
+                      </TransitionLink>
+                      
+                      {showDealerButton && (
+                        <DealerButton applicationStatus={applicationStatus} />
+                      )}
+                    </>
                   )}
                   <TransitionLink
                     href={isWishlistedPage ? "/cars" : "/saved-cars"}
@@ -136,14 +244,16 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                   </TransitionLink>
 
                   <NavbarMenu />
-                  {isAdmin && (
-                    <TransitionLink href="/admin">
+                  {(isAdmin || isDealershipAdmin) && (
+                    <TransitionLink href={isDealershipAdmin ? "/dealership" : "/admin"}>
                       <Button
                         variant="outline"
                         className="flex items-center gap-2"
                       >
                         <Layout size={18} />
-                        <span className="hidden md:inline">Admin Portal</span>
+                        <span className="hidden md:inline">
+                          {isDealershipAdmin ? "Dealership Portal" : "Admin Portal"}
+                        </span>
                       </Button>
                     </TransitionLink>
                   )}
@@ -187,18 +297,24 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 </>
               ) : (
                 <SignedIn>
-                  {!isAdmin && (
-                    <TransitionLink
-                      href={isReservationPage ? "/cars" : "/reservations"}
-                      className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
-                    >
-                      <Button variant="outline">
-                        <CarFront size={18} />
-                        <span className="hidden md:inline">
-                          {isReservationPage ? "Browse Cars" : "My Reservations"}
-                        </span>
-                      </Button>
-                    </TransitionLink>
+                  {(!isAdmin && !isDealershipAdmin) && (
+                    <>
+                      <TransitionLink
+                        href={isReservationPage ? "/cars" : "/reservations"}
+                        className="text-gray-600 hover:text-car-red flex items-center gap-2"
+                      >
+                        <Button variant="outline">
+                          <CarFront size={18} />
+                          <span className="hidden md:inline">
+                            {isReservationPage ? "Browse Cars" : "My Reservations"}
+                          </span>
+                        </Button>
+                      </TransitionLink>
+                      
+                      {showDealerButton && (
+                        <DealerButton applicationStatus={applicationStatus} />
+                      )}
+                    </>
                   )}
                   <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
                     <Button>
@@ -207,14 +323,16 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                     </Button>
                   </TransitionLink>
                   <MobNavbarMenu />
-                  {isAdmin && (
-                    <TransitionLink href="/admin">
+                  {(isAdmin || isDealershipAdmin) && (
+                    <TransitionLink href={isDealershipAdmin ? "/dealership" : "/admin"}>
                       <Button
                         variant="outline"
                         className="flex items-center gap-2"
                       >
                         <Layout size={18} />
-                        <span className="hidden md:inline">Admin Portal</span>
+                        <span className="hidden md:inline">
+                          {isDealershipAdmin ? "Dealership Portal" : "Admin Portal"}
+                        </span>
                       </Button>
                     </TransitionLink>
                   )}
@@ -248,6 +366,12 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
           </div>
         </div>
       </nav>
+      <Notification
+        isVisible={notification.isVisible}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+      />
     </PageWrapper>
   );
 };

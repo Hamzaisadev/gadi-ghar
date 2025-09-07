@@ -1,17 +1,35 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const NotFoundPage = () => {
+  const router = useRouter();
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
+  const goHome = useCallback(() => {
+    try {
+      router.push('/');
+    } catch (e) {
+      window.location.href = '/';
+    }
+  }, [router]);
+
   const goBack = useCallback(() => {
-    window.history.back();
-  }, []);
+    try {
+      if (window.history.length > 1) {
+        window.history.back();
+      } else {
+        router.push('/');
+      }
+    } catch (e) {
+      window.location.href = '/';
+    }
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -58,10 +76,10 @@ const NotFoundPage = () => {
         </h2>
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-          <a href="/" className="neon-button">
+          <button onClick={goHome} className="neon-button">
             <span className="button-glow"></span>
             <span className="relative z-10">Back to Showroom</span>
-          </a>
+          </button>
 
           <button onClick={goBack} className="neon-button">
             <span className="button-glow"></span>

@@ -1,102 +1,171 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-
 model User {
-  id                   String                @id @default(cuid())
-  clerkUserId          String                @unique // clerk user id 
-  email                String                @unique
-  name                 String?
-  imageUrl             String?
-  phone                String?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  role                 UserRole              @default(USER)
-  savedCars            UserSavedCar[]
-  testDrives           TestDriveBooking[]
+  id          String             @id @default(cuid())
+  clerkUserId String             @unique
+  email       String             @unique
+  name        String?
+  imageUrl    String?
+  phone       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  role        UserRole           @default(USER)
+  dealershipId String?           // Link user to dealership if they're a dealership admin
+  dealership  DealershipInfo?    @relation("DealershipAdmins", fields: [dealershipId], references: [id], onDelete: SetNull)
+  testDrives  TestDriveBooking[]
+  savedCars   UserSavedCar[]
+  
+  // Relations for dealership applications and approvals
+  dealershipApplications DealershipApplication[] // Users can apply to become dealerships
+  reviewedApplications   DealershipApplication[] @relation("ApplicationReviewer")
+  approvedDealerships    DealershipInfo[]       @relation("ApprovedBy")
+}
+
+model Car {
+  id                String             @id @default(uuid())
+  make              String
+  model             String
+  year              Int
+  mileage           Int
+  color             String
+  fuelType          String
+  transmission      String
+  bodyType          String
+  seats             Int?
+  description       String
+  status            CarStatus          @default(AVAILABLE)
+  featured          Boolean            @default(false)
+  images            String[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  maxPrice          Decimal            @db.Decimal(10, 2)
+  minPrice          Decimal            @db.Decimal(10, 2)
+  dealershipId      String?
+  dealership        DealershipInfo?    @relation(fields: [dealershipId], references: [id])
+  testDriveBookings TestDriveBooking[]
+  savedBy           UserSavedCar[]
+
+  @@index([make, model])
+  @@index([dealershipId])
+}
+
+model DealershipInfo {
+  id           String        @id @default(uuid())
+  name         String        @default("Gadi Ghar")
+  address      String        @default("Clifton Block 8 ,Karachi , Pakistan")
+  phone        String        @default("03343149433")
+  email        String        @default("hamzaisadev@gmail.com")
+  logo         String?       // Logo URL for the dealership
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  isActive     Boolean       @default(true)
+  isApproved   Boolean       @default(false)  // New: approval status
+  approvedAt   DateTime?     // New: when it was approved
+  approvedBy   String?       // New: who approved it
+  approvedByUser User?       @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  cars         Car[]
+  workingHours WorkingHour[]
+  admins       User[]        @relation("DealershipAdmins") // New: dealership admins
+
+  @@index([isActive])
+  @@index([isApproved])
+}
+
+// New: Dealership application model
+model DealershipApplication {
+  id                    String                    @id @default(uuid())
+  userId                String
+  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dealershipName        String
+  businessLicense       String                    // License number
+  businessAddress       String
+  businessPhone         String
+  businessEmail         String
+  ownerName             String
+  ownerPhone            String
+  ownerEmail            String
+  businessType          BusinessType
+  yearsInBusiness       Int
+  description           String
+  logo                  String?                   // Logo URL (optional)
+  status                ApplicationStatus         @default(PENDING)
+  reviewedBy            String?
+  reviewedByUser        User?                    @relation("ApplicationReviewer", fields: [reviewedBy], references: [id])
+  reviewedAt            DateTime?
+  reviewNotes           String?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([reviewedBy])
+}
+
+model WorkingHour {
+  id           String         @id @default(uuid())
+  dealershipId String
+  dayOfWeek    DayOfWeek
+  openTime     String
+  closeTime    String
+  isOpen       Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  dealership   DealershipInfo @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
+
+  @@index([dealershipId, dayOfWeek])
+  @@index([dealershipId])
+  @@index([dayOfWeek])
+  @@index([isOpen])
+}
+
+model UserSavedCar {
+  id      String   @id @default(uuid())
+  userId  String
+  carId   String
+  savedAt DateTime @default(now())
+  car     Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, carId])
+}
+
+model TestDriveBooking {
+  id          String        @id @default(uuid())
+  carId       String
+  userId      String
+  bookingDate DateTime      @db.Date
+  startTime   String
+  endTime     String
+  status      BookingStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  car         Car           @relation(fields: [carId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+
+  @@index([carId])
+  @@index([userId])
+  @@index([status])
 }
 
 enum UserRole {
   USER
+  DEALERSHIP_ADMIN
   ADMIN
-}
-
-model Car {
-  id                   String                @id @default(uuid())
-  make                 String
-  model                String
-  year                 Int
-  minPrice             Decimal             @db.Decimal(10, 2)
-  maxPrice             Decimal             @db.Decimal(10, 2)
-  mileage              Int
-  color                String
-  fuelType            String
-  transmission        String
-  bodyType            String
-  seats                Int?
-  description         String
-  status              CarStatus             @default(AVAILABLE)
-  featured            Boolean               @default(false)
-  images              String[]              // Array of Supabase storage
-  savedBy             UserSavedCar[]
-  testDriveBookings   TestDriveBooking[]
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-
-  @@index([make, model])
-  @@index([bodyType])
-  @@index([minPrice, maxPrice])
-  @@index([year])
-  @@index([status])
-  @@index([fuelType])
-  @@index([featured])
 }
 
 enum CarStatus {
   AVAILABLE
   UNAVAILABLE
   SOLD
-}
-
-model DealershipInfo {
-  id          String        @id @default(uuid())
-  name        String        @default("Gadi Ghar")
-  address     String        @default("Clifton Block 8 ,Karachi , Pakistan")
-  phone       String        @default("03343149433")
-  email       String        @default("hamzaisadev@gmail.com")
-  workingHours WorkingHour[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
-
-model WorkingHour {
-  id          String        @id @default(uuid())
-  dealershipId String
-  dealership  DealershipInfo @relation(fields: [dealershipId], references: [id], onDelete: Cascade)
-  dayOfWeek   DayOfWeek
-  openTime    String        // Format: "HH:MM" (24-hour)
-  closeTime   String        // Format: "HH:MM" (24-hour)
-  isOpen      Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  @@index([dealershipId ,dayOfWeek])
-  @@index([dealershipId])
-  @@index([dayOfWeek])
-  @@index([isOpen])
 }
 
 enum DayOfWeek {
@@ -109,46 +178,25 @@ enum DayOfWeek {
   SUNDAY
 }
 
-model UserSavedCar {
-  id          String        @id @default(uuid())
-  userId      String
-  user        User          @relation(fields: [userId] , references: [id],  onDelete: Cascade)
-  carId       String
-  car         Car           @relation(fields: [carId] , references: [id], onDelete: Cascade)
-  savedAt     DateTime      @default(now())
-
-  @@unique([userId, carId])
-  @@index([userId])
-  @@index([carId])
-}
-
-model TestDriveBooking {
-  id            String        @id @default(uuid())
-  carId         String
-  car           Car           @relation(fields: [carId], references: [id])
-  userId        String
-  user          User          @relation(fields: [userId], references: [id])
-  bookingDate   DateTime      @db.Date
-  startTime     String        // Format: "HH:MM" (24-hour)
-  endTime       String        // Format: "HH:MM" (24-hour)
-  status        BookingStatus @default(PENDING)
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@index([carId])
-  @@index([userId])
-  @@index([bookingDate])
-  @@index([status])
-}
-
 enum BookingStatus {
   PENDING
   CONFIRMED
-  COMPLETED
   CANCELLED
+  COMPLETED
   NO_SHOW
 }
 
+enum BusinessType {
+  INDIVIDUAL
+  PARTNERSHIP
+  CORPORATION
+  FRANCHISE
+}
 
-
+enum ApplicationStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REQUIRES_CHANGES
+}

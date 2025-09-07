@@ -4,6 +4,7 @@ import FeaturedCars from "@/components/sections/FeaturedCars";
 import GadiGharInfo from "@/components/sections/GadiGharInfo";
 import HeroSection from "@/components/sections/HeroSection";
 import WhyChooseUs from "@/components/sections/WhyChoseUs";
+import DealershipSignupSection from "@/components/sections/DealershipSignupSection";
 
 import PageWrapper from "@/components/utils/pageWrapper";
 
@@ -23,6 +24,7 @@ export default function Home() {
         <AICarMatching />
         <BestHonda />
         <BrowseByType />
+        <DealershipSignupSection />
         <GadiGharInfo />
         <LatestSuv />
         <CarReservation />

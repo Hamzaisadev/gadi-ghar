@@ -209,3 +209,23 @@ body {
   background-position: 0px, 0px, 10px, 100px;
   background-repeat: no-repeat;
 }
+
+/* --- Modern loader + route progress animations --- */
+@keyframes gg-route-progress {
+  0% { transform: translateX(-100%); }
+  10% { transform: translateX(-90%); }
+  40% { transform: translateX(-40%); }
+  100% { transform: translateX(0%); }
+}
+
+.gg-animate-route-progress {
+  animation: gg-route-progress 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gg-animate-route-progress,
+  .animate-spin,
+  [class*="animate-["] {
+    animation: none !important;
+  }
+}

@@ -4,10 +4,12 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/prisma";
 import { serializeCarData } from "@/lib/helper";
+import { advancedCarSearch, getFilterSuggestions } from "@/lib/advanced-search";
+import { safeAsync, GadiGharError, ErrorTypes } from "@/lib/error-utils";
 
 export async function getCarFilters() {
   try {
-    console.time("getCarFilters.total");
+   
 
     // Run all queries in parallel
     const [
@@ -16,7 +18,11 @@ export async function getCarFilters() {
       fuelTypes,
       transmissions,
       colors,
-      priceAggregations
+      seats,
+      priceAggregations,
+      yearAggregations,
+      mileageAggregations,
+      dealerships
     ] = await Promise.all([
       // Makes query
       db.car.findMany({
@@ -58,16 +64,47 @@ export async function getCarFilters() {
         orderBy: { color: "asc" },
       }),
       
+      // Seats query
+      db.car.findMany({
+        where: { 
+          status: "AVAILABLE",
+          seats: { not: null }
+        },
+        select: { seats: true },
+        distinct: ["seats"],
+        orderBy: { seats: "asc" },
+      }),
+      
       // Price aggregations
       db.car.aggregate({
         where: { status: "AVAILABLE" },
         _min: { minPrice: true },
         _max: { maxPrice: true },
+      }),
+      
+      // Year aggregations
+      db.car.aggregate({
+        where: { status: "AVAILABLE" },
+        _min: { year: true },
+        _max: { year: true },
+      }),
+      
+      // Mileage aggregations
+      db.car.aggregate({
+        where: { status: "AVAILABLE" },
+        _min: { mileage: true },
+        _max: { mileage: true },
+      }),
+      
+      // Dealerships query
+      db.dealershipInfo.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, address: true },
+        orderBy: { name: "asc" },
       })
     ]);
 
-    console.timeEnd("getCarFilters.total");
-
+    
     return {
       success: true,
       data: {
@@ -76,15 +113,24 @@ export async function getCarFilters() {
         fuelTypes: fuelTypes.map((item) => item.fuelType).filter(Boolean),
         transmissions: transmissions.map((item) => item.transmission).filter(Boolean),
         colors: colors.map((item) => item.color).filter(Boolean),
+        seats: seats.map((item) => item.seats).filter(Boolean).sort((a, b) => a - b),
+        dealerships,
         priceRange: {
-          min: priceAggregations._min.minPrice ? Number(priceAggregations._min.minPrice) : 0,
-          max: priceAggregations._max.maxPrice ? Number(priceAggregations._max.maxPrice) : 100000,
+          min: priceAggregations?._min?.minPrice ? Number(priceAggregations._min.minPrice) : 0,
+          max: priceAggregations?._max?.maxPrice ? Number(priceAggregations._max.maxPrice) : 10000000,
+        },
+        yearRange: {
+          min: yearAggregations?._min?.year || 1990,
+          max: yearAggregations?._max?.year || new Date().getFullYear(),
+        },
+        mileageRange: {
+          min: mileageAggregations?._min?.mileage ? Number(mileageAggregations._min.mileage) : 0,
+          max: mileageAggregations?._max?.mileage ? Number(mileageAggregations._max.mileage) : 500000,
         },
       },
     };
   } catch (error) {
     console.error("Error in getCarFilters:", error);
-    console.timeEnd("getCarFilters.total");
     return {
       success: false,
       error: "Failed to fetch car filters"
@@ -98,14 +144,24 @@ export async function getCars({
   bodyType = "",
   fuelType = "",
   transmission = "",
+  color = "",
+  dealershipId = "",
   minPrice = 0,
   maxPrice = Number.MAX_SAFE_INTEGER,
-  sortBy = "newest", // Options: newest, priceAsc, priceDesc
+  minYear = 1990,
+  maxYear = new Date().getFullYear(),
+  minMileage = 0,
+  maxMileage = 999999999,
+  sortBy = "newest",
   page = 1,
-  limit = 6,
+  limit = 8,
 }) {
   try {
-    console.time("getCars.total");
+    console.log('getCars called with params:', {
+      search, make, bodyType, fuelType, transmission, 
+      color, dealershipId, minPrice, maxPrice, sortBy, page, limit
+    });
+
     // Get current user if authenticated
     const { userId } = await auth();
     let dbUser = null;
@@ -132,20 +188,33 @@ export async function getCars({
     if (make) where.make = { equals: make, mode: "insensitive" };
     if (bodyType) where.bodyType = { equals: bodyType, mode: "insensitive" };
     if (fuelType) where.fuelType = { equals: fuelType, mode: "insensitive" };
-    if (transmission)
-      where.transmission = { equals: transmission, mode: "insensitive" };
+    if (transmission) where.transmission = { equals: transmission, mode: "insensitive" };
+    if (color) where.color = { contains: color, mode: "insensitive" };
+    if (dealershipId) where.dealershipId = dealershipId;
 
-    // Add price range (overlap condition)
-    // Include a car if its [minPrice, maxPrice] overlaps the selected [minPrice, maxPrice]
-    where.minPrice = {
-      lte:
-        maxPrice && maxPrice < Number.MAX_SAFE_INTEGER
-          ? parseFloat(maxPrice)
-          : Number.MAX_SAFE_INTEGER,
-    };
-    where.maxPrice = {
-      gte: parseFloat(minPrice) || 0,
-    };
+    // Add price range
+    if (minPrice > 0 || maxPrice < Number.MAX_SAFE_INTEGER) {
+      where.minPrice = { gte: parseFloat(minPrice) || 0 };
+      where.maxPrice = { lte: parseFloat(maxPrice) || Number.MAX_SAFE_INTEGER };
+    }
+
+    // Add year range
+    if (minYear > 1990 || maxYear < new Date().getFullYear()) {
+      where.year = {
+        gte: parseInt(minYear) || 1990,
+        lte: parseInt(maxYear) || new Date().getFullYear()
+      };
+    }
+
+    // Add mileage range
+    if (minMileage > 0 || maxMileage < 999999999) {
+      where.mileage = {
+        gte: parseFloat(minMileage) || 0,
+        lte: parseFloat(maxMileage) || 999999999
+      };
+    }
+
+    console.log('Where conditions:', where);
 
     // Calculate pagination
     const skip = (page - 1) * limit;
@@ -165,20 +234,32 @@ export async function getCars({
         break;
     }
 
-    // Get total count for pagination
-    console.time("getCars.count");
-    const totalCars = await db.car.count({ where });
-    console.timeEnd("getCars.count");
+    // Get total count and cars in parallel
+    const [totalCars, cars] = await Promise.all([
+      db.car.count({ where }),
+      db.car.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy,
+        include: {
+          dealership: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              phone: true,
+            },
+          },
+        },
+      })
+    ]);
 
-    // Execute the main query
-    console.time("getCars.findMany");
-    const cars = await db.car.findMany({
-      where,
-      take: limit,
-      skip,
-      orderBy,
+    console.log('Query results:', {
+      totalCars,
+      carsCount: cars.length,
+      firstCar: cars[0] ? { id: cars[0].id, make: cars[0].make, model: cars[0].model } : null
     });
-    console.timeEnd("getCars.findMany");
 
     // If we have a user, check which cars are wishlisted
     let wishlisted = new Set();
@@ -187,12 +268,11 @@ export async function getCars({
         where: { userId: dbUser.id },
         select: { carId: true },
       });
-
       wishlisted = new Set(savedCars.map((saved) => saved.carId));
     }
 
     // Serialize and check wishlist status
-    const serializedCars = cars.map((car) =>
+    const serializedCars = cars.map((car) => 
       serializeCarData(car, wishlisted.has(car.id))
     );
 
@@ -206,12 +286,22 @@ export async function getCars({
         pages: Math.ceil(totalCars / limit),
       },
     };
+    
+    console.log('Final result:', {
+      success: result.success,
+      dataLength: result.data.length,
+      pagination: result.pagination
+    });
+    
     return result;
   } catch (error) {
-    throw new Error("Error fetching cars:" + error.message);
-  }
-  finally {
-    console.timeEnd("getCars.total");
+    console.error("Error fetching cars:", error);
+    return {
+      success: false,
+      error: "Error fetching cars: " + error.message,
+      data: [],
+      pagination: { total: 0, page: 1, limit: 6, pages: 0 }
+    };
   }
 }
 
@@ -307,6 +397,17 @@ export async function getCarById(carId) {
     // Get car details
     const car = await db.car.findUnique({
       where: { id: carId },
+      include: {
+        dealership: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
     });
 
     if (!car) {
@@ -355,11 +456,31 @@ export async function getCarById(carId) {
     }
 
     // Get dealership info for test drive availability
-    const dealership = await db.dealershipInfo.findFirst({
-      include: {
-        workingHours: true,
-      },
-    });
+    let dealership = null;
+    if (car.dealership) {
+      dealership = await db.dealershipInfo.findUnique({
+        where: { id: car.dealership.id },
+        include: {
+          workingHours: {
+            orderBy: {
+              dayOfWeek: "asc",
+            },
+          },
+        },
+      });
+    } else {
+      // Fallback to first active dealership if car has no specific dealership
+      dealership = await db.dealershipInfo.findFirst({
+        where: { isActive: true },
+        include: {
+          workingHours: {
+            orderBy: {
+              dayOfWeek: "asc",
+            },
+          },
+        },
+      });
+    }
 
     return {
       success: true,
@@ -436,7 +557,3 @@ export async function getSavedCars() {
     };
   }
 }
-
-
-
-  

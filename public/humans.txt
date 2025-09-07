@@ -1,0 +1,21 @@
+/* TEAM */
+  Developer: Hamza
+  Site: https://hamzaisadev.netlify.app
+  Twitter: @hamzaisadev
+  Location: Pakistan
+
+/* SITE */
+  Last update: 2024/09/05
+  Language: English / Urdu
+  Doctype: HTML5
+  IDE: VS Code, WebStorm
+
+/* THANKS */
+  Next.js team for the amazing framework
+  Vercel for hosting
+  Open source community
+
+/* SITE INFO */
+  Standards: HTML5, CSS3, JavaScript ES6+
+  Components: React, Next.js
+  Software: Node.js, npm

@@ -7,6 +7,12 @@ const isProtectedRoute = createRouteMatcher([
   "/reservations(.*)",
 ]);
 
+const isDealershipAdminRoute = createRouteMatcher([
+  "/dealership(.*)",
+]);
+
+
+
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
 
@@ -17,6 +23,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // For all protected routes, let the page handle authorization
+  // The individual pages will check user roles and redirect accordingly
   return NextResponse.next();
 });
 

@@ -59,6 +59,14 @@ const Footer = () => {
               </svg>
             </a>
           </div>
+          <div className="mb-4">
+            <a
+              href="/dealership-signup"
+              className="text-white hover:text-gray-200 underline text-lg font-medium"
+            >
+              Become a Dealership Partner
+            </a>
+          </div>
           <p className="text-gray-600">
             © 2025 Gari Ghar Car Showroom. All rights reserved.
           </p>

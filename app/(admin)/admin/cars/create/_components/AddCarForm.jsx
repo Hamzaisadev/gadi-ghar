@@ -16,7 +16,10 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { formatPriceRange, parseCurrency } from "@/components/utils/FormatCurrency";
+import {
+  formatPriceRange,
+  parseCurrency,
+} from "@/components/utils/FormatCurrency";
 import {
   Select,
   SelectContent,
@@ -42,6 +45,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import useFetch from "@/hooks/use-fetch";
 import { addCar, processCarImageWithAI } from "@/app/actions/cars";
+import { getAllDealerships } from "@/app/actions/settings";
 import { useRouter } from "next/navigation";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
@@ -57,34 +61,44 @@ const bodyTypes = [
 ];
 const carStatuses = ["AVAILABLE", "UNAVAILABLE", "SOLD"];
 
-const carFormSchema = z.object({
-  make: z.string().min(1, "Make is required"),
-  model: z.string().min(1, "Model is required"),
-  year: z.string().refine((val) => {
-    const year = parseInt(val);
-    return !isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1;
-  }, "Valid year required"),
-  minPrice: z.string().min(1, "Min price is required"),
-  maxPrice: z.string().min(1, "Max price is required"),
-  mileage: z.string().min(1, "Mileage is required"),
-  color: z.string().min(1, "Color is required"),
-  fuelType: z.string().min(1, "Fuel type is required"),
-  transmission: z.string().min(1, "Transmission is required"),
-  bodyType: z.string().min(1, "Body type is required"),
-  seats: z.string().optional(),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  status: z.enum(["AVAILABLE", "UNAVAILABLE", "SOLD"]),
-  featured: z.boolean().default(false),
-  // Images are handled separately
-}).refine((data) => {
-  // Ensure minPrice <= maxPrice
-  const min = Number(data.minPrice);
-  const max = Number(data.maxPrice);
-  return !isNaN(min) && !isNaN(max) && min <= max;
-}, {
-  message: "Min price must be less than or equal to Max price",
-  path: ["minPrice", "maxPrice"],
-});
+const carFormSchema = z
+  .object({
+    make: z.string().min(1, "Make is required"),
+    model: z.string().min(1, "Model is required"),
+    year: z.string().refine((val) => {
+      const year = parseInt(val);
+      return (
+        !isNaN(year) && year >= 1900 && year <= new Date().getFullYear() + 1
+      );
+    }, "Valid year required"),
+    minPrice: z.string().min(1, "Min price is required"),
+    maxPrice: z.string().min(1, "Max price is required"),
+    mileage: z.string().min(1, "Mileage is required"),
+    color: z.string().min(1, "Color is required"),
+    fuelType: z.string().min(1, "Fuel type is required"),
+    transmission: z.string().min(1, "Transmission is required"),
+    bodyType: z.string().min(1, "Body type is required"),
+    seats: z.string().optional(),
+    description: z
+      .string()
+      .min(10, "Description must be at least 10 characters"),
+    status: z.enum(["AVAILABLE", "UNAVAILABLE", "SOLD"]),
+    featured: z.boolean().default(false),
+    dealershipId: z.string().optional(),
+    // Images are handled separately
+  })
+  .refine(
+    (data) => {
+      // Ensure minPrice <= maxPrice
+      const min = Number(data.minPrice);
+      const max = Number(data.maxPrice);
+      return !isNaN(min) && !isNaN(max) && min <= max;
+    },
+    {
+      message: "Min price must be less than or equal to Max price",
+      path: ["minPrice", "maxPrice"],
+    }
+  );
 
 export const AddCarForm = () => {
   const [activeTab, setActiveTab] = useState("ai");
@@ -98,12 +112,12 @@ export const AddCarForm = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadedAiImage, setUploadedAiImage] = useState(null);
+  const [dealerships, setDealerships] = useState([]);
   const router = useRouter();
   const removeManualImage = (index) => {
     setManualUploadedImages((prev) => prev.filter((_, i) => i !== index));
     toast.error("Image removed");
   };
-
 
   const {
     register,
@@ -129,6 +143,7 @@ export const AddCarForm = () => {
       description: "",
       status: "AVAILABLE",
       featured: false,
+      dealershipId: "none",
     },
   });
 
@@ -156,8 +171,6 @@ export const AddCarForm = () => {
     setMaxAmount(rawValue);
     setValue("maxPrice", rawValue);
   };
-
-  
 
   const removeAiImage = (index) => {
     setAiUploadedImages((prev) => prev.filter((_, i) => i !== index));
@@ -267,6 +280,13 @@ export const AddCarForm = () => {
     data: processImageData,
   } = useFetch(processCarImageWithAI);
 
+  const {
+    loading: fetchingDealerships,
+    fn: fetchDealerships,
+    data: dealershipsData,
+    error: dealershipsError,
+  } = useFetch(getAllDealerships);
+
   const processWithAI = async () => {
     if (!uploadedAiImage) {
       toast.error("Please upload an image");
@@ -282,6 +302,16 @@ export const AddCarForm = () => {
   }, [processImageError]);
 
   useEffect(() => {
+    fetchDealerships();
+  }, []);
+
+  useEffect(() => {
+    if (dealershipsData?.success) {
+      setDealerships(dealershipsData.data);
+    }
+  }, [dealershipsData]);
+
+  useEffect(() => {
     if (processImageData?.success) {
       const carDetails = processImageData.data;
 
@@ -293,13 +323,13 @@ export const AddCarForm = () => {
       setValue("bodyType", carDetails.bodyType);
       setValue("fuelType", carDetails.fuelType);
       // Debug: log AI price and parse result
-      console.log('AI carDetails.price:', carDetails.price);
+      console.log("AI carDetails.price:", carDetails.price);
       const { parseRangeFromAI } = require("@/components/utils/FormatCurrency");
       const priceResult = parseRangeFromAI(carDetails.price);
       setValue("minPrice", carDetails.minPrice?.toString() || "");
-setValue("maxPrice", carDetails.maxPrice?.toString() || "");
-setMinAmount(carDetails.minPrice?.toString() || "");
-setMaxAmount(carDetails.maxPrice?.toString() || "");
+      setValue("maxPrice", carDetails.maxPrice?.toString() || "");
+      setMinAmount(carDetails.minPrice?.toString() || "");
+      setMaxAmount(carDetails.maxPrice?.toString() || "");
       setValue("mileage", carDetails.mileage);
       setValue("transmission", carDetails.transmission);
       setValue("description", carDetails.description);
@@ -328,8 +358,13 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
     }
   }, [addCarData, router]);
 
-    const onSubmit = async (data) => {
-   
+  const onSubmit = async (data) => {
+    // Convert "none" to null for dealershipId
+    const carData = {
+      ...data,
+      dealershipId: data.dealershipId === "none" ? null : data.dealershipId,
+    };
+
     // ...rest of your submit logic
     if (manualUploadedImages.length === 0 && aiUploadedImages.length === 0) {
       setImageError("Please upload at least one image");
@@ -337,32 +372,42 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
     }
 
     // Prepare data for server action
-    const carData = {
-      ...data,
-      year: parseInt(data.year),
-      minPrice: data.minPrice ? parseFloat(data.minPrice) : null,
-      maxPrice: data.maxPrice ? parseFloat(data.maxPrice) : null,
-      mileage: parseInt(data.mileage),
-      seats: data.seats ? parseInt(data.seats) : null,
+    const finalCarData = {
+      ...carData,
+      year: parseInt(carData.year),
+      minPrice: carData.minPrice ? parseFloat(carData.minPrice) : null,
+      maxPrice: carData.maxPrice ? parseFloat(carData.maxPrice) : null,
+      mileage: parseInt(carData.mileage),
+      seats: carData.seats ? parseInt(carData.seats) : null,
     };
 
     // Combine manual and AI images for upload
     const allImages = [...manualUploadedImages, ...aiUploadedImages];
 
     await addCarFn({
-      carData,
+      carData: finalCarData,
       images: allImages,
     });
   };
 
   useEffect(() => {
     const errorFields = [
-      'make', 'model', 'year', 'price', 'mileage', 'color', 
-      'fuelType', 'transmission', 'bodyType', 'seats', 
-      'status', 'description', 'featured'
+      "make",
+      "model",
+      "year",
+      "price",
+      "mileage",
+      "color",
+      "fuelType",
+      "transmission",
+      "bodyType",
+      "seats",
+      "status",
+      "description",
+      "featured",
     ];
-    
-    errorFields.forEach(field => {
+
+    errorFields.forEach((field) => {
       const error = errors[field];
       if (error) {
         toast.error(error.message);
@@ -518,7 +563,9 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                     {errors.minPrice && (
                       <div className="flex items-center gap-2 text-red-600">
                         <AlertCircle className="w-4 h-4" />
-                        <span className="text-sm">{errors.minPrice.message}</span>
+                        <span className="text-sm">
+                          {errors.minPrice.message}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -546,16 +593,22 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                     {errors.maxPrice && (
                       <div className="flex items-center gap-2 text-red-600">
                         <AlertCircle className="w-4 h-4" />
-                        <span className="text-sm">{errors.maxPrice.message}</span>
+                        <span className="text-sm">
+                          {errors.maxPrice.message}
+                        </span>
                       </div>
                     )}
                   </div>
 
                   {/* Display formatted price range */}
                   <div className="space-y-1">
-                    <Label className="text-xs text-gray-500">Formatted Price Range</Label>
+                    <Label className="text-xs text-gray-500">
+                      Formatted Price Range
+                    </Label>
                     <div className="font-semibold">
-                      {minAmount && maxAmount ? formatPriceRange(minAmount, maxAmount) : "—"}
+                      {minAmount && maxAmount
+                        ? formatPriceRange(minAmount, maxAmount)
+                        : "—"}
                     </div>
                   </div>
 
@@ -728,6 +781,55 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                         <AlertCircle className="w-4 h-4" />
                         <span className="text-sm">
                           {errors.bodyType.message}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Dealership */}
+                  <div className="space-y-3 group">
+                    <Label className="text-sm font-semibold text-black group-hover:text-red-600 transition-colors">
+                      Dealership{" "}
+                      <span className="text-gray-500 font-normal">
+                        (Optional)
+                      </span>
+                    </Label>
+                    <Select
+                      onValueChange={(value) => setValue("dealershipId", value)}
+                      defaultValue={getValues("dealershipId") || "none"}
+                    >
+                      <SelectTrigger
+                        className={`h-12 text-base border-0 hover-lift transition-all duration-300 ${
+                          errors.dealershipId
+                            ? "ring-2 ring-red-600"
+                            : "focus:ring-2 focus:ring-red-600"
+                        }`}
+                      >
+                        <SelectValue placeholder="Choose dealership (optional)" />
+                      </SelectTrigger>
+                      <SelectContent className="border-0 shadow-lg">
+                        <SelectItem
+                          value="none"
+                          className="hover:bg-red-100 cursor-pointer"
+                        >
+                          No specific dealership
+                        </SelectItem>
+                        {dealerships.map((dealership) => (
+                          <SelectItem
+                            key={dealership.id}
+                            value={dealership.id}
+                            className="hover:bg-red-100 cursor-pointer"
+                          >
+                            {dealership.name} - {dealership.address}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.dealershipId && (
+                      <div className="flex items-center gap-2 text-red-600">
+                        <AlertCircle className="w-4 h-4" />
+                        <span className="text-sm">
+                          {errors.dealershipId.message}
                         </span>
                       </div>
                     )}
@@ -927,17 +1029,22 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                 </div>
 
                 {/* Image Previews */}
-                {(manualUploadedImages.length > 0 || aiUploadedImages.length > 0) && (
+                {(manualUploadedImages.length > 0 ||
+                  aiUploadedImages.length > 0) && (
                   <div className="space-y-6 animate-fade-in">
                     <div className="flex items-center gap-3">
                       <CheckCircle className="w-5 h-5 text-green-500" />
                       <h3 className="text-lg font-semibold text-black">
-                        Uploaded Images ({manualUploadedImages.length + aiUploadedImages.length})
+                        Uploaded Images (
+                        {manualUploadedImages.length + aiUploadedImages.length})
                       </h3>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                       {manualUploadedImages.map((image, index) => (
-                        <div key={`manual-${index}`} className="relative group hover-lift">
+                        <div
+                          key={`manual-${index}`}
+                          className="relative group hover-lift"
+                        >
                           <img
                             src={image}
                             alt={`Vehicle image ${index + 1}`}
@@ -955,7 +1062,10 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                         </div>
                       ))}
                       {aiUploadedImages.map((image, index) => (
-                        <div key={`ai-${index}`} className="relative group hover-lift">
+                        <div
+                          key={`ai-${index}`}
+                          className="relative group hover-lift"
+                        >
                           <img
                             src={image}
                             alt={`AI Vehicle image ${index + 1}`}
@@ -1045,7 +1155,6 @@ setMaxAmount(carDetails.maxPrice?.toString() || "");
                           onClick={() => {
                             setImagePreview(null);
                             setUploadedAiImage(null);
-                           
                           }}
                           className="px-6 border-2 hover:border-red-600 hover-lift"
                         >

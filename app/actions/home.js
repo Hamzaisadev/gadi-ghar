@@ -157,6 +157,10 @@ export async function processImageSearch(file) {
     const result = await model.generateContent([imagePart, prompt]);
     const response = await result.response;
     const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
     try {
       const carDetails = JSON.parse(cleanedText);
@@ -168,7 +172,6 @@ export async function processImageSearch(file) {
       };
     } catch (parseError) {
       console.error("Failed to parse AI response:", parseError);
-      console.log("Raw response:", text);
       return {
         success: false,
         error: "Failed to parse AI response",

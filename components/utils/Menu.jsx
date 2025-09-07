@@ -62,25 +62,22 @@ const NavbarMenu = () => {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    lastScrollY.current = window.scrollY;
-
-    const menuClose = () => {
-      const currentScrollY = window.scrollY;
-      console.log("Scroll event fired", {
-        currentScrollY,
-        lastScrollY: lastScrollY.current,
-      });
-      if (currentScrollY > lastScrollY.current) {
-        console.log("Scrolling down - closing menu");
-        setIsActive(false);
+    const handleScroll = () => {
+      if (isActive) {
+        const currentScrollY = window.scrollY;
+        
+        if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+          // Scrolling down - closing menu
+          setIsActive(false);
+        }
+        
+        lastScrollY.current = currentScrollY;
       }
-
-      lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener("scroll", menuClose, { passive: true });
-    return () => window.removeEventListener("scroll", menuClose);
-  }, []);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isActive]);
 
   return (
     <div className="relative">
@@ -117,25 +114,22 @@ const MobNavbarMenu = () => {
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    lastScrollY.current = window.scrollY;
-
-    const menuClose = () => {
-      const currentScrollY = window.scrollY;
-      console.log("Scroll event fired", {
-        currentScrollY,
-        lastScrollY: lastScrollY.current,
-      });
-      if (currentScrollY > lastScrollY.current) {
-        console.log("Scrolling down - closing menu");
-        setIsActive(false);
+    const handleScroll = () => {
+      if (isActive) {
+        const currentScrollY = window.scrollY;
+        
+        if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+          // Scrolling down - closing menu
+          setIsActive(false);
+        }
+        
+        lastScrollY.current = currentScrollY;
       }
-
-      lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener("scroll", menuClose, { passive: true });
-    return () => window.removeEventListener("scroll", menuClose);
-  }, []);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isActive]);
 
   return (
     <div className="relative">

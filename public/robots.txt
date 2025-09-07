@@ -1,0 +1,26 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://gadi-ghar.vercel.app
+
+# Sitemaps
+Sitemap: https://gadi-ghar.vercel.app/sitemap.xml
+
+# Disallow specific paths
+Disallow: /api/
+Disallow: /_next/
+Disallow: /admin/
+Disallow: /dealer/
+
+# Allow important paths
+Allow: /cars
+Allow: /about
+Allow: /contact
+Allow: /blogs
+Allow: /saved-cars
+Allow: /dealership-signup
+
+# Crawl-delay for specific bots (in seconds)
+Crawl-delay: 1

@@ -1,8 +1,16 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "./ui/card";
-import Image from "next/image";
-import { CarIcon, Heart, Gauge, Fuel, Settings, Users } from "lucide-react";
+import OptimizedImage from "./ui/optimized-image";
+import {
+  CarIcon,
+  Heart,
+  Gauge,
+  Fuel,
+  Settings,
+  Users,
+  Building2,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
 import { Badge } from "./ui/badge";
@@ -55,11 +63,15 @@ const CarCard = ({ car }) => {
       {/* Image */}
       <div className="relative h-64 md:h-72">
         {car.images?.length > 0 ? (
-          <Image
+          <OptimizedImage
             src={car.images[0]}
-            alt={`${car.make} ${car.model}`}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            alt={`${car.make} ${car.model} - Car for sale`}
+            containerClassName="h-full"
+            className="transition-transform duration-500 group-hover:scale-105"
+            priority={false} // Lazy load car cards
+            quality={80}
+            aspectRatio="h-full"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center">
@@ -124,7 +136,7 @@ const CarCard = ({ car }) => {
         </div>
 
         {/* Badges */}
-        <div className="flex flex-wrap gap-2 mb-5">
+        <div className="flex flex-wrap gap-2 mb-3">
           <Badge className="bg-black text-white rounded-full px-3 py-1 text-sm md:text-base font-medium">
             {car.bodyType}
           </Badge>
@@ -132,6 +144,22 @@ const CarCard = ({ car }) => {
             {car.color}
           </Badge>
         </div>
+
+        {/* Dealership Info */}
+        {car.dealership && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2 mb-1">
+              <Building2 className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                Dealership
+              </span>
+            </div>
+            <div className="text-sm text-gray-600">
+              <div className="font-medium">{car.dealership.name}</div>
+              <div className="text-xs">{car.dealership.address}</div>
+            </div>
+          </div>
+        )}
 
         {/* CTA */}
         <Button
