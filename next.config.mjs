@@ -39,6 +39,7 @@ const nextConfig = withPWA({
   ],
 })({
   images: {
+    dangerouslyAllowSVG: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -68,12 +69,14 @@ const nextConfig = withPWA({
             value: [
               "default-src 'self'",
               // Allow Clerk + CAPTCHA providers
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://*.supabase.co https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://*.supabase.co https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://source.unsplash.com https://images.unsplash.com https://img.clerk.com https://ilmkrxcimwdjjvrzxlkd.supabase.co https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://*.supabase.co https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
               "frame-src 'self' https://www.youtube.com https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
+              "worker-src 'self' blob:",
+              "child-src 'self' blob:",
               "frame-ancestors 'self'",
               "upgrade-insecure-requests",
             ].join("; "),

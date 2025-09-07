@@ -145,7 +145,7 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                       variant="outline"
                       className="bg-red-600 border-none text-white"
                     >
-                      {" "}
+                    
                       <User /> Login
                     </Button>
                   </SignInButton>

@@ -143,30 +143,10 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
   const isDealershipAdmin = user?.role === "DEALERSHIP_ADMIN";
   
   // Temporary fallback for testing - remove this later
-  if (!user) {
-    console.log('Navbar: No user found, showing login button only');
-  }
+  // if (!user) {
+  //   console.debug('Navbar: No user found, showing login button only');
+  // }
   
-  // Debug logging
-  console.log('Navbar Debug:', {
-    isVisible,
-    isAdmin,
-    isDealershipAdmin,
-    user: user ? { id: user.id, role: user.role } : null,
-    showDealerButton,
-    applicationStatus,
-    isAdminPage,
-    pathname,
-    isWishlistedPage,
-    isReservationPage,
-    // Check which buttons should show
-    shouldShowReservations: (!isAdmin && !isDealershipAdmin),
-    shouldShowDealerButton: showDealerButton,
-    shouldShowAdminPortal: (isAdmin || isDealershipAdmin),
-    shouldShowSavedCars: true // Always show for signed in users
-  });
-
-
 
   return (
     <PageWrapper>

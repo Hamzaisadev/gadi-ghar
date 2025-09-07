@@ -161,7 +161,7 @@ const ImageWithLoader = ({ src, alt, width, height, className }) => {
         </div>
       )}
       <Image
-        src={src}
+        src={typeof src === 'string' && src.length > 0 ? src : '/placeholder-car.svg'}
         alt={alt}
         width={width}
         height={height}

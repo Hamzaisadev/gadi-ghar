@@ -11,6 +11,7 @@ import PageWrapper from "@/components/utils/pageWrapper";
 import RouteChangeIndicator from "@/components/utils/RouteChangeIndicator";
 import { headers } from "next/headers";
 import { WebsiteStructuredData, OrganizationStructuredData, WebsiteNavigationStructuredData } from "@/components/StructuredData";
+import InitialSplash from "@/components/ui/InitialSplash";
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -103,6 +104,7 @@ export default function RootLayout({ children }) {
             <WebsiteStructuredData />
             <OrganizationStructuredData />
             <WebsiteNavigationStructuredData />
+            <InitialSplash />
             <PageWrapper>
               { <NavbarServer />}
               <main className=" min-h-screen">{children}</main>

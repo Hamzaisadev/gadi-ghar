@@ -43,99 +43,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 import { Badge } from "@/components/ui/badge";
+import ShareDialog from "@/components/shareDialog";
 
-
-
-
-
-const ShareDialog = ({ open, onOpenChange, carToShare, onShare }) => {
-  if (!carToShare) return null;
-  
-  const shareUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/cars/${carToShare.id}`;
-  
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Share {carToShare.make} {carToShare.model}</DialogTitle>
-          <DialogDescription>
-            Share this car listing with others
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <div className="grid flex-1 gap-1.5">
-              <Input
-                id="share-link"
-                value={shareUrl}
-                readOnly
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                Anyone with this link can view this car listing
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              className="shrink-0"
-              onClick={() => {
-                navigator.clipboard.writeText(shareUrl);
-                toast.success("Link copied to clipboard!");
-              }}
-            >
-              <Copy className="h-4 w-4" />
-              <span className="sr-only">Copy link</span>
-            </Button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => onShare(carToShare)}
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Share via...
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1"
-              onClick={() => {
-                window.open(`https://wa.me/?text=Check out this ${encodeURIComponent(carToShare.make + ' ' + carToShare.model)} on GadiGhar: ${shareUrl}`, '_blank');
-              }}
-            >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              WhatsApp
-            </Button>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
 const ImageWithLoader = ({ src, alt, width, height, className }) => {
   const [loading, setLoading] = useState(true);
   return (
@@ -165,7 +76,11 @@ const ImageWithLoader = ({ src, alt, width, height, className }) => {
         </div>
       )}
       <Image
-        src={src}
+        src={
+          typeof src === "string" && src.length > 0
+            ? src
+            : "/placeholder-car.svg"
+        }
         alt={alt}
         width={width}
         height={height}
@@ -176,9 +91,6 @@ const ImageWithLoader = ({ src, alt, width, height, className }) => {
     </div>
   );
 };
-
-
-
 
 const CarList = () => {
   const [search, setSearch] = useState("");
@@ -211,8 +123,8 @@ const CarList = () => {
         toast.success("Link copied to clipboard!");
       }
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Error sharing:', err);
+      if (err.name !== "AbortError") {
+        console.error("Error sharing:", err);
         toast.error("Failed to share. Please try again.");
       }
     } finally {
@@ -220,8 +132,6 @@ const CarList = () => {
       setCarToShare(null);
     }
   };
-  
-
 
   const {
     loading: loadingCars,
@@ -537,12 +447,12 @@ const CarList = () => {
 
               {/* Quick actions */}
               <div className="absolute bottom-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Button 
+                <Button
                   onClick={(e) => {
                     e.stopPropagation();
                     setCarToShare(car);
                     setShareDialogOpen(true);
-                  }} 
+                  }}
                   className="p-3 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
                   title="Share this car"
                 >
@@ -827,8 +737,8 @@ const CarList = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <ShareDialog 
-        open={shareDialogOpen} 
+      <ShareDialog
+        open={shareDialogOpen}
         onOpenChange={setShareDialogOpen}
         carToShare={carToShare}
         onShare={handleShare}

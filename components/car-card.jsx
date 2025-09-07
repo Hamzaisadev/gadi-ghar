@@ -45,6 +45,8 @@ const CarCard = ({ car }) => {
       toast.error("Failed to toggle saved car");
     }
   }, [toggleError]);
+
+  
   const handleToggleClick = async (e) => {
     e.preventDefault();
     if (!isSignedIn) {

@@ -36,22 +36,6 @@
       "purpose": "maskable any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile view of car listings"
-    },
-    {
-      "src": "/screenshot-desktop.png", 
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Desktop view of car marketplace"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Search Cars",
