@@ -1,47 +1,38 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef } from 'react'
 import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function Error({ error, reset }) {
-  const router = useRouter()
+  const hasReset = useRef(false)
 
   useEffect(() => {
-    // Log error to console and potentially external service
     console.error('Route error:', error)
   }, [error])
 
   const handleTryAgain = () => {
+    if (hasReset.current) return
+    hasReset.current = true
     try {
       reset()
     } catch (e) {
-      console.error('Reset failed, reloading page:', e)
-      window.location.reload()
+      window.location.href = window.location.href
     }
   }
 
   const handleGoHome = () => {
-    try {
-      router.push('/')
-    } catch (e) {
-      console.error('Navigation failed, using fallback:', e)
-      window.location.href = '/'
-    }
+    window.location.href = '/'
   }
 
   const handleGoBack = () => {
-    try {
+    if (typeof window !== 'undefined') {
       if (window.history.length > 1) {
-        router.back()
+        window.history.back()
       } else {
-        router.push('/')
+        window.location.href = '/'
       }
-    } catch (e) {
-      console.error('Navigation failed, using fallback:', e)
-      window.location.href = '/'
     }
   }
 

@@ -1,30 +1,30 @@
 'use client'
 
+import { useRef } from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useRouter } from 'next/navigation'
 
 export default function GlobalError({ error, reset }) {
-  const router = useRouter()
+  const hasReset = useRef(false)
   const errorId = `global_error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   
-  // Log error to console and potentially to external service
+  // Log error once per mount
   console.error('Global error:', error)
   
   const handleTryAgain = () => {
+    if (hasReset.current) return
+    hasReset.current = true
     try {
       reset()
     } catch (e) {
-      window.location.reload()
+      // If reset fails, provide a manual fallback
+      window.location.href = window.location.href
     }
   }
   
   const handleGoHome = () => {
-    try {
-      router.push('/')
-    } catch (e) {
-      window.location.href = '/'
-    }
+    // Use hard navigation to avoid any stale state or HMR artifacts
+    window.location.href = '/'
   }
   
   return (
@@ -54,14 +54,15 @@ export default function GlobalError({ error, reset }) {
                 Try Again
               </Button>
               
-              <Button 
-                onClick={handleGoHome}
-                variant="outline" 
-                className="w-full"
-              >
-                <Home className="h-4 w-4 mr-2" />
-                Go to Homepage
-              </Button>
+              <a href="/" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Go to Homepage
+                </Button>
+              </a>
             </div>
 
             {process.env.NODE_ENV === 'development' && (
