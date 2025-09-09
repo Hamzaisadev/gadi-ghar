@@ -9,131 +9,75 @@ import { safeAsync, GadiGharError, ErrorTypes } from "@/lib/error-utils";
 
 export async function getCarFilters() {
   try {
-   
-
-    // Run all queries in parallel
-    const [
-      makes,
-      bodyTypes,
-      fuelTypes,
-      transmissions,
-      colors,
-      seats,
-      priceAggregations,
-      yearAggregations,
-      mileageAggregations,
-      dealerships
-    ] = await Promise.all([
-      // Makes query
-      db.car.findMany({
-        where: { status: "AVAILABLE" },
-        select: { make: true },
-        distinct: ["make"],
-        orderBy: { make: "asc" },
-      }),
-      
-      // Body types query
-      db.car.findMany({
-        where: { status: "AVAILABLE" },
-        select: { bodyType: true },
-        distinct: ["bodyType"],
-        orderBy: { bodyType: "asc" },
-      }),
-      
-      // Fuel types query
-      db.car.findMany({
-        where: { status: "AVAILABLE" },
-        select: { fuelType: true },
-        distinct: ["fuelType"],
-        orderBy: { fuelType: "asc" },
-      }),
-      
-      // Transmissions query
-      db.car.findMany({
-        where: { status: "AVAILABLE" },
-        select: { transmission: true },
-        distinct: ["transmission"],
-        orderBy: { transmission: "asc" },
-      }),
-      
-      // Colors query
-      db.car.findMany({
-        where: { status: "AVAILABLE" },
-        select: { color: true },
-        distinct: ["color"],
-        orderBy: { color: "asc" },
-      }),
-      
-      // Seats query
-      db.car.findMany({
-        where: { 
-          status: "AVAILABLE",
-          seats: { not: null }
-        },
-        select: { seats: true },
-        distinct: ["seats"],
-        orderBy: { seats: "asc" },
-      }),
-      
-      // Price aggregations
-      db.car.aggregate({
-        where: { status: "AVAILABLE" },
-        _min: { minPrice: true },
-        _max: { maxPrice: true },
-      }),
-      
-      // Year aggregations
-      db.car.aggregate({
-        where: { status: "AVAILABLE" },
-        _min: { year: true },
-        _max: { year: true },
-      }),
-      
-      // Mileage aggregations
-      db.car.aggregate({
-        where: { status: "AVAILABLE" },
-        _min: { mileage: true },
-        _max: { mileage: true },
-      }),
-      
-      // Dealerships query
-      db.dealershipInfo.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true, address: true },
-        orderBy: { name: "asc" },
-      })
-    ]);
-
+    console.log('🔧 getCarFilters (Enhanced) - using advanced search system');
     
+    // Use the advanced search system's filter suggestions
+    const filterResult = await getFilterSuggestions();
+    
+    // Handle safeAsync result
+    if (!filterResult.success) {
+      throw new Error(filterResult.error?.message || 'Failed to get filter suggestions');
+    }
+    
+    const filterSuggestions = filterResult.data;
+    
+    // Get dealerships separately as they're not part of the advanced search filter suggestions
+    const dealerships = await db.dealershipInfo.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, address: true },
+      orderBy: { name: "asc" },
+    });
+
+    // Get seat options from available cars
+    const seats = await db.car.findMany({
+      where: { 
+        status: "AVAILABLE",
+        seats: { not: null }
+      },
+      select: { seats: true },
+      distinct: ["seats"],
+      orderBy: { seats: "asc" },
+    });
+
+    // Get color options from available cars
+    const colors = await db.car.findMany({
+      where: { status: "AVAILABLE" },
+      select: { color: true },
+      distinct: ["color"],
+      orderBy: { color: "asc" },
+    });
+
+    console.log('🔧 Enhanced filter data loaded:', {
+      makes: filterSuggestions.makes.length,
+      bodyTypes: filterSuggestions.bodyTypes.length,
+      fuelTypes: filterSuggestions.fuelTypes.length,
+      transmissions: filterSuggestions.transmissions.length,
+      dealerships: dealerships.length,
+      priceRange: filterSuggestions.priceRange,
+      yearRange: filterSuggestions.yearRange,
+      mileageRange: filterSuggestions.mileageRange
+    });
+
     return {
       success: true,
       data: {
-        makes: makes.map((item) => item.make).filter(Boolean),
-        bodyTypes: bodyTypes.map((item) => item.bodyType).filter(Boolean),
-        fuelTypes: fuelTypes.map((item) => item.fuelType).filter(Boolean),
-        transmissions: transmissions.map((item) => item.transmission).filter(Boolean),
+        makes: filterSuggestions.makes,
+        bodyTypes: filterSuggestions.bodyTypes,
+        fuelTypes: filterSuggestions.fuelTypes,
+        transmissions: filterSuggestions.transmissions,
         colors: colors.map((item) => item.color).filter(Boolean),
         seats: seats.map((item) => item.seats).filter(Boolean).sort((a, b) => a - b),
         dealerships,
-        priceRange: {
-          min: priceAggregations?._min?.minPrice ? Number(priceAggregations._min.minPrice) : 0,
-          max: priceAggregations?._max?.maxPrice ? Number(priceAggregations._max.maxPrice) : 10000000,
-        },
-        yearRange: {
-          min: yearAggregations?._min?.year || 1990,
-          max: yearAggregations?._max?.year || new Date().getFullYear(),
-        },
-        mileageRange: {
-          min: mileageAggregations?._min?.mileage ? Number(mileageAggregations._min.mileage) : 0,
-          max: mileageAggregations?._max?.mileage ? Number(mileageAggregations._max.mileage) : 500000,
-        },
+        priceRange: filterSuggestions.priceRange,
+        yearRange: filterSuggestions.yearRange,
+        mileageRange: filterSuggestions.mileageRange,
       },
     };
   } catch (error) {
-    console.error("Error in getCarFilters:", error);
+    console.error("Error in enhanced getCarFilters:", error);
     return {
       success: false,
-      error: "Failed to fetch car filters"
+      error: "Failed to fetch car filters: " + error.message
     };
   }
 }
@@ -149,145 +93,160 @@ export async function getCars({
   minPrice = 0,
   maxPrice = Number.MAX_SAFE_INTEGER,
   minYear = 1990,
-  maxYear = new Date().getFullYear(),
+  maxYear = new Date().getFullYear() + 1,
   minMileage = 0,
   maxMileage = 999999999,
+  seats = null,
+  featured = null,
   sortBy = "newest",
   page = 1,
   limit = 8,
 }) {
   try {
-    console.log('getCars called with params:', {
+    console.log('🚗 getCars (Enhanced) called with params:', {
       search, make, bodyType, fuelType, transmission, 
-      color, dealershipId, minPrice, maxPrice, sortBy, page, limit
+      color, dealershipId, minPrice, maxPrice, minYear, maxYear, minMileage, maxMileage,
+      seats, featured, sortBy, page, limit
     });
 
-    // Get current user if authenticated
+    // Get current user for wishlist status
     const { userId } = await auth();
     let dbUser = null;
+    let wishlisted = new Set();
 
     if (userId) {
       dbUser = await db.user.findUnique({
         where: { clerkUserId: userId },
       });
+      
+      // Get user's saved cars
+      if (dbUser) {
+        const savedCars = await db.userSavedCar.findMany({
+          where: { userId: dbUser.id },
+          select: { carId: true },
+        });
+        wishlisted = new Set(savedCars.map((saved) => saved.carId));
+      }
     }
 
-    // Build where conditions
-    let where = {
-      status: "AVAILABLE",
+    // Convert legacy sort values to advanced search format
+    let convertedSortBy = sortBy;
+    const sortMapping = {
+      "newest": "NEWEST",
+      "oldest": "OLDEST",
+      "priceAsc": "PRICE_LOW_HIGH",
+      "priceDesc": "PRICE_HIGH_LOW",
+      "yearNew": "YEAR_NEW_OLD",
+      "yearOld": "YEAR_OLD_NEW",
+      "mileageLow": "MILEAGE_LOW_HIGH",
+      "mileageHigh": "MILEAGE_HIGH_LOW",
+      "featured": "FEATURED",
+      // Legacy mappings for backwards compatibility
+      "YEAR_NEWEST": "YEAR_NEW_OLD",
+      "YEAR_OLDEST": "YEAR_OLD_NEW", 
+      "MILEAGE_LOW_HIGH": "MILEAGE_LOW_HIGH",
+      "MILEAGE_HIGH_LOW": "MILEAGE_HIGH_LOW",
+      "ALPHABETICAL_AZ": "NEWEST", // Fallback since advanced search doesn't have alphabetical
+      "ALPHABETICAL_ZA": "NEWEST"
     };
-
-    if (search) {
-      where.OR = [
-        { make: { contains: search, mode: "insensitive" } },
-        { model: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-      ];
+    if (sortMapping[sortBy]) {
+      convertedSortBy = sortMapping[sortBy];
     }
 
-    if (make) where.make = { equals: make, mode: "insensitive" };
-    if (bodyType) where.bodyType = { equals: bodyType, mode: "insensitive" };
-    if (fuelType) where.fuelType = { equals: fuelType, mode: "insensitive" };
-    if (transmission) where.transmission = { equals: transmission, mode: "insensitive" };
-    if (color) where.color = { contains: color, mode: "insensitive" };
-    if (dealershipId) where.dealershipId = dealershipId;
-
-    // Add price range
-    if (minPrice > 0 || maxPrice < Number.MAX_SAFE_INTEGER) {
-      where.minPrice = { gte: parseFloat(minPrice) || 0 };
-      where.maxPrice = { lte: parseFloat(maxPrice) || Number.MAX_SAFE_INTEGER };
-    }
-
-    // Add year range
-    if (minYear > 1990 || maxYear < new Date().getFullYear()) {
-      where.year = {
-        gte: parseInt(minYear) || 1990,
-        lte: parseInt(maxYear) || new Date().getFullYear()
-      };
-    }
-
-    // Add mileage range
-    if (minMileage > 0 || maxMileage < 999999999) {
-      where.mileage = {
-        gte: parseFloat(minMileage) || 0,
-        lte: parseFloat(maxMileage) || 999999999
-      };
-    }
-
-    console.log('Where conditions:', where);
-
-    // Calculate pagination
-    const skip = (page - 1) * limit;
-
-    // Determine sort order
-    let orderBy = {};
-    switch (sortBy) {
-      case "priceAsc":
-        orderBy = { minPrice: "asc" };
-        break;
-      case "priceDesc":
-        orderBy = { minPrice: "desc" };
-        break;
-      case "newest":
-      default:
-        orderBy = { createdAt: "desc" };
-        break;
-    }
-
-    // Get total count and cars in parallel
-    const [totalCars, cars] = await Promise.all([
-      db.car.count({ where }),
-      db.car.findMany({
-        where,
-        take: limit,
-        skip,
-        orderBy,
-        include: {
-          dealership: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-              phone: true,
-            },
-          },
-        },
-      })
-    ]);
-
-    console.log('Query results:', {
-      totalCars,
-      carsCount: cars.length,
-      firstCar: cars[0] ? { id: cars[0].id, make: cars[0].make, model: cars[0].model } : null
+    // Extract year and mileage filter parameters from function parameters
+    // Don't use searchParams which is undefined in this context
+    const minYearValue = minYear || 1990;
+    const maxYearValue = maxYear || new Date().getFullYear() + 1;
+    const minMileageValue = minMileage || 0;
+    const maxMileageValue = maxMileage || 999999999;
+    
+    // Use advanced search with proper parameter mapping
+    const searchResult = await advancedCarSearch({
+      query: search,
+      make,
+      bodyType,
+      fuelType,
+      transmission,
+      color,
+      minPrice: minPrice === Number.MAX_SAFE_INTEGER ? 0 : Number(minPrice),
+      maxPrice: maxPrice === Number.MAX_SAFE_INTEGER ? 999999999 : Number(maxPrice),
+      // Properly handle seats filter
+      seats: seats && seats !== '' && !isNaN(Number(seats)) ? Number(seats) : null,
+      // Better featured filter handling
+      featured: featured === 'true' ? true : featured === 'false' ? false : featured === true ? true : featured === false ? false : null,
+      // Pass year and mileage parameters directly
+      minYear: Number(minYearValue),
+      maxYear: Number(maxYearValue),
+      minMileage: Number(minMileageValue),
+      maxMileage: Number(maxMileageValue),
+      dealershipId: dealershipId || null,
+      sortBy: convertedSortBy,
+      page: Number(page) || 1,
+      limit: Number(limit) || 8,
+      includeDealership: true
+    });
+    
+    console.log('Search parameters after conversion:', {
+      minPrice: minPrice === Number.MAX_SAFE_INTEGER ? 0 : Number(minPrice),
+      maxPrice: maxPrice === Number.MAX_SAFE_INTEGER ? 999999999 : Number(maxPrice),
+      seats: seats ? Number(seats) : null,
+      featured: featured === 'true' ? true : featured === 'false' ? false : null,
+      minYear: Number(minYearValue),
+      maxYear: Number(maxYearValue),
+      minMileage: Number(minMileageValue),
+      maxMileage: Number(maxMileageValue),
     });
 
-    // If we have a user, check which cars are wishlisted
-    let wishlisted = new Set();
-    if (dbUser) {
-      const savedCars = await db.userSavedCar.findMany({
-        where: { userId: dbUser.id },
-        select: { carId: true },
-      });
-      wishlisted = new Set(savedCars.map((saved) => saved.carId));
+    console.log('🔍 Raw search result:', searchResult);
+
+    // Handle safeAsync result
+    if (!searchResult.success) {
+      throw new Error(searchResult.error?.message || 'Advanced search failed');
     }
 
-    // Serialize and check wishlist status
-    const serializedCars = cars.map((car) => 
-      serializeCarData(car, wishlisted.has(car.id))
-    );
+    const searchData = searchResult.data;
 
+    console.log('🔍 Advanced search results:', {
+      carsCount: searchData.cars?.length,
+      pagination: searchData.pagination,
+      appliedFilters: searchData.appliedFilters
+    });
+
+    // Apply wishlist status to serialized cars with error handling
+    let carsWithWishlist = [];
+    try {
+      if (!searchData || !Array.isArray(searchData.cars)) {
+        console.error('Invalid searchData structure:', searchData);
+        throw new Error('Invalid search result structure');
+      }
+      
+      // Update wishlist status efficiently
+      carsWithWishlist = searchData.cars.map((car) => {
+        const isUserWishlisted = wishlisted.has(car.id);
+        return {
+          ...car,
+          isWishlisted: isUserWishlisted,
+          wishlisted: isUserWishlisted  // Ensure both properties are consistent
+        };
+      });
+    } catch (mappingError) {
+      console.error('Error mapping cars with wishlist:', mappingError);
+      throw new Error('Failed to process search results: ' + mappingError.message);
+    }
+
+    // Convert advanced search response to legacy format for compatibility
     const result = {
       success: true,
-      data: serializedCars,
+      data: carsWithWishlist,
       pagination: {
-        total: totalCars,
-        page,
-        limit,
-        pages: Math.ceil(totalCars / limit),
+        total: searchData.pagination.total,
+        page: searchData.pagination.page,
+        limit: searchData.pagination.limit,
+        pages: searchData.pagination.totalPages,
       },
     };
     
-    console.log('Final result:', {
+    console.log('Final enhanced result:', {
       success: result.success,
       dataLength: result.data.length,
       pagination: result.pagination
@@ -295,12 +254,29 @@ export async function getCars({
     
     return result;
   } catch (error) {
-    console.error("Error fetching cars:", error);
+    console.error("Error in enhanced getCars:", error);
+    
+    // Create a user-friendly error message
+    let errorMessage = "Please check your input and try again.";
+    
+    // Check for specific error types to provide better messages
+    if (error.message.includes('validation') || 
+        error.message.includes('invalid') || 
+        error.message.includes('required')) {
+      errorMessage = "Invalid filter values. Please check your inputs and try again.";
+    } else if (error.message.includes('database') || 
+               error.message.includes('query')) {
+      errorMessage = "Database error. Please try again later.";
+    } else if (error.message.includes('timeout') || 
+               error.message.includes('network')) {
+      errorMessage = "Network error. Please check your connection and try again.";
+    }
+    
     return {
       success: false,
-      error: "Error fetching cars: " + error.message,
+      error: "Error fetching cars: " + errorMessage,
       data: [],
-      pagination: { total: 0, page: 1, limit: 6, pages: 0 }
+      pagination: { total: 0, page: 1, limit: 8, pages: 0 }
     };
   }
 }

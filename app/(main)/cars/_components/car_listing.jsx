@@ -25,9 +25,6 @@ const CarListings = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const limit = 8; // items per page
-
   // Extract filter values from searchParams - including advanced filters
   const search = searchParams.get("search") || "";
   const make = searchParams.get("make") || "";
@@ -39,7 +36,7 @@ const CarListings = () => {
   const minPrice = searchParams.get("minPrice") || 0;
   const maxPrice = searchParams.get("maxPrice") || Number.MAX_SAFE_INTEGER;
   const minYear = searchParams.get("minYear") || 1990;
-  const maxYear = searchParams.get("maxYear") || new Date().getFullYear();
+  const maxYear = searchParams.get("maxYear") || new Date().getFullYear() + 1;
   const minMileage = searchParams.get("minMileage") || 0;
   const maxMileage = searchParams.get("maxMileage") || 999999999;
   const seats = searchParams.get("seats") || null;
@@ -47,9 +44,15 @@ const CarListings = () => {
   const sortBy = searchParams.get("sortBy") || "newest";
   const page = parseInt(searchParams.get("page") || "1");
 
+  const [currentPage, setCurrentPage] = useState(page);
+  const limit = 8; // items per page
+
   const { loading, fn: fetchCars, data: result, error } = useFetch(getCars);
 
+  console.log('🚗 CarListings state:', { loading, hasResult: !!result, hasError: !!error });
+
   useEffect(() => {
+    console.log('🔄 CarListings useEffect triggered, calling fetchCars...');
     fetchCars({
       search,
       make,
@@ -64,12 +67,13 @@ const CarListings = () => {
       maxYear,
       minMileage,
       maxMileage,
-      seats: seats ? parseInt(seats) : null,
-      featured: featured === 'true' ? true : featured === 'false' ? false : null,
+      seats: seats,  // Let server action handle conversion
+      featured: featured,  // Let server action handle conversion
       sortBy,
       page,
       limit,
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     search,
     make,
@@ -90,7 +94,14 @@ const CarListings = () => {
     page,
   ]);
 
-  // Update URL when page changes
+  // Sync currentPage state with URL page param
+  useEffect(() => {
+    if (currentPage !== page) {
+      setCurrentPage(page);
+    }
+  }, [page]);
+
+  // Update URL when currentPage changes
   useEffect(() => {
     if (currentPage !== page) {
       const params = new URLSearchParams(searchParams);
@@ -114,6 +125,28 @@ const CarListings = () => {
   // Show loading state when data is being fetched
   if (loading) return <CarListingsLoading />;
 
+  // Helper function to get user-friendly error messages
+  const getUserFriendlyMessage = (error) => {
+    if (!error) return "An unknown error occurred";
+    
+    // Extract message from error object
+    const errorMsg = typeof error === 'string' ? error : 
+                    error.message || error.error || JSON.stringify(error);
+    
+    // Check for specific error patterns
+    if (errorMsg.includes('invalid') || errorMsg.includes('validation')) {
+      return "Invalid filter values. Please adjust your search criteria and try again.";
+    } else if (errorMsg.includes('network') || errorMsg.includes('timeout')) {
+      return "Network error. Please check your connection and try again.";
+    } else if (errorMsg.includes('database')) {
+      return "Database error. Please try again later.";
+    } else if (errorMsg.includes('not found')) {
+      return "No cars found matching your criteria. Try broadening your search.";
+    }
+    
+    return errorMsg || "We couldn't load the cars. Please try again later.";
+  };
+  
   // Show error state if there's an error
   if (error) {
     const errorMessage = getUserFriendlyMessage(error);
@@ -123,7 +156,7 @@ const CarListings = () => {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Unable to Load Cars</AlertTitle>
           <AlertDescription className="mb-4">
-            {errorMessage || "We couldn't load the cars. Please try again later."}
+            {errorMessage}
           </AlertDescription>
         </Alert>
         <div className="flex gap-3 mt-4">
@@ -152,15 +185,30 @@ const CarListings = () => {
   
   if (!result.success) {
     console.log('Result not successful:', result);
+    const errorMessage = getUserFriendlyMessage(result.error);
     return (
       <div className="min-h-[400px] flex flex-col items-center justify-center text-center p-8">
         <Alert variant="destructive" className="max-w-md">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Failed to Load Cars</AlertTitle>
-          <AlertDescription>
-            {result.error || "Unable to load car listings. Please try refreshing the page."}
+          <AlertDescription className="mb-4">
+            {errorMessage}
           </AlertDescription>
         </Alert>
+        <div className="flex gap-3 mt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push('/cars')}
+          >
+            Clear Filters
+          </Button>
+        </div>
       </div>
     );
   }
@@ -173,7 +221,47 @@ const CarListings = () => {
     pagination: result.pagination 
   });
   
-  const cars = Array.isArray(result.data) ? result.data : [];
+  // Defensive check for result.data
+  if (!result.data) {
+    console.error('Error fetching cars: result.data is undefined');
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center text-center p-8">
+        <Alert variant="destructive" className="max-w-md">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Failed to Load Cars</AlertTitle>
+          <AlertDescription>
+            Error fetching cars: Cannot read properties of undefined
+          </AlertDescription>
+        </Alert>
+        <div className="flex gap-3 mt-4">
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push('/cars')}
+          >
+            Clear Filters
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  // Ensure cars is always an array and log any issues
+  let cars = [];
+  try {
+    if (Array.isArray(result.data)) {
+      cars = result.data;
+    } else {
+      console.error('result.data is not an array:', result.data);
+    }
+  } catch (err) {
+    console.error('Error processing car data:', err);
+  }
   const pagination = result.pagination || { pages: 0, total: 0 };
 
   if (cars.length === 0) {

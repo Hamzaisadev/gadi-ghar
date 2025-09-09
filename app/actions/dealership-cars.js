@@ -24,7 +24,7 @@ async function getDealershipUser() {
 
   if (!user) throw new Error("User not found");
   
-  const allowedRoles = ['DEALERSHIP_ADMIN', 'DEALERSHIP'];
+  const allowedRoles = ['ADMIN', 'DEALERSHIP'];
   if (!allowedRoles.includes(user.role) || !user.dealership) {
     throw new Error("Unauthorized: Only dealership admins can perform this action");
   }

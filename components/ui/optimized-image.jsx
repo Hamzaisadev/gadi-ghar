@@ -29,13 +29,15 @@ const OptimizedImage = forwardRef(
       placeholder = "blur",
       blurDataURL,
       fallbackSrc = "/placeholder-car.svg",
-      sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+      sizes = "(max-width: 640px) 100vw, (max-width: 768px) 90vw, (max-width: 1024px) 50vw, (max-width: 1280px) 40vw, 33vw",
       aspectRatio = "aspect-[4/3]", // Common car photo aspect ratio
       loading = "lazy",
       onLoadComplete,
       onError,
       showLoadingSpinner = true,
       objectFit = "cover",
+      decoding = "async",
+      fetchPriority = undefined, // 'high' | 'low'
       ...props
     },
     ref
@@ -83,6 +85,8 @@ const OptimizedImage = forwardRef(
       priority,
       sizes,
       loading: priority ? "eager" : loading,
+      decoding,
+      fetchPriority,
       placeholder: placeholder === "blur" ? "blur" : "empty",
       blurDataURL: blurDataURL || defaultBlurDataURL,
       onLoad: handleLoad,

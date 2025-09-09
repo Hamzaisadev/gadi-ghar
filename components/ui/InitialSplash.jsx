@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import FullScreenLoader from "@/components/ui/FullScreenLoader";
+
+import MainFullScreenLoader from "./mainFullScreenLoader";
 
 export default function InitialSplash({ minDuration = 4000, oncePerSession = true, onlyOnHome = true, excludePrefixes = ["/admin", "/dealership"] }) {
   const [show, setShow] = useState(false);

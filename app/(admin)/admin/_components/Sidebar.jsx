@@ -78,11 +78,12 @@ const Sidebar = () => {
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "flex h-12 items-center gap-x-3 text-sm font-medium px-6 mx-2 rounded-lg transition-all duration-200 group hover:translate-x-1",
+                  "flex min-h-[44px] items-center gap-x-3 text-sm font-medium px-6 mx-2 rounded-lg transition-all duration-200 group hover:translate-x-1 focus:outline-none focus:ring-2 focus:ring-red-500/50",
                   isActive
                     ? "bg-red-500 text-primary-foreground shadow-md"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
+                aria-label={`Navigate to ${route.label}`}
               >
                 <route.icon
                   className={cn(
@@ -109,11 +110,12 @@ const Sidebar = () => {
                 key={route.href}
                 href={route.href}
                 className={cn(
-                  "flex flex-col items-center justify-center text-xs font-medium transition-all duration-200 py-2 px-3 rounded-lg min-w-0 flex-1",
+                  "flex flex-col items-center justify-center text-xs font-medium transition-all duration-200 py-2 px-2 rounded-lg min-w-0 flex-1 min-h-[48px] focus:outline-none focus:ring-2 focus:ring-red-500/50",
                   isActive
-                    ? "text-primary bg-red-500"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-primary-foreground bg-red-500 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
+                aria-label={`Navigate to ${route.label}`}
               >
                 <route.icon
                   className={cn(

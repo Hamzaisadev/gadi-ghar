@@ -64,6 +64,12 @@ model DealershipInfo {
   phone        String        @default("03343149433")
   email        String        @default("hamzaisadev@gmail.com")
   logo         String?       // Logo URL for the dealership
+  website      String?       // Website URL
+  description  String?       // Dealership description
+  facebook     String?       // Facebook page URL
+  twitter      String?       // Twitter profile URL
+  instagram    String?       // Instagram profile URL
+  whatsapp     String?       // WhatsApp number
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   isActive     Boolean       @default(true)
@@ -96,6 +102,11 @@ model DealershipApplication {
   yearsInBusiness       Int
   description           String
   logo                  String?                   // Logo URL (optional)
+  website               String?                   // Website URL (optional)
+  facebook              String?                   // Facebook page URL (optional)
+  twitter               String?                   // Twitter profile URL (optional)
+  instagram             String?                   // Instagram profile URL (optional)
+  whatsapp              String?                   // WhatsApp number (optional)
   status                ApplicationStatus         @default(PENDING)
   reviewedBy            String?
   reviewedByUser        User?                    @relation("ApplicationReviewer", fields: [reviewedBy], references: [id])

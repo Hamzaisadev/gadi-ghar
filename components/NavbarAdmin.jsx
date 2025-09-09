@@ -83,6 +83,7 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                 width={100}
                 height={60}
                 className="md:w-44 w-36 object-contain"
+                style={{ height: "auto" }}
               />
               {isAdminPage && (
                 <span className="text-xs font-extralight">admin</span>
@@ -94,7 +95,12 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
-                    <Button variant="outline">
+                    <Button 
+                      variant="outline" 
+                      size="default"
+                      priority="primary"
+                      aria-label="Back to main application"
+                    >
                       <ArrowLeft size={18} />
                       <span>Back to app</span>
                     </Button>
@@ -105,9 +111,14 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                   {!isAdmin && (
                     <TransitionLink
                       href="/reservations"
-                      className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+                      className="flex items-center"
                     >
-                      <Button variant="outline">
+                      <Button 
+                        variant="outline" 
+                        size="default"
+                        priority="secondary"
+                        aria-label="View my car reservations"
+                      >
                         <CarFront size={18} />
                         <span className="hidden md:inline">
                           My Reservations
@@ -116,7 +127,12 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                     </TransitionLink>
                   )}
                   <TransitionLink href="/saved-cars">
-                    <Button>
+                    <Button 
+                      variant="primary" 
+                      size="default"
+                      priority="primary"
+                      aria-label="View saved cars"
+                    >
                       <Heart size={18} />
                       <span className="hidden md:inline">Saved Cars</span>
                     </Button>
@@ -126,8 +142,11 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                   {isAdmin && (
                     <TransitionLink href="/admin">
                       <Button
-                        variant="outline"
+                        variant="secondary"
+                        size="default"
+                        priority="primary"
                         className="flex items-center gap-2"
+                        aria-label="Access admin portal"
                       >
                         <Layout size={18} />
                         <span className="hidden md:inline">Admin Portal</span>
@@ -142,11 +161,13 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                 {!isAdminPage && (
                   <SignInButton forceRedirectUrl="/">
                     <Button
-                      variant="outline"
-                      className="bg-red-600 border-none text-white"
+                      variant="primary"
+                      size="default"
+                      priority="primary"
+                      aria-label="Sign in to your account"
                     >
-                    
-                      <User /> Login
+                      <User size={18} /> 
+                      <span className="hidden sm:inline">Login</span>
                     </Button>
                   </SignInButton>
                 )}
@@ -162,13 +183,18 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                 />
               </SignedIn>
             </div>
-            <div className="md:hidden flex  animate-in fade-in gap-x-3">
+            <div className="md:hidden flex animate-in fade-in gap-x-2 items-center">
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
-                    <Button variant="outline">
+                    <Button 
+                      variant="outline" 
+                      size="default"
+                      priority="primary"
+                      aria-label="Back to main application"
+                    >
                       <ArrowLeft size={18} />
-                      <span>Back to app</span>
+                      <span className="sr-only sm:not-sr-only">Back</span>
                     </Button>
                   </TransitionLink>
                 </>
@@ -177,31 +203,44 @@ const NavbarAdmin = ({ user, isAdminPage = false }) => {
                   {!isAdmin && (
                     <TransitionLink
                       href="/reservations"
-                      className="text-gray-600 hover:text-blue-600 flex items-center gap-2"
+                      className="flex items-center"
                     >
-                      <Button variant="outline">
+                      <Button 
+                        variant="outline" 
+                        size="default"
+                        priority="secondary"
+                        aria-label="View my car reservations"
+                      >
                         <CarFront size={18} />
-                        <span className="hidden md:inline">
+                        <span className="sr-only">
                           My Reservations
                         </span>
                       </Button>
                     </TransitionLink>
                   )}
                   <TransitionLink href="/saved-cars">
-                    <Button>
+                    <Button 
+                      variant="primary" 
+                      size="default"
+                      priority="primary"
+                      aria-label="View saved cars"
+                    >
                       <Heart size={18} />
-                      <span className="hidden md:inline">Saved Cars</span>
+                      <span className="sr-only">Saved Cars</span>
                     </Button>
                   </TransitionLink>
                   <MobNavbarMenu />
                   {isAdmin && (
                     <TransitionLink href="/admin">
                       <Button
-                        variant="outline"
+                        variant="secondary"
+                        size="default"
+                        priority="primary"
                         className="flex items-center gap-2"
+                        aria-label="Access admin portal"
                       >
                         <Layout size={18} />
-                        <span className="hidden md:inline">Admin Portal</span>
+                        <span className="sr-only">Admin Portal</span>
                       </Button>
                     </TransitionLink>
                   )}

@@ -27,6 +27,12 @@ export default function DealershipSettingsPage() {
         address: formData.get("address"),
         phone: formData.get("phone"),
         email: formData.get("email"),
+        website: formData.get("website") || null,
+        whatsapp: formData.get("whatsapp") || null,
+        facebook: formData.get("facebook") || null,
+        twitter: formData.get("twitter") || null,
+        instagram: formData.get("instagram") || null,
+        description: formData.get("description") || null,
       };
       const res = await updateDealershipInfo(payload);
       if (!res?.success) throw new Error(res?.error || "Failed to update info");
@@ -105,6 +111,30 @@ export default function DealershipSettingsPage() {
             <div className="sm:col-span-2">
               <Label htmlFor="address">Address</Label>
               <Input id="address" name="address" placeholder="Street, City" />
+            </div>
+            <div>
+              <Label htmlFor="website">Website (Optional)</Label>
+              <Input id="website" name="website" type="url" placeholder="https://yourdealership.com" />
+            </div>
+            <div>
+              <Label htmlFor="whatsapp">WhatsApp (Optional)</Label>
+              <Input id="whatsapp" name="whatsapp" placeholder="+92 300 1234567" />
+            </div>
+            <div>
+              <Label htmlFor="facebook">Facebook (Optional)</Label>
+              <Input id="facebook" name="facebook" type="url" placeholder="https://facebook.com/yourdealership" />
+            </div>
+            <div>
+              <Label htmlFor="twitter">Twitter (Optional)</Label>
+              <Input id="twitter" name="twitter" type="url" placeholder="https://twitter.com/yourdealership" />
+            </div>
+            <div>
+              <Label htmlFor="instagram">Instagram (Optional)</Label>
+              <Input id="instagram" name="instagram" type="url" placeholder="https://instagram.com/yourdealership" />
+            </div>
+            <div>
+              <Label htmlFor="description">Business Description (Optional)</Label>
+              <Input id="description" name="description" placeholder="Tell customers about your dealership..." />
             </div>
             <div className="sm:col-span-2">
               <Button disabled={saving} type="submit">{saving ? "Saving..." : "Save Info"}</Button>

@@ -46,6 +46,14 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import ShareDialog from "@/components/shareDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const ImageWithLoader = ({ src, alt, width, height, className }) => {
   const [loading, setLoading] = useState(true);

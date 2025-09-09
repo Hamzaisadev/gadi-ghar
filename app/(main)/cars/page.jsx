@@ -52,7 +52,7 @@ const CarPage = async () => {
           
           {/* Car Listings */}
           <div className="w-full">
-            <CarListings />
+            <CarListings filterData={filterData.data} />
           </div>
         </div>
       </div>

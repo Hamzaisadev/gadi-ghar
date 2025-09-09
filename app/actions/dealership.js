@@ -69,6 +69,11 @@ export async function submitDealershipApplication(applicationData) {
         yearsInBusiness: parseInt(applicationData.yearsInBusiness) || 0,
         description: applicationData.description,
         logo: logoUrl,
+        website: applicationData.website || null,
+        facebook: applicationData.facebook || null,
+        twitter: applicationData.twitter || null,
+        instagram: applicationData.instagram || null,
+        whatsapp: applicationData.whatsapp || null,
         status: 'PENDING',
       },
     });
@@ -274,6 +279,13 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
           phone: application.businessPhone,
           email: application.businessEmail,
           logo: application.logo, // Include the logo
+          description: application.description,
+          // Include social media fields from application
+          website: application.website,
+          facebook: application.facebook,
+          twitter: application.twitter,
+          instagram: application.instagram,
+          whatsapp: application.whatsapp,
           isApproved: true,
           approvedBy: user.id,
           approvedAt: new Date(),
@@ -464,6 +476,36 @@ export async function checkUserApplicationStatus() {
   }
 }
 
+// Wrapper function to ensure we always return a valid response
+export async function safeCheckUserApplicationStatus() {
+  try {
+    const result = await checkUserApplicationStatus();
+    
+    // Double-check that we have a valid response structure
+    if (!result || typeof result !== 'object') {
+      return {
+        success: false,
+        error: 'Invalid response from server',
+        data: null
+      };
+    }
+    
+    // Ensure all required properties exist
+    return {
+      success: result.success || false,
+      error: result.error || null,
+      data: result.data || null
+    };
+  } catch (error) {
+    console.error('Critical error in safeCheckUserApplicationStatus:', error);
+    return {
+      success: false,
+      error: 'Critical server error occurred',
+      data: null
+    };
+  }
+}
+
 export async function checkDealershipAuthorization() {
   try {
     const { userId } = await auth();
@@ -616,135 +658,74 @@ export async function checkDealershipAuthorization() {
 }
 
 // New function to deactivate a dealership
-export async function deactivateDealership(dealershipId) {
+export async function deleteDealership(dealershipId) {
   try {
     const { userId } = await auth();
-    
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
-      };
+      return { success: false, error: "Unauthorized: You must be logged in" };
     }
 
-    // Fetch user and determine permissions
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) {
-      return {
-        success: false,
-        error: "User not found"
-      };
-    }
-
+    // Permissions
+    const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+    if (!user) return { success: false, error: "User not found" };
     const isAdmin = user.role === 'ADMIN';
     const isDealershipAdmin = user.role === 'DEALERSHIP_ADMIN' && user.dealershipId === dealershipId;
-
-    // Admins can deactivate any dealership; dealership admins can only deactivate their own
     if (!isAdmin && !isDealershipAdmin) {
-      return { 
-        success: false, 
-        error: "Unauthorized: Admin access required" 
-      };
+      return { success: false, error: "Unauthorized: Admin access required" };
     }
 
-    // Collect file paths for Supabase image cleanup BEFORE DB deletion
-    const carsWithImages = await db.car.findMany({
-      where: { dealershipId },
-      select: { id: true, images: true },
-    });
-
-    const filePathSet = new Set();
-    for (const car of carsWithImages) {
-      if (Array.isArray(car.images)) {
-        for (const imageUrl of car.images) {
-          try {
-            const u = new URL(imageUrl);
-            const match = u.pathname.match(/\/car-images\/(.+)$/);
-            if (match && match[1]) filePathSet.add(match[1]);
-          } catch (e) {
-            // ignore invalid URL
-          }
-        }
-      }
-    }
-    const filePaths = Array.from(filePathSet);
-
-    // Use transaction to ensure data consistency
+    // Transactional cascade delete
     const result = await db.$transaction(async (tx) => {
-      // Ensure the dealership exists
-      const target = await tx.dealershipInfo.findUnique({ where: { id: dealershipId } });
-      if (!target) {
-        throw new Error("Dealership not found");
-      }
-
-      // Find all cars (ids) for cascading deletes
-      const cars = await tx.car.findMany({
-        where: { dealershipId },
-        select: { id: true },
+      const target = await tx.dealershipInfo.findUnique({ 
+        where: { id: dealershipId },
+        include: { admins: { select: { id: true } } }
       });
-      const carIds = cars.map((c) => c.id);
+      if (!target) throw new Error("Dealership not found");
 
-      // Delete dependent records first to satisfy FK constraints
+      // Collect car IDs
+      const cars = await tx.car.findMany({ where: { dealershipId }, select: { id: true } });
+      const carIds = cars.map(c => c.id);
+
       if (carIds.length > 0) {
         await tx.testDriveBooking.deleteMany({ where: { carId: { in: carIds } } });
         await tx.userSavedCar.deleteMany({ where: { carId: { in: carIds } } });
       }
 
-      // Delete cars belonging to this dealership
+      // Delete related dealership applications for all users who were part of this dealership
+      const userIds = target.admins.map(admin => admin.id);
+      if (userIds.length > 0) {
+        await tx.dealershipApplication.deleteMany({ 
+          where: { 
+            OR: [
+              { userId: { in: userIds } },
+              { 
+                AND: [
+                  { dealershipName: target.name },
+                  { businessEmail: target.email }
+                ]
+              }
+            ]
+          } 
+        });
+      }
+
       await tx.car.deleteMany({ where: { dealershipId } });
-
-      // Delete working hours explicitly (in case DB doesn't cascade)
       await tx.workingHour.deleteMany({ where: { dealershipId } });
-
-      // Remove admin role and association from users of this dealership
-      await tx.user.updateMany({
-        where: { dealershipId },
-        data: {
-          role: 'USER',
-          dealershipId: null,
-        },
-      });
-
-      // Finally delete the dealership
-      const deletedDealership = await tx.dealershipInfo.delete({
-        where: { id: dealershipId },
-      });
-
-      return deletedDealership;
+      await tx.user.updateMany({ where: { dealershipId }, data: { role: 'USER', dealershipId: null } });
+      const deleted = await tx.dealershipInfo.delete({ where: { id: dealershipId } });
+      return deleted;
     });
 
-    // After successful DB deletion, attempt to remove Supabase storage files (best-effort)
-    let storageWarning = null;
-    try {
-      if (filePaths.length > 0) {
-        const cookieStore = await cookies();
-        const supabase = createClient(cookieStore);
-        const { error } = await supabase.storage.from('car-images').remove(filePaths);
-        if (error) {
-          console.error('Supabase storage removal error:', error);
-          storageWarning = 'Some images could not be removed from storage';
-        }
-      }
-    } catch (storageErr) {
-      console.error('Supabase storage cleanup failed:', storageErr);
-      storageWarning = 'Storage cleanup failed';
-    }
-
-    return {
-      success: true,
-      data: result,
-      warning: storageWarning || undefined,
-    };
+    return { success: true, data: result };
   } catch (error) {
-    console.error('Error deactivating dealership:', error);
-    return {
-      success: false,
-      error: error.message || 'Failed to deactivate dealership',
-    };
+    console.error('Error deleting dealership:', error);
+    return { success: false, error: error.message || 'Failed to delete dealership' };
   }
+}
+
+// Backwards-compatible wrapper (deactivation now means deletion)
+export async function deactivateDealership(dealershipId) {
+  return deleteDealership(dealershipId);
 }
 
 // New function to update dealership information
@@ -786,6 +767,12 @@ export async function updateDealershipInfo(dealershipData) {
         address: dealershipData.address,
         phone: dealershipData.phone,
         email: dealershipData.email,
+        website: dealershipData.website,
+        whatsapp: dealershipData.whatsapp,
+        facebook: dealershipData.facebook,
+        twitter: dealershipData.twitter,
+        instagram: dealershipData.instagram,
+        description: dealershipData.description,
       },
     });
 
@@ -1041,5 +1028,221 @@ export async function checkAndFixDealershipAdminRole() {
       success: false,
       error: error.message || 'Failed to check and fix role',
     };
+  }
+}
+
+// New public dealership actions
+export async function getDealershipById(dealershipId) {
+  try {
+    if (!dealershipId) {
+      return { success: false, error: "Dealership ID is required" };
+    }
+
+    const dealership = await db.dealershipInfo.findUnique({
+      where: {
+        id: dealershipId,
+        isActive: true,
+        isApproved: true
+      },
+      include: {
+        workingHours: {
+          orderBy: {
+            dayOfWeek: 'asc'
+          }
+        },
+        cars: {
+          where: {
+            status: {
+              in: ['AVAILABLE', 'UNAVAILABLE']
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 12
+        },
+        _count: {
+          select: {
+            cars: {
+              where: {
+                status: {
+                  in: ['AVAILABLE', 'UNAVAILABLE']
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!dealership) {
+      return { success: false, error: "Dealership not found" };
+    }
+
+    return { success: true, data: dealership };
+  } catch (error) {
+    console.error("Error fetching dealership by ID:", error);
+    return { success: false, error: "Failed to fetch dealership" };
+  }
+}
+
+export async function getDealershipCarsById(dealershipId, page = 1, limit = 12, filters = {}) {
+  try {
+    const skip = (page - 1) * limit;
+    
+    const where = {
+      dealershipId,
+      status: {
+        in: ['AVAILABLE', 'UNAVAILABLE']
+      },
+      ...(filters.make && { make: filters.make }),
+      ...(filters.year && { year: parseInt(filters.year) }),
+      ...(filters.fuelType && { fuelType: filters.fuelType }),
+      ...(filters.transmission && { transmission: filters.transmission }),
+      ...(filters.bodyType && { bodyType: filters.bodyType }),
+      ...(filters.minPrice && { minPrice: { gte: parseFloat(filters.minPrice) } }),
+      ...(filters.maxPrice && { maxPrice: { lte: parseFloat(filters.maxPrice) } }),
+    };
+
+    const [cars, totalCount] = await Promise.all([
+      db.car.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      }),
+      db.car.count({ where })
+    ]);
+
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return {
+      success: true,
+      data: {
+        cars,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalCount,
+          hasNext: page < totalPages,
+          hasPrevious: page > 1
+        }
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching dealership cars:", error);
+    return { success: false, error: "Failed to fetch dealership cars" };
+  }
+}
+
+export async function getDealershipStats(dealershipId) {
+  try {
+    const stats = await db.dealershipInfo.findUnique({
+      where: { id: dealershipId },
+      include: {
+        _count: {
+          select: {
+            cars: true
+          }
+        },
+        cars: {
+          select: {
+            status: true,
+            minPrice: true,
+            maxPrice: true,
+            featured: true
+          }
+        }
+      }
+    });
+
+    if (!stats) {
+      return { success: false, error: "Dealership not found" };
+    }
+
+    const totalCars = stats._count.cars;
+    const availableCars = stats.cars.filter(car => car.status === 'AVAILABLE').length;
+    const soldCars = stats.cars.filter(car => car.status === 'SOLD').length;
+    const featuredCars = stats.cars.filter(car => car.featured).length;
+    const totalValue = stats.cars.reduce((sum, car) => sum + (Number(car.maxPrice) || 0), 0);
+    const avgPrice = totalCars > 0 ? totalValue / totalCars : 0;
+
+    return {
+      success: true,
+      data: {
+        totalCars,
+        availableCars,
+        soldCars,
+        featuredCars,
+        totalValue,
+        avgPrice,
+        yearsInBusiness: Math.floor((new Date() - new Date(stats.createdAt)) / (365.25 * 24 * 60 * 60 * 1000))
+      }
+    };
+  } catch (error) {
+    console.error("Error fetching dealership stats:", error);
+    return { success: false, error: "Failed to fetch dealership stats" };
+  }
+}
+
+export async function getDealershipByName(dealershipName) {
+  try {
+    if (!dealershipName) {
+      return { success: false, error: "Dealership name is required" };
+    }
+
+    // Convert URL-friendly name back to search format
+    const searchName = dealershipName.replace(/-/g, ' ');
+
+    const dealership = await db.dealershipInfo.findFirst({
+      where: {
+        name: {
+          contains: searchName,
+          mode: 'insensitive'
+        },
+        isActive: true,
+        isApproved: true
+      },
+      include: {
+        workingHours: {
+          orderBy: {
+            dayOfWeek: 'asc'
+          }
+        },
+        cars: {
+          where: {
+            status: {
+              in: ['AVAILABLE', 'UNAVAILABLE']
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 12
+        },
+        _count: {
+          select: {
+            cars: {
+              where: {
+                status: {
+                  in: ['AVAILABLE', 'UNAVAILABLE']
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!dealership) {
+      return { success: false, error: "Dealership not found" };
+    }
+
+    return { success: true, data: dealership };
+  } catch (error) {
+    console.error("Error fetching dealership by name:", error);
+    return { success: false, error: "Failed to fetch dealership" };
   }
 }

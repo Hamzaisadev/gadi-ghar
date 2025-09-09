@@ -27,9 +27,13 @@ const DealerButton = ({ applicationStatus }) => {
 
   return (
     <TransitionLink href={dealerButtonInfo.href}>
-      <Button variant="outline" className="bg-car-red border-car-red text-white hover:bg-car-red-dark">
+      <Button 
+        variant="outline" 
+        className="bg-car-red border-car-red text-white hover:bg-car-red-dark"
+        title={dealerButtonInfo.text} // Add tooltip for accessibility
+      >
         <IconComponent size={18} />
-        <span className="hidden md:inline">{dealerButtonInfo.text}</span>
+        <span className="hidden lg:inline">{dealerButtonInfo.text}</span>
       </Button>
     </TransitionLink>
   );

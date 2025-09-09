@@ -12,9 +12,14 @@ import RouteChangeIndicator from "@/components/utils/RouteChangeIndicator";
 import { headers } from "next/headers";
 import { WebsiteStructuredData, OrganizationStructuredData, WebsiteNavigationStructuredData } from "@/components/StructuredData";
 import InitialSplash from "@/components/ui/InitialSplash";
+
+// Configure Poppins font with better error handling
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-poppins",
+  display: "swap",
+  fallback: ["system-ui", "arial"],
 });
 
 export const metadata = {

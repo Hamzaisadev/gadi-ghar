@@ -26,6 +26,7 @@ const Header = async ({ isAdminPage = false }) => {
             width={250}
             height={60}
             className="md:w-full w-44 object-contain"
+            style={{ height: "auto" }}
           />
           {isAdminPage && (
             <span className="text-xs font-extralight">admin</span>

@@ -27,8 +27,7 @@ import MenuButton from "./utils/MenuButton";
 import PageWrapper from "./utils/pageWrapper";
 import { NavbarMenu, MobNavbarMenu } from "./utils/Menu";
 import { usePathname } from "next/navigation";
-import { checkUserApplicationStatus } from "@/app/actions/dealership";
-import DealerButton from "./DealerButton";
+import DealerNavButton from "./DealerNavButton";
 import Notification from "./ui/notification";
 
 const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
@@ -72,38 +71,6 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Check if user has already applied for dealership
-  useEffect(() => {
-    const checkDealerStatus = async () => {
-      if (user) {
-        try {
-          const result = await checkUserApplicationStatus();
-          if (result.success) {
-            const newStatus = result.data.status;
-            setApplicationStatus(newStatus);
-            
-            // Check if status changed and show notification
-            if (previousStatus && previousStatus !== newStatus) {
-              showStatusChangeNotification(previousStatus, newStatus);
-            }
-            
-            setPreviousStatus(newStatus);
-            // Show button for all users except admins
-            setShowDealerButton(true);
-          }
-        } catch (error) {
-          console.error('Error checking dealer status:', error);
-        }
-      }
-    };
-
-    checkDealerStatus();
-    
-    // Set up polling every 30 seconds
-    const interval = setInterval(checkDealerStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, [user, previousStatus]);
 
   const showStatusChangeNotification = (oldStatus, newStatus) => {
     let type = "info";
@@ -154,11 +121,11 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
         className={`
         fixed top-0 left-0 w-full z-50
         transform transition-transform duration-300
-        py-4 md:py-5               ← add some vertical padding!
+        py-4 md:py-5
         ${
           isVisible
-            ? "translate-y-0 "
-            : "-translate-y-full animate-pulse selection:"
+            ? "translate-y-0"
+            : "-translate-y-full"
         }
       `}
       >
@@ -173,7 +140,8 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 alt="Gadi Ghar Logo"
                 width={100}
                 height={60}
-                className="md:w-44 w-36 object-contain"
+                className="md:w-44 w-36 h-auto object-contain"
+                style={{ height: "auto" }}
               />
               {isAdminPage && (
                 <span className="text-xs font-extralight">admin</span>
@@ -208,8 +176,8 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                                 </span>
                               </Button>
                             </TransitionLink>
-                            {showDealerButton && (
-                              <DealerButton applicationStatus={applicationStatus} />
+{showDealerButton && (
+                              <DealerNavButton />
                             )}
                           </>
                         )}
@@ -271,9 +239,9 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                         </Button>
                       </TransitionLink>
                       
-                      {showDealerButton && (
-                        <DealerButton applicationStatus={applicationStatus} />
-                      )}
+{showDealerButton && (
+                              <DealerNavButton />
+                            )}
                     </>
                   )}
                   <TransitionLink
@@ -358,9 +326,9 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                                 </span>
                               </Button>
                             </TransitionLink>
-                            {showDealerButton && (
-                              <DealerButton applicationStatus={applicationStatus} />
-                            )}
+{showDealerButton && (
+                        <DealerNavButton />
+                      )}
                           </>
                         )}
                         <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
@@ -414,8 +382,8 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                         </Button>
                       </TransitionLink>
                       
-                      {showDealerButton && (
-                        <DealerButton applicationStatus={applicationStatus} />
+{showDealerButton && (
+                        <DealerNavButton />
                       )}
                     </>
                   )}

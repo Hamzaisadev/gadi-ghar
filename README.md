@@ -879,7 +879,7 @@ const CarCard = ({ car, onSave, onShare }) => (
 # 🗄️ Database Configuration
 DATABASE_URL="postgresql://user:password@host:5432/gadi_ghar"
 DIRECT_URL="postgresql://user:password@host:5432/gadi_ghar"
-
+eh
 # 🔐 Authentication (Clerk)
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
 CLERK_SECRET_KEY="sk_test_..."

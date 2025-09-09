@@ -33,15 +33,21 @@
 
     --accent-foreground: 0 0% 9%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 50.2%;
 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 89.8%;
+    --border: 0 0% 85.8%;
 
-    --input: 0 0% 89.8%;
+    --input: 0 0% 85.8%;
 
     --ring: 0 0% 3.9%;
+    
+    /* Accessibility-focused contrast ratios */
+    --text-high-contrast: 0 0% 9%;
+    --text-medium-contrast: 0 0% 25%;
+    --text-low-contrast: 0 0% 45%;
+    --focus-ring: 0 0% 9%;
 
     --chart-1: 12 76% 61%;
 
@@ -103,21 +109,27 @@
 
     --muted: 0 0% 14.9%;
 
-    --muted-foreground: 0 0% 63.9%;
+    --muted-foreground: 0 0% 70%;
 
     --accent: 0 0% 14.9%;
 
     --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 70% 45%;
 
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 14.9%;
+    --border: 0 0% 20%;
 
-    --input: 0 0% 14.9%;
+    --input: 0 0% 20%;
 
     --ring: 0 0% 83.1%;
+    
+    /* Dark theme accessibility improvements */
+    --text-high-contrast: 0 0% 98%;
+    --text-medium-contrast: 0 0% 85%;
+    --text-low-contrast: 0 0% 70%;
+    --focus-ring: 0 0% 98%;
 
     --chart-1: 220 70% 50%;
 
@@ -141,6 +153,108 @@
   .gradient-title {
     @apply gradient font-extrabold tracking-tighter pr-2 pb-2 text-transparent bg-clip-text;
   }
+  
+  /* Mobile-first touch targets */
+  .touch-target {
+    @apply min-w-[44px] min-h-[44px] flex items-center justify-center;
+  }
+  .touch-target-sm {
+    @apply min-w-[36px] min-h-[36px] flex items-center justify-center;
+  }
+  .touch-target-lg {
+    @apply min-w-[48px] min-h-[48px] flex items-center justify-center;
+  }
+  
+  /* Better button spacing for mobile */
+  .button-group {
+    @apply flex gap-3 md:gap-2;
+  }
+  .button-group-sm {
+    @apply flex gap-2 md:gap-1;
+  }
+  .button-group-lg {
+    @apply flex gap-4 md:gap-3;
+  }
+  
+  /* Form spacing improvements */
+  .form-spacing {
+    @apply space-y-6 md:space-y-4;
+  }
+  .form-spacing-sm {
+    @apply space-y-4 md:space-y-3;
+  }
+  
+  /* Better color contrast utilities */
+  .text-high-contrast {
+    @apply text-gray-900 dark:text-gray-50;
+  }
+  .text-medium-contrast {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+  .text-low-contrast {
+    @apply text-gray-600 dark:text-gray-400;
+  }
+  
+  /* Accessibility utilities */
+  .focus-visible-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2;
+  }
+  
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md focus:shadow-lg;
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --border: 0 0% 40%;
+      --muted-foreground: 0 0% 20%;
+    }
+    
+    .dark {
+      --border: 0 0% 60%;
+      --muted-foreground: 0 0% 80%;
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Loading animations */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 .dotted-background {
@@ -263,5 +377,73 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .skeleton::after {
     animation: none;
+  }
+}
+
+/* --- Custom loader animations --- */
+:root {
+  --car-blue: 219 78% 66%;
+  --car-orange: 36 100% 60%;
+  --neon-blue: 210 100% 70%;
+  --neon-red: 0 100% 70%;
+  --chrome: 0 0% 85%;
+}
+
+.car-blue { color: hsl(var(--car-blue)); }
+.car-orange { color: hsl(var(--car-orange)); }
+.neon-blue { color: hsl(var(--neon-blue)); }
+.neon-red { color: hsl(var(--neon-red)); }
+.chrome { color: hsl(var(--chrome)); }
+
+@keyframes headlight-sweep {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes road-lines {
+  0% { transform: translateX(-100px); }
+  100% { transform: translateX(100vw); }
+}
+
+@keyframes smoke-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  100% { transform: translateY(-60px) scale(2); opacity: 0; }
+}
+
+@keyframes car-race {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(80px); }
+  50% { transform: translateX(160px); }
+  75% { transform: translateX(240px); }
+  100% { transform: translateX(320px); }
+}
+
+@keyframes engine-rev {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes wheel-fast-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-headlight-sweep { animation: headlight-sweep 2.4s linear infinite; }
+.animate-road-lines { animation: road-lines 2s linear infinite; }
+.animate-smoke-rise { animation: smoke-rise 2s ease-out infinite; }
+.animate-car-race { animation: car-race 3s ease-in-out infinite; }
+.animate-engine-rev { animation: engine-rev 1s ease-in-out infinite; }
+.animate-wheel-fast-spin { animation: wheel-fast-spin 0.5s linear infinite; }
+.animate-particle-fall { animation: particle-fall 4.5s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-headlight-sweep,
+  .animate-road-lines,
+  .animate-smoke-rise,
+  .animate-car-race,
+  .animate-engine-rev,
+  .animate-wheel-fast-spin,
+  .animate-particle-fall {
+    animation: none !important;
   }
 }

@@ -23,6 +23,7 @@ import { Loader2 } from "lucide-react";
 
 const CarCard = ({ car }) => {
   const [isSaved, setIsSaved] = useState(car.wishlisted);
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
   const { isSignedIn } = useAuth();
 
@@ -60,26 +61,36 @@ const CarCard = ({ car }) => {
     await toggleSavedCarfn(car.id);
   };
 
+  const handleViewDetails = async () => {
+    setIsNavigating(true);
+    // Add a small delay for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 100));
+    router.push(`/cars/${car.id}`);
+  };
+
   return (
-    <Card className="group overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:scale-[1.02] transition-transform duration-300">
+    <Card className="group overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:shadow-red-600/10 hover:scale-[1.02] transition-all duration-300 cursor-pointer">
       {/* Image */}
-      <div className="relative h-64 md:h-72">
+      <div className="relative h-64 md:h-72 overflow-hidden">
         {car.images?.length > 0 ? (
           <OptimizedImage
             src={car.images[0]}
             alt={`${car.make} ${car.model} - Car for sale`}
             containerClassName="h-full"
-            className="transition-transform duration-500 group-hover:scale-105"
+            className="transition-transform duration-700 ease-in-out group-hover:scale-110 group-hover:rotate-1"
             priority={false} // Lazy load car cards
             quality={80}
             aspectRatio="h-full"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         ) : (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-            <CarIcon className="h-16 w-16 text-gray-400" />
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center transition-all duration-700 group-hover:bg-gray-200">
+            <CarIcon className="h-16 w-16 text-gray-400 transition-transform duration-700 group-hover:scale-110" />
           </div>
         )}
+        
+        {/* Overlay gradient for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Price bottom-left */}
         <div className="absolute bottom-3 left-3 bg-red-600/95 text-white px-4 py-1.5 rounded-lg text-lg md:text-xl font-semibold shadow-lg">
@@ -166,9 +177,17 @@ const CarCard = ({ car }) => {
         {/* CTA */}
         <Button
           className="w-full bg-red-600 hover:bg-red-700 hover:scale-[1.02] transition-transform duration-300 text-white font-medium py-3 rounded-lg text-base md:text-lg"
-          onClick={() => router.push(`/cars/${car.id}`)}
+          onClick={handleViewDetails}
+          disabled={isNavigating}
         >
-          View Details
+          {isNavigating ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading...</span>
+            </div>
+          ) : (
+            "View Details"
+          )}
         </Button>
       </CardContent>
     </Card>

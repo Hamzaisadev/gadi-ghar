@@ -33,6 +33,12 @@ const dealershipFormSchema = z.object({
   }, "Valid years in business required"),
   description: z.string().min(20, "Description must be at least 20 characters"),
   logo: z.any().optional(),
+  // Optional social media and web presence fields
+  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
+  facebook: z.string().url("Invalid Facebook URL").optional().or(z.literal("")),
+  twitter: z.string().url("Invalid Twitter URL").optional().or(z.literal("")),
+  instagram: z.string().url("Invalid Instagram URL").optional().or(z.literal("")),
+  whatsapp: z.string().optional(),
   workingHours: z.object({
     monday: z.object({
       isOpen: z.boolean(),
@@ -130,7 +136,7 @@ export default function DealershipSignupPage() {
     const interval = setInterval(async () => {
       try {
         const result = await checkUserApplicationStatus();
-        if (result.success && result.data && result.data.status !== 'NO_APPLICATION') {
+        if (result && result.success && result.data && result.data.status !== 'NO_APPLICATION') {
           // Check if status has changed
           if (applicationStatus && applicationStatus.status !== result.data.status) {
             // Show notification for status change
@@ -169,7 +175,7 @@ export default function DealershipSignupPage() {
   const checkApplicationStatus = async () => {
     try {
       const result = await checkUserApplicationStatus();
-      if (result.success) {
+      if (result && result.success) {
         // Only set application status if there's an actual application
         if (result.data.status !== 'NO_APPLICATION') {
           setApplicationStatus(result.data);
@@ -619,6 +625,83 @@ export default function DealershipSignupPage() {
                         </Button>
                       </>
                     )}
+                  </div>
+                </div>
+
+                {/* Social Media & Web Presence (Optional) */}
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Online Presence (Optional)</Label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Adding your website and social media links will help customers find and connect with your dealership.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website URL</Label>
+                      <Input
+                        id="website"
+                        {...register("website")}
+                        placeholder="https://yourdealership.com"
+                        className={errors.website ? "border-red-500" : ""}
+                      />
+                      {errors.website && (
+                        <p className="text-sm text-red-500">{errors.website.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsapp">WhatsApp Number</Label>
+                      <Input
+                        id="whatsapp"
+                        {...register("whatsapp")}
+                        placeholder="+92 300 1234567"
+                        className={errors.whatsapp ? "border-red-500" : ""}
+                      />
+                      {errors.whatsapp && (
+                        <p className="text-sm text-red-500">{errors.whatsapp.message}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="facebook">Facebook Page</Label>
+                      <Input
+                        id="facebook"
+                        {...register("facebook")}
+                        placeholder="https://facebook.com/yourdealership"
+                        className={errors.facebook ? "border-red-500" : ""}
+                      />
+                      {errors.facebook && (
+                        <p className="text-sm text-red-500">{errors.facebook.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter">Twitter Profile</Label>
+                      <Input
+                        id="twitter"
+                        {...register("twitter")}
+                        placeholder="https://twitter.com/yourdealership"
+                        className={errors.twitter ? "border-red-500" : ""}
+                      />
+                      {errors.twitter && (
+                        <p className="text-sm text-red-500">{errors.twitter.message}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram">Instagram Profile</Label>
+                      <Input
+                        id="instagram"
+                        {...register("instagram")}
+                        placeholder="https://instagram.com/yourdealership"
+                        className={errors.instagram ? "border-red-500" : ""}
+                      />
+                      {errors.instagram && (
+                        <p className="text-sm text-red-500">{errors.instagram.message}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 

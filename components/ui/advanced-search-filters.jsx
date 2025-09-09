@@ -7,7 +7,8 @@ import {
   X, 
   ChevronDown, 
   RotateCcw,
-  SlidersHorizontal
+  SlidersHorizontal,
+  AlertTriangle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,6 +42,7 @@ import {
   TRANSMISSIONS
 } from '@/lib/advanced-search'
 import { formatPriceToLakhsCrores } from '@/components/utils/FormatPriceRange'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 /**
  * Advanced Search Filters Component
@@ -60,7 +62,8 @@ export default function AdvancedSearchFilters({
   isLoading = false,
   resultCount = 0,
   className = '',
-  filterData = {}
+  filterData = {},
+  error = null
 }) {
   // DEBUG: Log filterData to console
   console.log('🔍 AdvancedSearchFilters filterData:', {
@@ -139,36 +142,76 @@ export default function AdvancedSearchFilters({
     }
   }, [filterData])
 
-  // Handle filter changes
+  // Handle filter changes with error handling
   const handleFilterChange = (key, value) => {
-    // Convert 'all' to empty string for filtering
-    const filterValue = value === 'all' ? '' : value
-    const newFilters = { ...filters, [key]: filterValue }
+    try {
+      // Convert 'all' to empty string for filtering
+      const filterValue = value === 'all' ? '' : value
+      
+      // Validate numeric values
+      let processedValue = filterValue;
+      if (['minPrice', 'maxPrice', 'minYear', 'maxYear', 'minMileage', 'maxMileage', 'seats'].includes(key)) {
+        // If value is empty string, convert to null for seats or default value for ranges
+        if (filterValue === '') {
+          if (key === 'seats') {
+            processedValue = null;
+          } else if (key.startsWith('min')) {
+            // For min values, use the minimum from filterData or a reasonable default
+            const defaultMap = {
+              minPrice: filterData?.priceRange?.min || 0,
+              minYear: filterData?.yearRange?.min || 1990,
+              minMileage: filterData?.mileageRange?.min || 0
+            };
+            processedValue = defaultMap[key];
+          } else if (key.startsWith('max')) {
+            // For max values, use the maximum from filterData or a reasonable default
+            const defaultMap = {
+              maxPrice: filterData?.priceRange?.max || 10000000,
+              maxYear: filterData?.yearRange?.max || new Date().getFullYear(),
+              maxMileage: filterData?.mileageRange?.max || 500000
+            };
+            processedValue = defaultMap[key];
+          }
+        } else if (typeof filterValue === 'string' && key !== 'seats') {
+          // Convert string to number if it's a valid number
+          const parsed = Number(filterValue);
+          if (!isNaN(parsed)) {
+            processedValue = parsed;
+          }
+        }
+      }
+      
+      const newFilters = { ...filters, [key]: processedValue }
+      setFilters(newFilters)
+      onFiltersChange?.(newFilters)
+    } catch (error) {
+      console.error(`Error updating ${key} filter:`, error)
+      // Don't update the filter if there's an error
+    }
+  }
+
+  // Handle price range slider changes
+  const handlePriceRangeChange = (values) => {
+    setPriceRange(values)
+    const newFilters = { 
+      ...filters, 
+      minPrice: values[0],
+      maxPrice: values[1]
+    }
     setFilters(newFilters)
     onFiltersChange?.(newFilters)
   }
 
-  // Handle range slider changes
-  const handlePriceRangeChange = (values) => {
-    setPriceRange(values)
-    handleFilterChange('minPrice', values[0])
-    handleFilterChange('maxPrice', values[1])
-  }
-
-  const handleYearRangeChange = (values) => {
-    setYearRange(values)
-    handleFilterChange('minYear', values[0])
-    handleFilterChange('maxYear', values[1])
-  }
-
-  const handleMileageRangeChange = (values) => {
-    setMileageRange(values)
-    handleFilterChange('minMileage', values[0])
-    handleFilterChange('maxMileage', values[1])
-  }
-
   // Clear all filters
   const clearAllFilters = () => {
+    // Get the latest dynamic ranges from filterData
+    const currentPriceMin = filterData?.priceRange?.min || 0
+    const currentPriceMax = filterData?.priceRange?.max || 10000000
+    const currentYearMin = filterData?.yearRange?.min || 1990
+    const currentYearMax = filterData?.yearRange?.max || new Date().getFullYear()
+    const currentMileageMin = filterData?.mileageRange?.min || 0
+    const currentMileageMax = filterData?.mileageRange?.max || 500000
+    
     const defaultFilters = {
       query: '',
       make: '',
@@ -177,20 +220,18 @@ export default function AdvancedSearchFilters({
       transmission: '',
       color: '',
       dealershipId: '',
-      minPrice: priceMin,
-      maxPrice: priceMax,
-      minYear: yearMin,
-      maxYear: yearMax,
-      minMileage: mileageMin,
-      maxMileage: mileageMax,
+      minPrice: currentPriceMin,
+      maxPrice: currentPriceMax,
+      minYear: currentYearMin,
+      maxYear: currentYearMax,
+      minMileage: currentMileageMin,
+      maxMileage: currentMileageMax,
       seats: null,
       sortBy: 'NEWEST',
       featured: null
     }
     setFilters(defaultFilters)
-    setPriceRange([priceMin, priceMax])
-    setYearRange([yearMin, yearMax])
-    setMileageRange([mileageMin, mileageMax])
+    setPriceRange([currentPriceMin, currentPriceMax])
     onFiltersChange?.(defaultFilters)
   }
 
@@ -222,6 +263,14 @@ export default function AdvancedSearchFilters({
 
   return (
     <div className={`bg-white border rounded-lg shadow-sm ${className}`}>
+      {/* Error message */}
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       {/* Main Search Bar */}
       <div className="p-4 border-b">
         <div className="flex gap-2">
@@ -292,7 +341,7 @@ export default function AdvancedSearchFilters({
       {/* Advanced Filters Panel */}
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
         <CollapsibleContent className="border-t">
-          <div className="p-4 space-y-6">
+          <div className="p-4 space-y-4">
             {/* Quick Filter Buttons */}
             <div className="flex flex-wrap gap-2">
               <Button 
@@ -306,7 +355,8 @@ export default function AdvancedSearchFilters({
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Main Filter Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Make Filter */}
               <div>
                 <Label className="text-sm font-medium mb-2 block">Make</Label>
@@ -424,11 +474,11 @@ export default function AdvancedSearchFilters({
               </div>
             </div>
 
-            {/* Range Sliders */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Price Range */}
+            {/* Range Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Price Range Slider */}
               <div>
-                <Label className="text-sm font-medium mb-3 block">
+                <Label className="text-sm font-medium mb-2 block">
                   Price Range: {formatCurrency(priceRange[0])} - {formatCurrency(priceRange[1])}
                 </Label>
                 <Slider
@@ -437,50 +487,77 @@ export default function AdvancedSearchFilters({
                   min={priceMin}
                   max={priceMax}
                   step={Math.max(50000, Math.floor((priceMax - priceMin) / 100))}
-                  className="mt-2"
                 />
               </div>
 
-              {/* Year Range */}
+              {/* Year Range Inputs */}
               <div>
-                <Label className="text-sm font-medium mb-3 block">
-                  Year: {yearRange[0]} - {yearRange[1]}
+                <Label className="text-sm font-medium mb-2 block">
+                  Year Range
                 </Label>
-                <Slider
-                  value={yearRange}
-                  onValueChange={handleYearRangeChange}
-                  min={yearMin}
-                  max={yearMax}
-                  step={1}
-                  className="mt-2"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minYear || ''}
+                    onChange={(e) => handleFilterChange('minYear', e.target.value)}
+                    min={filterData?.yearRange?.min || 1990}
+                    max={filterData?.yearRange?.max || new Date().getFullYear()}
+                    className="text-sm"
+                  />
+                  <span className="text-xs text-gray-500">to</span>
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxYear || ''}
+                    onChange={(e) => handleFilterChange('maxYear', e.target.value)}
+                    min={filterData?.yearRange?.min || 1990}
+                    max={filterData?.yearRange?.max || new Date().getFullYear()}
+                    className="text-sm"
+                  />
+                </div>
               </div>
 
-              {/* Mileage Range */}
+              {/* Mileage Range Inputs */}
               <div>
-                <Label className="text-sm font-medium mb-3 block">
-                  Mileage: {mileageRange[0].toLocaleString()} - {mileageRange[1].toLocaleString()} KM
+                <Label className="text-sm font-medium mb-2 block">
+                  Mileage (km)
                 </Label>
-                <Slider
-                  value={mileageRange}
-                  onValueChange={handleMileageRangeChange}
-                  min={mileageMin}
-                  max={mileageMax}
-                  step={Math.max(5000, Math.floor((mileageMax - mileageMin) / 100))}
-                  className="mt-2"
-                />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={filters.minMileage || ''}
+                    onChange={(e) => handleFilterChange('minMileage', e.target.value)}
+                    min={filterData?.mileageRange?.min || 0}
+                    max={filterData?.mileageRange?.max || 500000}
+                    step={1000}
+                    className="text-sm"
+                  />
+                  <span className="text-xs text-gray-500">to</span>
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={filters.maxMileage || ''}
+                    onChange={(e) => handleFilterChange('maxMileage', e.target.value)}
+                    min={filterData?.mileageRange?.min || 0}
+                    max={filterData?.mileageRange?.max || 500000}
+                    step={1000}
+                    className="text-sm"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Additional Filters Row */}
-            <div className="flex flex-wrap items-center gap-4">
+            {/* Additional Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <Label className="text-sm font-medium mb-2 block">Color</Label>
                 <Input
                   placeholder="Any color"
                   value={filters.color}
                   onChange={(e) => handleFilterChange('color', e.target.value)}
-                  className="w-32"
+                  className="w-full"
                 />
               </div>
 
@@ -490,7 +567,7 @@ export default function AdvancedSearchFilters({
                   value={filters.seats?.toString() || 'all'} 
                   onValueChange={(value) => handleFilterChange('seats', value === 'all' ? null : parseInt(value))}
                 >
-                  <SelectTrigger className="w-24">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
                   <SelectContent>
@@ -518,7 +595,7 @@ export default function AdvancedSearchFilters({
                   value={filters.dealershipId || 'all'}
                   onValueChange={(value) => handleFilterChange('dealershipId', value)}
                 >
-                  <SelectTrigger className="w-56">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Any Dealership" />
                   </SelectTrigger>
                   <SelectContent>
