@@ -54,15 +54,14 @@ export default function GlobalError({ error, reset }) {
                 Try Again
               </Button>
               
-              <a href="/" className="w-full">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  <Home className="h-4 w-4 mr-2" />
-                  Go to Homepage
-                </Button>
-              </a>
+              <Button 
+                onClick={handleGoHome}
+                variant="outline" 
+                className="w-full"
+              >
+                <Home className="h-4 w-4 mr-2" />
+                Go to Homepage
+              </Button>
             </div>
 
             {process.env.NODE_ENV === 'development' && (
