@@ -25,7 +25,8 @@ import {
   CheckSquare,
   XSquare,
   Car,
-  Calendar
+  Calendar,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageSpinner } from "@/components/ui/loading-spinner";
@@ -267,10 +268,10 @@ export default function DealershipManagement() {
                       <SelectItem value="REQUIRES_CHANGES">Requires Changes</SelectItem>
                     </SelectContent>
                   </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Applications List */}
           <div className="space-y-4">
@@ -301,7 +302,7 @@ export default function DealershipManagement() {
                             <p className="text-sm text-gray-600">
                               License: {application.businessLicense}
                             </p>
-                            </div>
+                          </div>
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                             {getStatusBadge(application.status)}
                             <Button
@@ -314,15 +315,15 @@ export default function DealershipManagement() {
                               Review
                             </Button>
                           </div>
-          </div>
+                        </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
-                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2">
                             <User className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">Owner:</span>
                             <span className="font-medium">{application.ownerName}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                          </div>
+                          <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">Experience:</span>
                             <span className="font-medium">{application.yearsInBusiness} years</span>
@@ -333,12 +334,12 @@ export default function DealershipManagement() {
                           <div className="flex items-center gap-2">
                             <Phone className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">{application.businessPhone}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                          </div>
+                          <div className="flex items-center gap-2">
                             <Mail className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">{application.businessEmail}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                          </div>
+                          <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">{application.businessAddress}</span>
                           </div>
@@ -388,53 +389,62 @@ export default function DealershipManagement() {
                   </p>
                 </CardContent>
               </Card>
-            ) : (
-              filteredApprovedDealerships.map((dealership) => (
-                <Card key={dealership.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4 sm:p-6">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      <div className="flex-1 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            {dealership.logo && (
-                              <img 
-                                src={dealership.logo} 
-                                alt="Dealership Logo" 
-                                className="w-12 h-12 rounded-lg object-cover"
-                              />
-                            )}
-                            <div>
-                              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-                                {dealership.name}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                License: {dealership.application?.businessLicense || 'N/A'}
-                              </p>
-                    </div>
-                  </div>
+              ) : (
+                filteredApprovedDealerships.map((dealership) => (
+                  <Card key={dealership.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div className="flex-1 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              {dealership.logo && (
+                                <img 
+                                  src={dealership.logo} 
+                                  alt="Dealership Logo" 
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              )}
+                              <div>
+                                <h3 className="text-base sm:text-lg font-semibold text-gray-900">
+                                  {dealership.name}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  License: {dealership.application?.businessLicense || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
                           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                             <Badge variant="default" className="bg-green-100 text-green-800">
                               Active
                             </Badge>
-                    <Button
-                      variant="outline"
-                      size="sm"
+                            <Button
+                              variant="outline"
+                              size="sm"
                               onClick={() => handleReview(dealership)}
                               className="w-full sm:w-auto"
-                    >
+                            >
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
-                    </Button>
-                    <Button
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => window.open(`/admin/dealership/${dealership.id}/portal`, '_blank')}
+                              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              View Portal
+                            </Button>
+                            <Button
                               variant="destructive"
-                      size="sm"
+                              size="sm"
                               onClick={() => handleDeactivateDealership(dealership.id)}
                               className="w-full sm:w-auto"
-                    >
+                            >
                               <XSquare className="w-4 h-4 mr-2" />
                               Deactivate
-                    </Button>
-                  </div>
+                            </Button>
+                          </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-sm">
@@ -474,8 +484,8 @@ export default function DealershipManagement() {
                           <div className="flex items-center gap-2">
                             <MapPin className="w-4 h-4 text-gray-400" />
                             <span className="text-gray-600">{dealership.address}</span>
-          </div>
-        </div>
+                          </div>
+                        </div>
 
                         <div className="flex items-center gap-4 text-xs text-gray-500">
                           <span>Created: {new Date(dealership.createdAt).toLocaleDateString()}</span>
@@ -488,11 +498,11 @@ export default function DealershipManagement() {
                         </p>
                       </div>
                     </div>
-          </CardContent>
-        </Card>
-              ))
-      )}
-          </div>
+                  </CardContent>
+                </Card>
+                ))
+              )}
+            </div>
         </TabsContent>
       </Tabs>
 

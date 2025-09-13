@@ -33,15 +33,35 @@ import { useRouter } from "next/navigation";
 import { getDealershipCarsById, getDealershipStats } from "@/app/actions/dealership";
 import useFetch from "@/hooks/use-fetch";
 import { formatPriceRange } from "@/components/utils/FormatCurrency";
+import { formatWorkingHours, formatDayName } from "@/lib/timeUtils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CarCard from "@/components/car-card";
+import { CarCardSkeletonGrid } from "@/components/ui/car-card-skeleton";
+import Breadcrumb from "@/components/ui/breadcrumb";
 
 const DealershipProfile = ({ dealership }) => {
   const router = useRouter();
   const [cars, setCars] = useState([]);
   const [stats, setStats] = useState({});
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    hasNext: false,
+    hasPrevious: false
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({});
-  const [viewMode, setViewMode] = useState('grid');
+  const [showFilters, setShowFilters] = useState(false);
+  const [availableFilters, setAvailableFilters] = useState({
+    makes: [],
+    models: [],
+    years: [],
+    fuelTypes: [],
+    transmissions: [],
+    bodyTypes: [],
+    colors: []
+  });
 
   // Fetch dealership cars
   const {
@@ -59,16 +79,55 @@ const DealershipProfile = ({ dealership }) => {
     data: statsData,
   } = useFetch(() => getDealershipStats(dealership.id));
 
+  // Function to load available filters
+  const loadAvailableFilters = async () => {
+    if (!dealership?.id) return;
+    
+    try {
+      // Get all cars from this dealership to build filter options
+      const response = await getDealershipCarsById(dealership.id, 1, 1000, {});
+      if (response.success && response.data.cars) {
+        const allCars = response.data.cars;
+        
+        const makes = [...new Set(allCars.map(car => car.make))].sort();
+        const years = [...new Set(allCars.map(car => car.year))].sort((a, b) => b - a);
+        const fuelTypes = [...new Set(allCars.map(car => car.fuelType))].sort();
+        const transmissions = [...new Set(allCars.map(car => car.transmission))].sort();
+        const bodyTypes = [...new Set(allCars.map(car => car.bodyType))].sort();
+        const colors = [...new Set(allCars.map(car => car.color))].sort();
+        
+        setAvailableFilters({
+          makes,
+          years,
+          fuelTypes,
+          transmissions,
+          bodyTypes,
+          colors
+        });
+      }
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+    }
+  };
+
   useEffect(() => {
     if (dealership?.id) {
       fetchCars(currentPage, filters);
       fetchStats();
+      loadAvailableFilters();
     }
   }, [currentPage, filters, dealership?.id]);
 
   useEffect(() => {
     if (carsData?.success) {
-      setCars(carsData.data.cars);
+      setCars(carsData.data.cars || []);
+      setPagination(carsData.data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalCount: 0,
+        hasNext: false,
+        hasPrevious: false
+      });
     }
   }, [carsData]);
 
@@ -99,17 +158,13 @@ const DealershipProfile = ({ dealership }) => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-        <Link href="/" className="hover:text-red-600 transition-colors">
-          Home
-        </Link>
-        <ChevronLeft className="h-4 w-4 rotate-180" />
-        <Link href="/dealerships" className="hover:text-red-600 transition-colors">
-          Dealerships
-        </Link>
-        <ChevronLeft className="h-4 w-4 rotate-180" />
-        <span className="text-gray-900 font-medium">{dealership.name}</span>
-      </nav>
+      <Breadcrumb 
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Dealerships", href: "/dealerships" },
+          { label: dealership.name }
+        ]}
+      />
 
       {/* Header Section */}
       <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
@@ -322,127 +377,221 @@ const DealershipProfile = ({ dealership }) => {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="inventory" className="space-y-6">
-              {/* View Controls */}
+              {/* Filter Controls */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className={viewMode === 'grid' ? 'bg-red-600 hover:bg-red-700' : ''}
-                  >
-                    <Grid className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className={viewMode === 'list' ? 'bg-red-600 hover:bg-red-700' : ''}
-                  >
-                    <List className="w-4 h-4" />
-                  </Button>
+                <div className="text-sm text-gray-600">
+                  Showing {cars.length} of {pagination.totalCount || 0} vehicles
+                  {pagination.totalPages > 1 && (
+                    <span className="ml-2">
+                      (Page {pagination.currentPage} of {pagination.totalPages})
+                    </span>
+                  )}
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
                   <Filter className="w-4 h-4 mr-2" />
-                  Filters
+                  {showFilters ? 'Hide Filters' : 'Show Filters'}
                 </Button>
               </div>
 
+              {/* Filter Panel */}
+              {showFilters && (
+                <Card className="p-4 bg-gray-50">
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {/* Make Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Make</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.make || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, make: e.target.value || undefined }))}
+                      >
+                        <option value="">All Makes</option>
+                        {availableFilters.makes.map(make => (
+                          <option key={make} value={make}>{make}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Year Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.year || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, year: e.target.value || undefined }))}
+                      >
+                        <option value="">All Years</option>
+                        {availableFilters.years.map(year => (
+                          <option key={year} value={year}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Fuel Type Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.fuelType || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, fuelType: e.target.value || undefined }))}
+                      >
+                        <option value="">All Fuel Types</option>
+                        {availableFilters.fuelTypes.map(fuel => (
+                          <option key={fuel} value={fuel}>{fuel}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Transmission Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.transmission || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, transmission: e.target.value || undefined }))}
+                      >
+                        <option value="">All Transmissions</option>
+                        {availableFilters.transmissions.map(trans => (
+                          <option key={trans} value={trans}>{trans}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Body Type Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Body Type</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.bodyType || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, bodyType: e.target.value || undefined }))}
+                      >
+                        <option value="">All Body Types</option>
+                        {availableFilters.bodyTypes.map(body => (
+                          <option key={body} value={body}>{body}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Color Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                      <select 
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        value={filters.color || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, color: e.target.value || undefined }))}
+                      >
+                        <option value="">All Colors</option>
+                        {availableFilters.colors.map(color => (
+                          <option key={color} value={color}>{color}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Price Range Filter */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Min Price</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        placeholder="Min Price"
+                        value={filters.minPrice || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value || undefined }))}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Max Price</label>
+                      <input
+                        type="number"
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        placeholder="Max Price"
+                        value={filters.maxPrice || ''}
+                        onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value || undefined }))}
+                      />
+                    </div>
+
+                    {/* Clear Filters Button */}
+                    <div className="flex items-end">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setFilters({})}
+                        className="w-full"
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
               {/* Cars Grid/List */}
               {loadingCars ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
-                      <div className="h-48 bg-gray-200 rounded-t-lg"></div>
-                      <CardContent className="p-4">
-                        <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <CarCardSkeletonGrid count={6} />
               ) : cars.length > 0 ? (
-                <div className={viewMode === 'grid' 
-                  ? "grid grid-cols-1 md:grid-cols-2 gap-6" 
-                  : "space-y-4"
-                }>
-                  {cars.map((car) => (
-                    <Card 
-                      key={car.id} 
-                      className="group hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-red-500"
-                      onClick={() => router.push(`/cars/${car.id}`)}
-                    >
-                      {viewMode === 'grid' ? (
-                        <>
-                          <div className="aspect-video overflow-hidden rounded-t-lg relative">
-                            {car.images && car.images.length > 0 ? (
-                              <OptimizedImage
-                                src={car.images[0]}
-                                alt={`${car.make} ${car.model}`}
-                                priority={false}
-                                quality={85}
-                                aspectRatio="aspect-video"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                <Car className="h-12 w-12 text-gray-400" />
-                              </div>
-                            )}
-                            {car.featured && (
-                              <Badge className="absolute top-2 left-2 bg-red-600">
-                                <Star className="w-3 h-3 mr-1" />
-                                Featured
-                              </Badge>
-                            )}
-                          </div>
-                          <CardContent className="p-4">
-                            <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                              {car.year} {car.make} {car.model}
-                            </h3>
-                            <div className="text-xl font-bold text-red-600 mb-2">
-                              {formatPriceRange(car.minPrice, car.maxPrice)}
-                            </div>
-                            <div className="flex items-center justify-between text-sm text-gray-600">
-                              <span>{car.mileage?.toLocaleString() || 0} miles</span>
-                              <span>{car.fuelType}</span>
-                              <span>{car.transmission}</span>
-                            </div>
-                          </CardContent>
-                        </>
-                      ) : (
-                        <div className="flex items-center p-4 gap-4">
-                          <div className="w-24 h-16 flex-shrink-0 rounded-lg overflow-hidden">
-                            {car.images && car.images.length > 0 ? (
-                              <OptimizedImage
-                                src={car.images[0]}
-                                alt={`${car.make} ${car.model}`}
-                                priority={false}
-                                quality={80}
-                                aspectRatio="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                                <Car className="h-6 w-6 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg text-gray-900">
-                              {car.year} {car.make} {car.model}
-                            </h3>
-                            <div className="text-lg font-bold text-red-600">
-                              {formatPriceRange(car.minPrice, car.maxPrice)}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {car.mileage?.toLocaleString() || 0} miles • {car.fuelType} • {car.transmission}
-                            </div>
-                          </div>
-                          <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-600 transition-colors" />
-                        </div>
-                      )}
-                    </Card>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {cars.map((car) => (
+                      <CarCard key={car.id} car={car} />
+                    ))}
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-center mt-8 space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={!pagination.hasPrevious || loadingCars}
+                      >
+                        Previous
+                      </Button>
+                      
+                      <div className="flex items-center space-x-1">
+                        {/* Show page numbers */}
+                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (pagination.totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (pagination.currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (pagination.currentPage >= pagination.totalPages - 2) {
+                            pageNum = pagination.totalPages - 4 + i;
+                          } else {
+                            pageNum = pagination.currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={pageNum === pagination.currentPage ? 'default' : 'outline'}
+                              size="sm"
+                              className={pageNum === pagination.currentPage ? 'bg-red-600 hover:bg-red-700' : ''}
+                              onClick={() => setCurrentPage(pageNum)}
+                              disabled={loadingCars}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(pagination.totalPages, prev + 1))}
+                        disabled={!pagination.hasNext || loadingCars}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <Card className="p-12 text-center">
                   <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -475,10 +624,10 @@ const DealershipProfile = ({ dealership }) => {
                     .map((day) => (
                       <div key={day.dayOfWeek} className="flex justify-between items-center">
                         <span className="text-sm font-medium text-gray-900">
-                          {day.dayOfWeek.charAt(0) + day.dayOfWeek.slice(1).toLowerCase()}
+                          {formatDayName(day.dayOfWeek)}
                         </span>
                         <span className="text-sm text-gray-600">
-                          {day.isOpen ? `${day.openTime} - ${day.closeTime}` : 'Closed'}
+                          {formatWorkingHours(day)}
                         </span>
                       </div>
                     ))

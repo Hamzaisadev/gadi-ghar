@@ -352,8 +352,8 @@ export default function PrivacyPolicyPage() {
                   <Phone className="w-5 h-5 text-red-600 flex-shrink-0" />
                   <div>
                     <p className="font-medium">Phone</p>
-                    <a href="tel:+92-XXX-XXXXXXX" className="text-red-600 hover:underline">
-                      +92-XXX-XXXXXXX
+                    <a href="tel:+923343149433" className="text-red-600 hover:underline">
+                      +92-334-3149433
                     </a>
                   </div>
                 </div>
@@ -363,8 +363,8 @@ export default function PrivacyPolicyPage() {
                     <p className="font-medium">Address</p>
                     <p className="text-gray-600 text-sm">
                       Gadi Ghar<br />
-                      [Your Address]<br />
-                      Pakistan
+                      Clifton Block 8, Karachi<br />
+                      Sindh 75600, Pakistan
                     </p>
                   </div>
                 </div>

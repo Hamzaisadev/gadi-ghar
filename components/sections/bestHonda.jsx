@@ -31,7 +31,7 @@ const BestHonda = async () => {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-10 gap-6">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
-            Honda Collection
+            Popular Honda Models in Pakistan
           </h2>
 
           <Button

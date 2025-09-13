@@ -9,7 +9,7 @@ import { faqItems } from "@/lib/data";
 import React, { useState } from "react";
 
 import { toast } from "sonner";
-import ContactSec from "@/components/sections/ContactSec";
+import ContactSec from "@/components/sections/ContactSec"; // or use ContactSecEnhanced for better error handling
 import { Label } from "@/components/ui/label";
 import {
   Select,

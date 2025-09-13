@@ -30,32 +30,32 @@ const AnimatedNumber = ({ value, duration = 2, inView }) => {
 const AboutPage = () => {
   const team = [
     {
-      name: "Hamza Ali",
+      name: "Hamza Ishaq",
       role: "Founder & CEO",
       image:
         "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
-      bio: "Car enthusiast turned entrepreneur, with a mission to redefine the car buying experience in Karachi.",
+      bio: "Passionate automotive entrepreneur with 15+ years in Pakistan's car industry. Leading the digital transformation of car buying across major Pakistani cities.",
     },
     {
-      name: "Ahmed Khan",
-      role: "Sales Manager",
+      name: "Ahmed Hassan Khan",
+      role: "Sales Director",
       image:
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face",
-      bio: "Specialist in helping clients find their dream ride with honesty, care, and deep market knowledge.",
+      bio: "Expert in Pakistani automotive market with deep knowledge of local preferences, financing options, and customer needs across all price segments.",
     },
     {
-      name: "Sara Yousuf",
-      role: "Customer Relations",
+      name: "Fatima Yousuf",
+      role: "Customer Success Manager",
       image:
         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face",
-      bio: "Focused on building long-term relationships and delivering smooth experiences to every visitor.",
+      bio: "Dedicated to ensuring exceptional customer experiences throughout the car buying journey. Fluent in Urdu, English, and Punjabi to serve diverse Pakistani customers.",
     },
     {
-      name: "Bilal Mirza",
-      role: "Technical Lead",
+      name: "Muhammad Bilal Mirza",
+      role: "Operations Manager",
       image:
         "https://images.unsplash.com/photo-1494790108755-2616b812c8d5?w=300&h=300&fit=crop&crop=face",
-      bio: "From inspections to detailing ensures every vehicle meets our quality promise before display.",
+      bio: "Oversees vehicle verification, documentation, and quality assurance. Ensures every car meets our stringent standards before listing on the platform.",
     },
   ];
 
@@ -98,9 +98,7 @@ const AboutPage = () => {
               About <span className="text-red-600">Our Showroom</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              Based in the heart of Saddar, Karachi we’ve built a place where
-              car lovers can explore, buy, and connect over the finest rides in
-              town.
+              Pakistan's premier online automotive marketplace, connecting car buyers and sellers across Karachi, Lahore, Islamabad, and beyond. Your trusted partner for finding the perfect vehicle.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               <div className="text-center" ref={ref}>
@@ -136,29 +134,26 @@ const AboutPage = () => {
               <div className="space-y-6">
                 <div className="border-l-4 border-red-600 pl-6">
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    2012 - Humble Beginnings
+                    2018 - Foundation
                   </h3>
                   <p className="text-muted-foreground">
-                    Started from a small lot in Saddar with just a few cars, a
-                    vision, and a lot of drive.
+                    Founded with a vision to digitize Pakistan's automotive market, starting with partnerships in Karachi's automotive hub.
                   </p>
                 </div>
                 <div className="border-l-4 border-red-600 pl-6">
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    2016 - Rapid Growth
+                    2020 - Nationwide Expansion
                   </h3>
                   <p className="text-muted-foreground">
-                    Expanded our showroom, added finance & leasing options, and
-                    began offering certified used cars.
+                    Expanded operations to Lahore, Islamabad, and Faisalabad. Introduced AI-powered car search and comprehensive financing solutions.
                   </p>
                 </div>
                 <div className="border-l-4 border-red-600 pl-6">
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    2020 - Going Digital
+                    2022 - Digital Innovation
                   </h3>
                   <p className="text-muted-foreground">
-                    Launched our online car booking platform, providing a
-                    seamless experience from home.
+                    Launched Pakistan's first image-based car search using AI, partnered with major banks for instant financing approvals.
                   </p>
                 </div>
                 <div className="border-l-4 border-red-600 pl-6">
@@ -166,8 +161,7 @@ const AboutPage = () => {
                     Today
                   </h3>
                   <p className="text-muted-foreground">
-                    One of Saddar’s most trusted names in cars — from hatchbacks
-                    to hybrids, we’ve got you covered.
+                    Pakistan's leading automotive marketplace with 500+ verified dealers, serving customers nationwide from Alto to luxury cars.
                   </p>
                 </div>
               </div>

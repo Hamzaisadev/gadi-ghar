@@ -99,7 +99,10 @@ export async function getDealershipApplications() {
     const { userId } = await auth();
     
     if (!userId) {
-      throw new Error("Unauthorized");
+      return {
+        success: false,
+        error: "Unauthorized"
+      };
     }
 
     // Check if user is admin
@@ -108,7 +111,10 @@ export async function getDealershipApplications() {
     });
 
     if (!user || user.role !== 'ADMIN') {
-      throw new Error("Unauthorized: Admin access required");
+      return {
+        success: false,
+        error: "Unauthorized: Admin access required"
+      };
     }
 
     const applications = await db.dealershipApplication.findMany({
@@ -118,6 +124,12 @@ export async function getDealershipApplications() {
             id: true,
             name: true,
             email: true,
+          },
+        },
+        reviewedByUser: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
@@ -132,7 +144,10 @@ export async function getDealershipApplications() {
     };
   } catch (error) {
     console.error('Error fetching dealership applications:', error);
-    throw error;
+    return {
+      success: false,
+      error: error.message || "Failed to fetch applications"
+    };
   }
 }
 
@@ -142,7 +157,10 @@ export async function getApprovedDealerships() {
     const { userId } = await auth();
     
     if (!userId) {
-      throw new Error("Unauthorized");
+      return {
+        success: false,
+        error: "Unauthorized"
+      };
     }
 
     // Check if user is admin
@@ -151,7 +169,10 @@ export async function getApprovedDealerships() {
     });
 
     if (!user || user.role !== 'ADMIN') {
-      throw new Error("Unauthorized: Admin access required");
+      return {
+        success: false,
+        error: "Unauthorized: Admin access required"
+      };
     }
 
     const dealerships = await db.dealershipInfo.findMany({
@@ -210,7 +231,10 @@ export async function getApprovedDealerships() {
     };
   } catch (error) {
     console.error('Error fetching approved dealerships:', error);
-    throw error;
+    return {
+      success: false,
+      error: error.message || "Failed to fetch approved dealerships"
+    };
   }
 }
 
@@ -635,17 +659,17 @@ export async function checkDealershipAuthorization() {
       return fixResult;
     }
     
-    console.log('Auth: Final dealership:', dealership ? {
-      id: dealership.id,
-      name: dealership.name,
-      isApproved: dealership.isApproved
+    console.log('Auth: Final dealership:', user.dealership ? {
+      id: user.dealership.id,
+      name: user.dealership.name,
+      isApproved: user.dealership.isApproved
     } : 'null');
 
     return {
       success: true,
       data: {
         role: user.role,
-        dealership: dealership,
+        dealership: user.dealership,
       },
     };
   } catch (error) {
@@ -759,21 +783,26 @@ export async function updateDealershipInfo(dealershipData) {
       };
     }
 
-    // Update dealership information
+    const updateData = {
+      name: dealershipData.name,
+      address: dealershipData.address,
+      phone: dealershipData.phone,
+      email: dealershipData.email,
+      website: dealershipData.website,
+      whatsapp: dealershipData.whatsapp,
+      facebook: dealershipData.facebook,
+      twitter: dealershipData.twitter,
+      instagram: dealershipData.instagram,
+      description: dealershipData.description,
+    };
+
+    if (dealershipData.logo) {
+      updateData.logo = dealershipData.logo;
+    }
+
     const updatedDealership = await db.dealershipInfo.update({
       where: { id: user.dealership.id },
-      data: {
-        name: dealershipData.name,
-        address: dealershipData.address,
-        phone: dealershipData.phone,
-        email: dealershipData.email,
-        website: dealershipData.website,
-        whatsapp: dealershipData.whatsapp,
-        facebook: dealershipData.facebook,
-        twitter: dealershipData.twitter,
-        instagram: dealershipData.instagram,
-        description: dealershipData.description,
-      },
+      data: updateData,
     });
 
     return {
@@ -1079,7 +1108,17 @@ export async function getDealershipById(dealershipId) {
       return { success: false, error: "Dealership not found" };
     }
 
-    return { success: true, data: dealership };
+    // Convert Decimal objects to numbers for client components
+    const serializedDealership = {
+      ...dealership,
+      cars: dealership.cars.map(car => ({
+        ...car,
+        minPrice: Number(car.minPrice),
+        maxPrice: Number(car.maxPrice)
+      }))
+    };
+
+    return { success: true, data: serializedDealership };
   } catch (error) {
     console.error("Error fetching dealership by ID:", error);
     return { success: false, error: "Failed to fetch dealership" };
@@ -1100,6 +1139,8 @@ export async function getDealershipCarsById(dealershipId, page = 1, limit = 12, 
       ...(filters.fuelType && { fuelType: filters.fuelType }),
       ...(filters.transmission && { transmission: filters.transmission }),
       ...(filters.bodyType && { bodyType: filters.bodyType }),
+      ...(filters.color && { color: filters.color }),
+      ...(filters.seats && { seats: parseInt(filters.seats) }),
       ...(filters.minPrice && { minPrice: { gte: parseFloat(filters.minPrice) } }),
       ...(filters.maxPrice && { maxPrice: { lte: parseFloat(filters.maxPrice) } }),
     };
@@ -1118,10 +1159,17 @@ export async function getDealershipCarsById(dealershipId, page = 1, limit = 12, 
 
     const totalPages = Math.ceil(totalCount / limit);
 
+    // Convert Decimal objects to numbers for client components
+    const serializedCars = cars.map(car => ({
+      ...car,
+      minPrice: Number(car.minPrice),
+      maxPrice: Number(car.maxPrice)
+    }));
+
     return {
       success: true,
       data: {
-        cars,
+        cars: serializedCars,
         pagination: {
           currentPage: page,
           totalPages,
@@ -1240,7 +1288,17 @@ export async function getDealershipByName(dealershipName) {
       return { success: false, error: "Dealership not found" };
     }
 
-    return { success: true, data: dealership };
+    // Convert Decimal objects to numbers for client components
+    const serializedDealership = {
+      ...dealership,
+      cars: dealership.cars.map(car => ({
+        ...car,
+        minPrice: Number(car.minPrice),
+        maxPrice: Number(car.maxPrice)
+      }))
+    };
+
+    return { success: true, data: serializedDealership };
   } catch (error) {
     console.error("Error fetching dealership by name:", error);
     return { success: false, error: "Failed to fetch dealership" };

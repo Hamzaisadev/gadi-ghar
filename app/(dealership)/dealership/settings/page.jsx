@@ -3,68 +3,20 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { saveWorkingHours } from "@/app/actions/settings";
-import { updateDealershipInfo, deactivateDealership, getDealershipData } from "@/app/actions/dealership";
+import { deactivateDealership, getDealershipData } from "@/app/actions/dealership";
 import React from "react";
 import { useEffect } from "react";
+import WorkingHoursEditor from "./_components/WorkingHoursEditor";
+import DealershipInfoEditor from "./_components/DealershipInfoEditor";
 
 export default function DealershipSettingsPage() {
   // Set document title for client component
   useEffect(() => {
     document.title = "Settings | Dealership | Gadi Ghar";
   }, []);
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  async function handleInfoSave(formData) {
-    try {
-      setSaving(true);
-      const payload = {
-        name: formData.get("name"),
-        address: formData.get("address"),
-        phone: formData.get("phone"),
-        email: formData.get("email"),
-        website: formData.get("website") || null,
-        whatsapp: formData.get("whatsapp") || null,
-        facebook: formData.get("facebook") || null,
-        twitter: formData.get("twitter") || null,
-        instagram: formData.get("instagram") || null,
-        description: formData.get("description") || null,
-      };
-      const res = await updateDealershipInfo(payload);
-      if (!res?.success) throw new Error(res?.error || "Failed to update info");
-      toast.success("Dealership info updated");
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleHoursSave(formData) {
-    try {
-      setSaving(true);
-      const hours = {
-        MONDAY: { openTime: formData.get("monOpen"), closeTime: formData.get("monClose"), isOpen: !!formData.get("monOpen") },
-        TUESDAY: { openTime: formData.get("tueOpen"), closeTime: formData.get("tueClose"), isOpen: !!formData.get("tueOpen") },
-        WEDNESDAY: { openTime: formData.get("wedOpen"), closeTime: formData.get("wedClose"), isOpen: !!formData.get("wedOpen") },
-        THURSDAY: { openTime: formData.get("thuOpen"), closeTime: formData.get("thuClose"), isOpen: !!formData.get("thuOpen") },
-        FRIDAY: { openTime: formData.get("friOpen"), closeTime: formData.get("friClose"), isOpen: !!formData.get("friOpen") },
-        SATURDAY: { openTime: formData.get("satOpen"), closeTime: formData.get("satClose"), isOpen: !!formData.get("satOpen") },
-        SUNDAY: { openTime: formData.get("sunOpen"), closeTime: formData.get("sunClose"), isOpen: !!formData.get("sunOpen") },
-      };
-      const res = await saveWorkingHours(hours);
-      if (!res?.success) throw new Error(res?.error || "Failed to save hours");
-      toast.success("Working hours saved");
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleDelete() {
     try {
@@ -90,88 +42,9 @@ export default function DealershipSettingsPage() {
     <div className="p-6 space-y-6">
       <h1 className="text-3xl font-bold">Settings</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Dealership Info</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={handleInfoSave} className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" placeholder="Your Dealership" required />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" placeholder="dealership@email.com" />
-            </div>
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" name="phone" placeholder="0300-0000000" />
-            </div>
-            <div className="sm:col-span-2">
-              <Label htmlFor="address">Address</Label>
-              <Input id="address" name="address" placeholder="Street, City" />
-            </div>
-            <div>
-              <Label htmlFor="website">Website (Optional)</Label>
-              <Input id="website" name="website" type="url" placeholder="https://yourdealership.com" />
-            </div>
-            <div>
-              <Label htmlFor="whatsapp">WhatsApp (Optional)</Label>
-              <Input id="whatsapp" name="whatsapp" placeholder="+92 300 1234567" />
-            </div>
-            <div>
-              <Label htmlFor="facebook">Facebook (Optional)</Label>
-              <Input id="facebook" name="facebook" type="url" placeholder="https://facebook.com/yourdealership" />
-            </div>
-            <div>
-              <Label htmlFor="twitter">Twitter (Optional)</Label>
-              <Input id="twitter" name="twitter" type="url" placeholder="https://twitter.com/yourdealership" />
-            </div>
-            <div>
-              <Label htmlFor="instagram">Instagram (Optional)</Label>
-              <Input id="instagram" name="instagram" type="url" placeholder="https://instagram.com/yourdealership" />
-            </div>
-            <div>
-              <Label htmlFor="description">Business Description (Optional)</Label>
-              <Input id="description" name="description" placeholder="Tell customers about your dealership..." />
-            </div>
-            <div className="sm:col-span-2">
-              <Button disabled={saving} type="submit">{saving ? "Saving..." : "Save Info"}</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <DealershipInfoEditor />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Working Hours</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={handleHoursSave} className="grid gap-3 sm:grid-cols-3">
-            {[
-              ["mon", "Monday"],
-              ["tue", "Tuesday"],
-              ["wed", "Wednesday"],
-              ["thu", "Thursday"],
-              ["fri", "Friday"],
-              ["sat", "Saturday"],
-              ["sun", "Sunday"],
-            ].map(([key, label]) => (
-              <div key={key} className="space-y-1">
-                <Label>{label}</Label>
-                <div className="flex gap-2">
-                  <Input name={`${key}Open`} placeholder="09:00" />
-                  <Input name={`${key}Close`} placeholder="18:00" />
-                </div>
-              </div>
-            ))}
-            <div className="sm:col-span-3">
-              <Button disabled={saving} type="submit">{saving ? "Saving..." : "Save Hours"}</Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+      <WorkingHoursEditor />
 
       <Card>
         <CardHeader>

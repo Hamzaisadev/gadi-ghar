@@ -13,6 +13,7 @@ import Link from "next/link";
 import WelcomeModal from "@/components/ui/welcome-modal";
 import PageWrapper from "@/components/utils/pageWrapper";
 import DealershipSidebar from "./_components/Sidebar";
+import ErrorBoundary from "./_components/ErrorBoundary";
 
 export const metadata = {
   title: "Dealership | Gadi Ghar",
@@ -67,14 +68,16 @@ export default async function DealershipLayout({ children }) {
 
   return (
     <PageWrapper>
-      <div className="min-h-screen bg-background pt-20">
-        <div className="flex">
-          <DealershipSidebar />
-          <main className="flex-1 md:ml-0 pb-20 md:pb-0 animate-fade-in">
-            <div className="p-6 md:p-8">{children}</div>
-          </main>
+      <ErrorBoundary>
+        <div className="min-h-screen bg-background pt-20">
+          <div className="flex">
+            <DealershipSidebar />
+            <main className="flex-1 md:ml-0 pb-20 md:pb-0 animate-fade-in">
+              <div className="p-6 md:p-8">{children}</div>
+            </main>
+          </div>
         </div>
-      </div>
+      </ErrorBoundary>
     </PageWrapper>
   );
 }

@@ -24,11 +24,11 @@ const poppins = Poppins({
 
 export const metadata = {
   title: {
-    default: "Gadi Ghar - Car Marketplace in Pakistan",
-    template: "%s | Gadi Ghar"
+    default: "Gadi Ghar - Pakistan's Premier Car Marketplace | Buy & Sell Cars Online",
+    template: "%s | Gadi Ghar Pakistan"
   },
-  description: "Your one-stop destination for all automotive needs. Find, compare, and purchase vehicles with ease in Pakistan. Browse cars, bikes, and automotive services.",
-  keywords: ["cars", "automobiles", "car marketplace", "Pakistan cars", "buy cars", "sell cars", "car dealership", "automotive", "vehicles", "gadi ghar"],
+  description: "Pakistan's most trusted car marketplace. Buy, sell, and finance cars across Karachi, Lahore, Islamabad. Find Suzuki Alto, Toyota Corolla, Honda City & more. AI-powered search, instant financing, verified dealers.",
+  keywords: ["pakistan cars", "car marketplace pakistan", "buy cars pakistan", "sell cars online", "suzuki alto", "toyota corolla", "honda civic", "car financing pakistan", "karachi cars", "lahore cars", "islamabad cars", "used cars pakistan", "new cars pakistan", "car dealers pakistan", "gadi ghar", "automotive pakistan", "car loans pakistan", "hbl car financing", "ubl auto loan"],
   authors: [{ name: "Gadi Ghar Team" }],
   creator: "Gadi Ghar",
   publisher: "Gadi Ghar",
@@ -42,25 +42,25 @@ export const metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: "Gadi Ghar - Car Marketplace in Pakistan",
-    description: "Your one-stop destination for all automotive needs. Find, compare, and purchase vehicles with ease in Pakistan.",
+    title: "Gadi Ghar - Pakistan's Premier Car Marketplace | Buy & Sell Cars Online",
+    description: "Pakistan's most trusted car marketplace. Buy, sell, and finance cars across Karachi, Lahore, Islamabad. AI-powered search, verified dealers, instant financing.",
     url: 'https://gadi-ghar.vercel.app',
-    siteName: 'Gadi Ghar',
-    locale: 'en_US',
+    siteName: 'Gadi Ghar Pakistan',
+    locale: 'en_PK',
     type: 'website',
     images: [
       {
         url: '/screenshot-desktop.png',
         width: 1200,
         height: 630,
-        alt: 'Gadi Ghar Car Marketplace',
+        alt: 'Gadi Ghar - Pakistan Car Marketplace with Suzuki, Toyota, Honda Cars',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Gadi Ghar - Car Marketplace in Pakistan",
-    description: "Your one-stop destination for all automotive needs. Find, compare, and purchase vehicles with ease in Pakistan.",
+    title: "Gadi Ghar - Pakistan's Premier Car Marketplace",
+    description: "Buy, sell & finance cars across Pakistan. Suzuki Alto, Toyota Corolla, Honda City & more. AI search, verified dealers, instant loans.",
     images: ['/screenshot-desktop.png'],
   },
   robots: {

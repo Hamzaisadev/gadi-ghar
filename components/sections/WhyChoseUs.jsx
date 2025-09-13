@@ -7,44 +7,44 @@ const WhyChooseUs = () => {
   const features = [
     {
       icon: Car,
-      title: "Extensive Inventory",
+      title: "Nationwide Coverage",
       description:
-        "A diverse range of vehicles from reputable dealers and private sellers with quality guaranteed.",
+        "From Karachi to Lahore, Islamabad to Faisalabad - access Pakistan's largest verified car inventory across all major cities.",
       gradient: "from-red-500 to-red-600",
     },
     {
       icon: Calendar,
-      title: "Convenient Test Drives",
+      title: "Instant Test Drives",
       description:
-        "Schedule your test drive effortlessly online, with various time slots available 24/7.",
+        "Book test drives online and get confirmed within 2 hours. Available across all Pakistani cities with flexible timings.",
       gradient: "from-red-600 to-red-700",
     },
     {
       icon: Shield,
-      title: "Safe Transactions",
+      title: "Pakistani Bank Financing",
       description:
-        "Enjoy peace of mind with verified listings and a secure booking process.",
+        "Instant auto loan approvals from HBL, UBL, Meezan Bank, and Bank Alfalah with competitive rates tailored for Pakistan.",
       gradient: "from-red-700 to-red-800",
     },
     {
       icon: CheckCircle,
-      title: "Quality Assurance",
+      title: "Complete Documentation",
       description:
-        "Every vehicle undergoes thorough inspection to ensure top-notch quality and reliability.",
+        "Full assistance with registration, transfer, and Excise & Taxation procedures across all provinces of Pakistan.",
       gradient: "from-red-500 to-red-700",
     },
     {
       icon: Users,
-      title: "Expert Support",
+      title: "Multilingual Support",
       description:
-        "Our dedicated team provides personalized assistance throughout your car buying journey.",
+        "Expert support team fluent in Urdu, English, and regional languages to serve all Pakistani customers efficiently.",
       gradient: "from-red-600 to-red-800",
     },
     {
       icon: Clock,
-      title: "Quick Processing",
+      title: "AI-Powered Matching",
       description:
-        "Fast and efficient service with minimal paperwork and instant approvals.",
+        "Upload any car image and instantly find similar vehicles, get market prices, and connect with verified Pakistani dealers.",
       gradient: "from-red-700 to-red-900",
     },
   ];
@@ -75,8 +75,7 @@ const WhyChooseUs = () => {
               </span>
             </h2>
             <p className="text-gray-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-              Experience the difference with our premium car marketplace that
-              puts your needs first
+              Pakistan's most trusted automotive platform with nationwide coverage, local expertise, and comprehensive services tailored for Pakistani car buyers
             </p>
           </div>
 

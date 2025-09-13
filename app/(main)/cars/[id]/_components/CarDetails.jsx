@@ -41,7 +41,9 @@ import {
   formatCurrency,
   formatPriceRange,
 } from "@/components/utils/FormatCurrency";
+import { formatWorkingHours, formatDayName } from "@/lib/timeUtils";
 import { format } from "date-fns";
+import Breadcrumb from "@/components/ui/breadcrumb";
 
 const CarDetails = ({ car, testDriveInfo }) => {
   const router = useRouter();
@@ -132,19 +134,14 @@ const CarDetails = ({ car, testDriveInfo }) => {
   return (
     <div>
       {/* Breadcrumb Navigation */}
-      <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6 px-4">
-        <Link href="/" className="hover:text-red-600 transition-colors">
-          Home
-        </Link>
-        <span className="text-gray-400">›</span>
-        <Link href="/cars" className="hover:text-red-600 transition-colors">
-          Cars
-        </Link>
-        <span className="text-gray-400">›</span>
-        <span className="text-gray-900 font-medium">
-          {car.year} {car.make} {car.model}
-        </span>
-      </nav>
+      <Breadcrumb 
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Cars", href: "/cars" },
+          { label: `${car.year} ${car.make} ${car.model}` }
+        ]}
+        className="mb-6 mx-4"
+      />
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Image Gallery */}
@@ -550,13 +547,10 @@ const CarDetails = ({ car, testDriveInfo }) => {
                           className="flex justify-between text-sm"
                         >
                           <span className="text-gray-600">
-                            {day.dayOfWeek.charAt(0) +
-                              day.dayOfWeek.slice(1).toLowerCase()}
+                            {formatDayName(day.dayOfWeek)}
                           </span>
                           <span>
-                            {day.isOpen
-                              ? `${day.openTime} - ${day.closeTime}`
-                              : "Closed"}
+                            {formatWorkingHours(day)}
                           </span>
                         </div>
                       ))

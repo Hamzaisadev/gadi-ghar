@@ -13,7 +13,9 @@ import { v4 as uuidv4 } from "uuid";
  */
 async function getDealershipUser() {
   const { userId } = await auth();
-  if (!userId) throw new Error("User not authenticated");
+  if (!userId) {
+    throw new Error("User not authenticated");
+  }
 
   const user = await db.user.findUnique({
     where: { clerkUserId: userId },
@@ -22,14 +24,46 @@ async function getDealershipUser() {
     }
   });
 
-  if (!user) throw new Error("User not found");
+  if (!user) {
+    throw new Error("User not found");
+  }
   
-  const allowedRoles = ['ADMIN', 'DEALERSHIP'];
-  if (!allowedRoles.includes(user.role) || !user.dealership) {
+  const allowedRoles = ['ADMIN', 'DEALERSHIP_ADMIN'];
+  if (!allowedRoles.includes(user.role)) {
     throw new Error("Unauthorized: Only dealership admins can perform this action");
   }
 
+  if (user.role === 'DEALERSHIP_ADMIN' && !user.dealership) {
+    throw new Error("No dealership found for this user. Please contact support.");
+  }
+
   return user;
+}
+
+/**
+ * Check if dealership has AI features enabled
+ */
+export async function checkDealershipAIAccess() {
+  try {
+    const user = await getDealershipUser();
+    const dealership = user.dealership;
+    
+    if (!dealership) {
+      return { success: false, error: "No dealership found" };
+    }
+    
+    const hasAIAccess = dealership.aiEnabled || user.role === 'ADMIN';
+    
+    return {
+      success: true,
+      data: { hasAIAccess }
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message || "Failed to check AI access"
+    };
+  }
 }
 
 /**
@@ -102,37 +136,38 @@ export async function addDealershipCar({ carData, images }) {
       return { success: false, error: "No images were successfully uploaded" };
     }
 
-    // Create car in database
-    const car = await db.car.create({
-      data: {
-        id: carId,
-        make: carData.make,
-        model: carData.model,
-        year: parseInt(carData.year),
-        minPrice: parseFloat(carData.minPrice),
-        maxPrice: parseFloat(carData.maxPrice),
-        mileage: parseFloat(carData.mileage),
-        color: carData.color,
-        fuelType: carData.fuelType,
-        transmission: carData.transmission,
-        bodyType: carData.bodyType,
-        seats: carData.seats ? parseInt(carData.seats) : null,
-        description: carData.description,
-        status: carData.status || "AVAILABLE",
-        featured: Boolean(carData.featured),
-        dealershipId: dealershipId,
-        images: imageUrls,
-      },
-      include: {
-        dealership: {
-          select: {
-            id: true,
-            name: true,
-            address: true,
-            phone: true
+    const car = await db.$transaction(async (tx) => {
+      return await tx.car.create({
+        data: {
+          id: carId,
+          make: carData.make,
+          model: carData.model,
+          year: parseInt(carData.year),
+          minPrice: parseFloat(carData.minPrice),
+          maxPrice: parseFloat(carData.maxPrice),
+          mileage: parseFloat(carData.mileage),
+          color: carData.color,
+          fuelType: carData.fuelType,
+          transmission: carData.transmission,
+          bodyType: carData.bodyType,
+          seats: carData.seats ? parseInt(carData.seats) : null,
+          description: carData.description,
+          status: carData.status || "AVAILABLE",
+          featured: Boolean(carData.featured),
+          dealershipId: dealershipId,
+          images: imageUrls,
+        },
+        include: {
+          dealership: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              phone: true
+            }
           }
         }
-      }
+      });
     });
 
     // Revalidate paths
@@ -286,12 +321,14 @@ export async function deleteDealershipCar(carId) {
       throw new Error("Car not found or unauthorized");
     }
 
-    // Delete from database first
-    await db.car.delete({ 
-      where: { id: carId } 
+    const result = await db.$transaction(async (tx) => {
+      const deletedCar = await tx.car.delete({ 
+        where: { id: carId } 
+      });
+
+      return deletedCar;
     });
 
-    // Try to delete images from storage (non-blocking)
     try {
       const cookieStore = await cookies();
       const supabase = createClient(cookieStore);
@@ -315,7 +352,6 @@ export async function deleteDealershipCar(carId) {
       }
     } catch (storageError) {
       console.warn("Error deleting images from storage:", storageError);
-      // Continue execution as the car is already deleted from DB
     }
 
     revalidatePath("/dealership/cars");

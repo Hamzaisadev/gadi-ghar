@@ -51,14 +51,7 @@ const Sidebar = () => {
     },
   ];
 
-  const mobileRoutes = [
-    ...routes,
-    {
-      label: "Profile",
-      icon: User,
-      href: "/admin/profile",
-    },
-  ];
+  const mobileRoutes = routes;
 
   return (
     <>

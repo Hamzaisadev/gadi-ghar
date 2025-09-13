@@ -1,5 +1,4 @@
 import BrowseByMake from "@/components/sections/BrowseByMake";
-import BrowseByType from "@/components/sections/BrowseByType";
 import FeaturedCars from "@/components/sections/FeaturedCars";
 import GadiGharInfo from "@/components/sections/GadiGharInfo";
 import HeroSection from "@/components/sections/HeroSection";
@@ -23,7 +22,6 @@ export default function Home() {
         <FeaturedCars />
         <AICarMatching />
         <BestHonda />
-        <BrowseByType />
         <DealershipSignupSection />
         <GadiGharInfo />
         <LatestSuv />

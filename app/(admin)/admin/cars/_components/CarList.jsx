@@ -177,27 +177,27 @@ const CarList = () => {
 
   useEffect(() => {
     if (carsError) {
-      // toast.error("Failed to load cars");
+      toast.error("Failed to load cars");
     }
 
     if (deleteError) {
-      // toast.error("Failed to delete car");
+      toast.error("Failed to delete car");
     }
 
     if (updateError) {
-      // toast.error("Failed to update car");
+      toast.error("Failed to update car");
     }
   }, [carsError, deleteError, updateError]);
 
   // Handle successful operations
   useEffect(() => {
     if (deleteResult?.success) {
-      // toast.success("Car deleted successfully");
+      toast.success("Car deleted successfully");
       setDeleteDialogOpen(false);
       setCarToDelete(null);
     }
     if (updateResult?.success) {
-      // toast.success("Car updated successfully");
+      toast.success("Car updated successfully");
     }
   }, [deleteResult, updateResult, search]);
 
@@ -276,107 +276,6 @@ const CarList = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
-  // if (loadingCars) {
-  //   return (
-  //     <>
-  //       <div className="space-y-6 p-6 bg-gradient-to-br from-background via-card to-car-gray-light/20">
-  //         <div className="flex justify-between items-center">
-  //           <div>
-  //             <div className="h-10 w-64 bg-gradient-to-r from-car-gray-light to-muted rounded-lg animate-pulse mb-2"></div>
-  //             <div className="h-6 w-48 bg-car-gray-light rounded-lg animate-pulse"></div>
-  //           </div>
-  //           <div className="h-12 w-36 bg-car-gray-light rounded-xl animate-pulse"></div>
-  //         </div>
-
-  //         {/* Search bar skeleton */}
-  //         <div className="flex items-center space-x-4">
-  //           <div className="relative flex-1 max-w-md">
-  //             <div className="h-14 w-full bg-white border-2 border-car-gray-light rounded-xl animate-pulse shadow-md"></div>
-  //           </div>
-  //         </div>
-  //       </div>
-
-  //       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-6">
-  //         {[...Array(6)].map((_, i) => (
-  //           <Card
-  //             key={i}
-  //             className="border-2 border-car-gray-light overflow-hidden shadow-lg bg-gradient-to-br from-white to-card rounded-2xl"
-  //           >
-  //             {/* Featured badge skeleton */}
-  //             <div className="absolute top-4 left-4 z-20">
-  //               <div className="h-8 w-24 bg-car-gray-light rounded-full animate-pulse"></div>
-  //             </div>
-
-  //             {/* Status badge skeleton */}
-  //             <div className="absolute top-4 right-4 z-20">
-  //               <div className="h-8 w-20 bg-car-gray-light rounded-full animate-pulse"></div>
-  //             </div>
-
-  //             {/* Image skeleton */}
-  //             <div className="aspect-video bg-gradient-to-br from-car-gray-light to-muted rounded-t-2xl animate-pulse flex items-center justify-center">
-  //               <div className="text-6xl text-car-gray opacity-20">🚗</div>
-  //             </div>
-
-  //             <CardHeader className="pb-3 px-6 pt-6">
-  //               <div className="space-y-3">
-  //                 {/* Car name skeleton */}
-  //                 <div className="h-8 w-3/4 bg-car-gray-light rounded-lg animate-pulse"></div>
-
-  //                 {/* Year and color badges skeleton */}
-  //                 <div className="flex items-center gap-4">
-  //                   <div className="h-7 w-16 bg-car-gray-light rounded-full animate-pulse"></div>
-  //                   <div className="h-7 w-20 bg-car-gray-light rounded-full animate-pulse"></div>
-  //                 </div>
-
-  //                 {/* VIN skeleton */}
-  //                 <div className="h-6 w-32 bg-car-gray-light rounded-full animate-pulse"></div>
-  //               </div>
-  //             </CardHeader>
-
-  //             <CardContent className="pt-0 px-6 pb-6">
-  //               {/* Price and mileage skeleton */}
-  //               <div className="flex items-center justify-between mb-4">
-  //                 <div className="h-10 w-32 bg-gradient-to-r from-car-red/20 to-car-red-dark/20 rounded-lg animate-pulse"></div>
-  //                 <div className="h-6 w-24 bg-car-gray-light rounded-lg animate-pulse"></div>
-  //               </div>
-
-  //               {/* Car details row skeleton */}
-  //               <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-car-gray-light to-muted rounded-xl">
-  //                 <div className="flex items-center gap-2">
-  //                   <div className="h-5 w-5 bg-car-red/30 rounded animate-pulse"></div>
-  //                   <div className="h-5 w-16 bg-car-gray-light rounded animate-pulse"></div>
-  //                 </div>
-  //                 <div className="flex items-center gap-2">
-  //                   <div className="h-5 w-5 bg-car-red/30 rounded animate-pulse"></div>
-  //                   <div className="h-5 w-20 bg-car-gray-light rounded animate-pulse"></div>
-  //                 </div>
-  //               </div>
-
-  //               {/* Action buttons skeleton */}
-  //               <div className="grid grid-cols-2 gap-3">
-  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-  //                 <div className="h-10 bg-car-gray-light rounded-lg animate-pulse"></div>
-  //               </div>
-  //             </CardContent>
-  //           </Card>
-  //         ))}
-  //       </div>
-  //     </>
-  //   );
-  // }
-
-  // if (carsError) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-[400px]">
-  //       <div className="text-center">
-  //         <p className="text-red-500 text-lg mb-4">Failed to load cars</p>
-  //         <Button onClick={() => window.location.reload()}>Try Again</Button>
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <>

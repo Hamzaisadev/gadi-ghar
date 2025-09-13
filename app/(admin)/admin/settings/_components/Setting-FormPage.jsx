@@ -319,7 +319,7 @@ const SettingFormPage = () => {
                           </div>
 
                           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 hidden sm:flex">
                               <Switch
                                 id={`is-open-${day.value}`}
                                 checked={!!workingHours[index]?.isOpen}

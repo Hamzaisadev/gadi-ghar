@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import useFetch from "@/hooks/use-fetch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -134,6 +134,20 @@ const ShareDialog = ({ open, onOpenChange, carToShare, onShare }) => {
 
 const ImageWithLoader = ({ src, alt, width, height, className }) => {
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(true);
+  
+  useEffect(() => {
+    return () => {
+      setMounted(false);
+    };
+  }, []);
+  
+  const handleImageLoad = useCallback(() => {
+    if (mounted) {
+      setLoading(false);
+    }
+  }, [mounted]);
+  
   return (
     <div className="relative w-full h-full">
       {loading && (
@@ -166,8 +180,9 @@ const ImageWithLoader = ({ src, alt, width, height, className }) => {
         width={width}
         height={height}
         className={className}
-        onLoadingComplete={() => setLoading(false)}
-        onLoad={() => setLoading(false)}
+        onLoadingComplete={handleImageLoad}
+        onLoad={handleImageLoad}
+        onError={handleImageLoad}
       />
     </div>
   );
@@ -279,8 +294,6 @@ const DealerCarList = () => {
       setCarToDelete(null);
       setLocalCars((prev) => prev.filter((car) => car.id !== carToDelete.id));
       toast.success("Car deleted successfully");
-      // Refetch cars to ensure consistency
-      fetchDealerCars(search);
     } catch (error) {
       toast.error("Failed to delete car");
       setDeleteDialogOpen(false);
@@ -299,8 +312,6 @@ const DealerCarList = () => {
         )
       );
       toast.success(car.featured ? "Car unfeatured" : "Car featured");
-      // Refetch cars to ensure consistency
-      fetchDealerCars(search);
     } catch (error) {
       toast.error("Failed to update car status");
     }
@@ -318,8 +329,6 @@ const DealerCarList = () => {
         )
       );
       toast.success("Car status updated successfully");
-      // Refetch cars to ensure consistency
-      fetchDealerCars(search);
     } catch (err) {
       toast.error("Failed to update car status");
     }

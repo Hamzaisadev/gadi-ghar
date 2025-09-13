@@ -2,6 +2,7 @@ import React from "react";
 import { getDealershipByName } from "@/app/actions/dealership";
 import NotFoundPage from "@/app/not-found";
 import DealershipProfile from "./_components/DealershipProfile";
+import { formatWorkingHoursSchema } from "@/lib/timeUtils";
 
 export async function generateMetadata({ params }) {
   const { dealershipName } = await params;
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: `${dealership.name} | Car Dealership`,
       description: description,
-      type: "business.business",
+      type: "website",
       images: dealership.logo ? [{
         url: dealership.logo,
         width: 1200,
@@ -81,7 +82,7 @@ const DealershipPublicPage = async ({ params }) => {
       "addressCountry": "Pakistan"
     },
     "openingHours": dealership.workingHours?.map(wh => 
-      wh.isOpen ? `${wh.dayOfWeek.slice(0,2)} ${wh.openTime}-${wh.closeTime}` : null
+      formatWorkingHoursSchema(wh)
     ).filter(Boolean),
     "aggregateRating": {
       "@type": "AggregateRating",

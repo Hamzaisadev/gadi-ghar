@@ -58,16 +58,22 @@ export default function DealershipApplications() {
       
       const result = await getDealershipApplications();
       
+      // Check if result exists and has the expected structure
+      if (!result) {
+        throw new Error('No response received from server');
+      }
+      
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch applications');
       }
 
-      setApplications(result.data);
+      setApplications(result.data || []);
       // Since we're not implementing pagination in the action yet, set total pages to 1
       setTotalPages(1);
     } catch (error) {
       console.error('Error fetching applications:', error);
-      toast.error("Failed to fetch applications");
+      toast.error(error.message || "Failed to fetch applications");
+      setApplications([]); // Set empty array on error
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +113,11 @@ export default function DealershipApplications() {
     
     try {
       const result = await reviewDealershipApplication(selectedApplication.id, reviewForm);
+
+      // Check if result exists and has the expected structure
+      if (!result) {
+        throw new Error('No response received from server');
+      }
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to submit review');

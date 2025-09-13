@@ -46,7 +46,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import useFetch from "@/hooks/use-fetch";
 import { processCarImageWithAI } from "@/app/actions/cars";
-import { addDealershipCar } from "@/app/actions/dealership-cars";
+import { addDealershipCar, checkDealershipAIAccess } from "@/app/actions/dealership-cars";
 import { useRouter } from "next/navigation";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
@@ -112,8 +112,14 @@ export const AddCarForm = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadedAiImage, setUploadedAiImage] = useState(null);
-  const [hasPaidForAI, setHasPaidForAI] = useState(false); // Track if dealership has paid for AI feature
+  const [hasPaidForAI, setHasPaidForAI] = useState(false);
   const router = useRouter();
+  
+  const {
+    loading: checkingAIAccess,
+    fn: checkAIAccessFn,
+    data: aiAccessData,
+  } = useFetch(checkDealershipAIAccess);
   const removeManualImage = (index) => {
     setManualUploadedImages((prev) => prev.filter((_, i) => i !== index));
     toast.error("Image removed");
@@ -183,6 +189,16 @@ export const AddCarForm = () => {
   useEffect(() => {
     setAmount(watchedPrice || "");
   }, [watchedPrice]);
+  
+  useEffect(() => {
+    checkAIAccessFn();
+  }, []);
+  
+  useEffect(() => {
+    if (aiAccessData?.success) {
+      setHasPaidForAI(aiAccessData.data.hasAIAccess);
+    }
+  }, [aiAccessData]);
 
   const handleAmountChange = (e) => {
     // Remove all non-digit characters
@@ -196,6 +212,11 @@ export const AddCarForm = () => {
   // On submit, parse the price to a number
 
   const onMultiImagesDrop = useCallback((acceptedFiles) => {
+    if (manualUploadedImages.length + acceptedFiles.length > 10) {
+      toast.error("You can upload maximum 10 images");
+      return;
+    }
+
     const validFiles = acceptedFiles.filter((file) => {
       if (file.size > 5 * 1024 * 1024) {
         toast.error(
@@ -203,9 +224,17 @@ export const AddCarForm = () => {
         );
         return false;
       }
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not a valid image file`);
+        return false;
+      }
       return true;
     });
-    if (validFiles.length === 0) return;
+    
+    if (validFiles.length === 0) {
+      toast.error("No valid images to upload");
+      return;
+    }
 
     const newImages = [];
     validFiles.forEach((file) => {
@@ -277,9 +306,8 @@ export const AddCarForm = () => {
   } = useFetch(processCarImageWithAI);
 
   const processWithAI = async () => {
-    // Check if dealership has paid for AI feature
     if (!hasPaidForAI) {
-      toast.error("Please purchase the AI feature to use this functionality");
+      toast.error("AI feature is not available for your dealership");
       return;
     }
 
@@ -337,22 +365,38 @@ export const AddCarForm = () => {
   } = useFetch(addDealershipCar);
 
   useEffect(() => {
-    if (addCarData?.success) {
+    let mounted = true;
+    
+    if (addCarData?.success && mounted) {
       toast.success(addCarData.message || "Vehicle added successfully");
-      // Reset form
       setManualUploadedImages([]);
       setAiUploadedImages([]);
       setImagePreview(null);
       setUploadedAiImage(null);
       router.push("/dealership/cars");
     }
+    
+    return () => {
+      mounted = false;
+    };
   }, [addCarData, router]);
 
   const onSubmit = async (data) => {
-    // ...rest of your submit logic
+    setImageError("");
+    
     if (manualUploadedImages.length === 0 && aiUploadedImages.length === 0) {
       setImageError("Please upload at least one image");
+      toast.error("Please upload at least one image");
       return;
+    }
+
+    if (data.minPrice && data.maxPrice) {
+      const minPrice = parseFloat(data.minPrice);
+      const maxPrice = parseFloat(data.maxPrice);
+      if (minPrice > maxPrice) {
+        toast.error("Minimum price cannot be greater than maximum price");
+        return;
+      }
     }
 
     // Prepare data for server action
@@ -399,13 +443,6 @@ export const AddCarForm = () => {
     });
   }, [errors]);
 
-  // Function to handle payment for AI feature
-  const handlePurchaseAI = () => {
-    // In a real implementation, this would integrate with a payment system
-    // For now, we'll just simulate the purchase
-    setHasPaidForAI(true);
-    toast.success("AI feature purchased successfully!");
-  };
 
   return (
     <PageWrapper>
@@ -924,7 +961,6 @@ export const AddCarForm = () => {
                   <h3 className="text-2xl font-semibold text-black mb-2">AI Extraction is Locked</h3>
                   <p className="text-gray-600 mb-6 max-w-xl">Upgrade to unlock AI-powered image analysis. Automatically extract car details from an image to speed up listing creation.</p>
                   <div className="flex gap-3">
-                    <Button onClick={handlePurchaseAI} size="lg" className="bg-gradient-to-r from-red-700 via-red-600 to-red-500">Unlock AI Feature</Button>
                     <Button variant="outline" size="lg" onClick={() => setActiveTab("manual")}>Continue Manually</Button>
                   </div>
                 </div>

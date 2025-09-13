@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Car, Building2, Users, DollarSign, Plus, Edit, Trash2, Eye, AlertCircle, User, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { updateDealershipInfo, addCarToDealership, deleteCarFromDealership } from "@/app/actions/dealership";
+import { formatPriceRange } from "@/components/utils/FormatCurrency";
 
 export default function DealershipClientPage({ initialDealership, initialCars }) {
   const [dealership, setDealership] = useState(initialDealership);
@@ -226,7 +227,7 @@ export default function DealershipClientPage({ initialDealership, initialCars })
                 <CardContent>
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600">
-                      Rs. {car.minPrice ? parseFloat(car.minPrice).toLocaleString() : '0'} - {car.maxPrice ? parseFloat(car.maxPrice).toLocaleString() : '0'}
+                      {formatPriceRange(car.minPrice || car.price, car.maxPrice)}
                     </p>
                     <p className="text-sm text-gray-600">
                       {car.color} • {car.fuelType} • {car.transmission}

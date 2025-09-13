@@ -137,13 +137,13 @@ const CarCard = ({ car }) => {
           <div className="flex items-center gap-2">
             <Gauge size={20} className="text-red-600" />
             <span className="font-medium">
-              {car.mileage.toLocaleString()} mi
+              {car.mileage?.toLocaleString() || 0} mi
             </span>
           </div>
-          {car.seat != null && (
+          {car.seats != null && (
             <div className="flex items-center gap-2">
               <Users size={20} className="text-red-600" />
-              <span className="font-medium">{car.seat} seats</span>
+              <span className="font-medium">{car.seats} seats</span>
             </div>
           )}
         </div>
