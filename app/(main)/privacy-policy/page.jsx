@@ -1,6 +1,5 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Mail, Phone, MapPin, Clock, Users, Lock, Eye } from "lucide-react";
 
@@ -103,7 +102,7 @@ export default function PrivacyPolicyPage() {
                 </ul>
               </div>
               
-              <Separator />
+              <hr className="border-t border-gray-200 my-4" />
               
               <div>
                 <h3 className="font-semibold text-lg mb-2">Usage Information</h3>
