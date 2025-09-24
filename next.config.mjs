@@ -152,7 +152,7 @@ const nextConfig = withPWA({
               "img-src 'self' data: blob: https://source.unsplash.com https://images.unsplash.com https://img.clerk.com https://ilmkrxcimwdjjvrzxlkd.supabase.co https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://clerk-telemetry.com https://*.supabase.co https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com",
-              "frame-src 'self' https://www.youtube.com https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com https://www.google.com https://*.google.com",
+              "frame-src 'self' https://www.youtube.com https://*.clerk.com https://*.clerk.dev https://*.clerkstage.dev https://*.clerk.services https://*.clerk.accounts.dev https://challenges.cloudflare.com https://hcaptcha.com https://*.hcaptcha.com https://www.google.com https://*.google.com https://clerk-telemetry.com",
               "worker-src 'self' blob:",
               "child-src 'self' blob:",
               "frame-ancestors 'self'",

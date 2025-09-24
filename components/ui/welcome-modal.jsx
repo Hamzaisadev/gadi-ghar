@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Car, CheckCircle } from "lucide-react";
 import { Button } from "./button";
 import { useRouter } from "next/navigation";

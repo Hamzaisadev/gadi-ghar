@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { cn } from "@/lib/utils";
 import { Building2, Car, Settings, Users, LayoutDashboard, User, Calendar } from "lucide-react";
 import Link from "next/link";
