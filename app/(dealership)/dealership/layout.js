@@ -107,7 +107,7 @@ export default async function DealershipLayout({ children }) {
             <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Something Went Wrong</h2>
             <p className="text-gray-600 mb-4">
-              We're having trouble loading the dealership dashboard. Please try again later.
+              We&apos;re having trouble loading the dealership dashboard. Please try again later.
             </p>
             <div className="space-y-2">
               <Button asChild className="w-full">
