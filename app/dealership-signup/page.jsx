@@ -302,7 +302,7 @@ export default function DealershipSignupPage() {
   // Show application status if user has already applied
   if (applicationStatus && applicationStatus.status !== 'NO_APPLICATION') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 lg:py-32">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center space-y-4">
             {applicationStatus.status === 'PENDING' && (

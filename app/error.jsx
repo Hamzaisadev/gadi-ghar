@@ -7,18 +7,36 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 export default function Error({ error, reset }) {
   const hasReset = useRef(false)
+  const hasLogged = useRef(false)
 
   useEffect(() => {
-    console.error('Route error:', error)
+    if (!hasLogged.current && error) {
+      hasLogged.current = true
+      try {
+        console.error('Route error:', error)
+      } catch (logError) {
+        // Prevent console.error from causing more issues
+      }
+    }
   }, [error])
 
   const handleTryAgain = () => {
-    if (hasReset.current) return
+    if (hasReset.current) {
+      // If already tried reset, do hard reload
+      window.location.reload()
+      return
+    }
+    
     hasReset.current = true
     try {
-      reset()
+      if (typeof reset === 'function') {
+        reset()
+      } else {
+        window.location.reload()
+      }
     } catch (e) {
-      window.location.href = window.location.href
+      // If reset fails, do hard reload
+      window.location.reload()
     }
   }
 

@@ -359,11 +359,15 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
   }
 }
 
-export async function getDealershipData() {
+export async function getDealershipData(dealershipId = null) {
   try {
+    console.log('🏢 getDealershipData: Starting with dealershipId:', dealershipId);
+    
     const { userId } = await auth();
+    console.log('🏢 getDealershipData: Auth userId:', userId);
     
     if (!userId) {
+      console.log('❌ getDealershipData: No userId found');
       return { 
         success: false, 
         error: "Unauthorized: You must be logged in" 
@@ -371,34 +375,48 @@ export async function getDealershipData() {
     }
 
     // Use checkUser to ensure user exists in database
+    console.log('🏢 getDealershipData: Checking user in database');
     const { checkUser } = await import('@/lib/checkUser');
     const user = await checkUser();
+    console.log('🏢 getDealershipData: User from checkUser:', {
+      id: user?.id,
+      role: user?.role,
+      dealershipId: user?.dealershipId
+    });
 
     if (!user) {
+      console.log('❌ getDealershipData: User not found in database');
       return { 
         success: false, 
         error: "User not found" 
       };
     }
 
-    // Check if user is dealership admin or main admin
-    if (user.role !== 'DEALERSHIP_ADMIN' && user.role !== 'ADMIN') {
+    // If no dealershipId is provided, use the user's dealership (for dealer portal)
+    const targetDealershipId = dealershipId || user.dealershipId;
+    console.log('🏢 getDealershipData: Target dealership ID:', targetDealershipId);
+
+    // If user is not an admin and is trying to access a different dealership, deny access
+    if (user.role !== 'ADMIN' && targetDealershipId !== user.dealershipId) {
+      console.log('❌ getDealershipData: Unauthorized access attempt');
       return {
         success: false,
-        error: "Unauthorized: Dealership admin access required"
+        error: "Unauthorized: You can only access your own dealership"
       };
     }
 
-    if (!user.dealershipId) {
+    if (!targetDealershipId) {
+      console.log('❌ getDealershipData: No dealership ID specified');
       return { 
         success: false, 
-        error: "No dealership found for this user" 
+        error: "No dealership specified" 
       };
     }
 
+    console.log('🏢 getDealershipData: Querying database for dealership:', targetDealershipId);
     // Get dealership data with working hours
     const dealership = await db.dealershipInfo.findUnique({
-      where: { id: user.dealershipId },
+      where: { id: targetDealershipId },
       include: {
         workingHours: {
           orderBy: {
@@ -408,19 +426,29 @@ export async function getDealershipData() {
       },
     });
 
+    console.log('🏢 getDealershipData: Database query result:', {
+      found: !!dealership,
+      name: dealership?.name,
+      id: dealership?.id,
+      isActive: dealership?.isActive,
+      isApproved: dealership?.isApproved
+    });
+
     if (!dealership) {
+      console.log('❌ getDealershipData: Dealership not found in database');
       return { 
         success: false, 
         error: "Dealership not found" 
       };
     }
 
+    console.log('✅ getDealershipData: Successfully retrieved dealership data');
     return {
       success: true,
       data: dealership,
     };
   } catch (error) {
-    console.error('Error fetching dealership data:', error);
+    console.error('❌ getDealershipData: Error occurred:', error);
     return {
       success: false,
       error: error.message || 'Failed to fetch dealership data',
@@ -652,24 +680,25 @@ export async function checkDealershipAuthorization() {
 
     // For other users, try to fix their role
     console.log('Auth: User is not an admin, trying to fix role...');
-    const fixResult = await checkAndFixDealershipAdminRole();
-    
-    if (fixResult.success && fixResult.data.role === 'DEALERSHIP_ADMIN') {
-      console.log('Auth: Role fixed successfully');
-      return fixResult;
+    try {
+      const fixResult = await checkAndFixDealershipAdminRole();
+      
+      if (fixResult.success && fixResult.data.role === 'DEALERSHIP_ADMIN') {
+        console.log('Auth: Role fixed successfully');
+        return fixResult;
+      }
+    } catch (error) {
+      console.error('Error fixing user role:', error);
+      // Continue with the normal flow if role fixing fails
     }
     
-    console.log('Auth: Final dealership:', user.dealership ? {
-      id: user.dealership.id,
-      name: user.dealership.name,
-      isApproved: user.dealership.isApproved
-    } : 'null');
-
+    console.log('Auth: User does not have dealership admin access');
     return {
-      success: true,
+      success: false,
+      error: 'You do not have permission to access the dealership admin panel.',
       data: {
         role: user.role,
-        dealership: user.dealership,
+        dealership: null,
       },
     };
   } catch (error) {
@@ -681,7 +710,7 @@ export async function checkDealershipAuthorization() {
   }
 }
 
-// New function to deactivate a dealership
+// Delete a dealership (hard delete with manual cascading)
 export async function deleteDealership(dealershipId) {
   try {
     const { userId } = await auth();
@@ -698,49 +727,62 @@ export async function deleteDealership(dealershipId) {
       return { success: false, error: "Unauthorized: Admin access required" };
     }
 
-    // Transactional cascade delete
-    const result = await db.$transaction(async (tx) => {
-      const target = await tx.dealershipInfo.findUnique({ 
-        where: { id: dealershipId },
-        include: { admins: { select: { id: true } } }
-      });
-      if (!target) throw new Error("Dealership not found");
-
-      // Collect car IDs
-      const cars = await tx.car.findMany({ where: { dealershipId }, select: { id: true } });
-      const carIds = cars.map(c => c.id);
-
-      if (carIds.length > 0) {
-        await tx.testDriveBooking.deleteMany({ where: { carId: { in: carIds } } });
-        await tx.userSavedCar.deleteMany({ where: { carId: { in: carIds } } });
-      }
-
-      // Delete related dealership applications for all users who were part of this dealership
-      const userIds = target.admins.map(admin => admin.id);
-      if (userIds.length > 0) {
-        await tx.dealershipApplication.deleteMany({ 
-          where: { 
-            OR: [
-              { userId: { in: userIds } },
-              { 
-                AND: [
-                  { dealershipName: target.name },
-                  { businessEmail: target.email }
-                ]
-              }
-            ]
-          } 
-        });
-      }
-
-      await tx.car.deleteMany({ where: { dealershipId } });
-      await tx.workingHour.deleteMany({ where: { dealershipId } });
-      await tx.user.updateMany({ where: { dealershipId }, data: { role: 'USER', dealershipId: null } });
-      const deleted = await tx.dealershipInfo.delete({ where: { id: dealershipId } });
-      return deleted;
+    // Fetch target dealership and related IDs first (outside of transaction)
+    const target = await db.dealershipInfo.findUnique({
+      where: { id: dealershipId },
+      include: { admins: { select: { id: true } } }
     });
+    if (!target) {
+      return { success: false, error: "Dealership not found" };
+    }
 
-    return { success: true, data: result };
+    const cars = await db.car.findMany({ where: { dealershipId }, select: { id: true } });
+    const carIds = cars.map(c => c.id);
+
+    // Clean up dependent data sequentially to avoid long interactive transactions in serverless
+    if (carIds.length > 0) {
+      await db.testDriveBooking.deleteMany({ where: { carId: { in: carIds } } });
+      await db.userSavedCar.deleteMany({ where: { carId: { in: carIds } } });
+    }
+
+    // Delete cars and working hours
+    await db.car.deleteMany({ where: { dealershipId } });
+    await db.workingHour.deleteMany({ where: { dealershipId } });
+
+    // Delete related dealership applications (for admins or by matching business details)
+    const userIds = target.admins.map(admin => admin.id);
+    if (userIds.length > 0) {
+      await db.dealershipApplication.deleteMany({
+        where: {
+          OR: [
+            { userId: { in: userIds } },
+            {
+              AND: [
+                { dealershipName: target.name },
+                { businessEmail: target.email }
+              ]
+            }
+          ]
+        }
+      });
+    } else {
+      await db.dealershipApplication.deleteMany({
+        where: {
+          AND: [
+            { dealershipName: target.name },
+            { businessEmail: target.email }
+          ]
+        }
+      });
+    }
+
+    // Reset user roles for users belonging to this dealership
+    await db.user.updateMany({ where: { dealershipId }, data: { role: 'USER', dealershipId: null } });
+
+    // Finally delete the dealership itself
+    await db.dealershipInfo.delete({ where: { id: dealershipId } });
+
+    return { success: true, data: { id: dealershipId } };
   } catch (error) {
     console.error('Error deleting dealership:', error);
     return { success: false, error: error.message || 'Failed to delete dealership' };

@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageSpinner } from "@/components/ui/loading-spinner";
-import { reviewDealershipApplication, getDealershipApplications, getApprovedDealerships, deactivateDealership } from "@/app/actions/dealership";
+import { reviewDealershipApplication, getDealershipApplications, getApprovedDealerships, deleteDealership } from "@/app/actions/dealership";
 
 export default function DealershipManagement() {
   const [applications, setApplications] = useState([]);
@@ -39,8 +39,8 @@ export default function DealershipManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
-  const [showDeactivateDialog, setShowDeactivateDialog] = useState(false);
-  const [deactivatingDealership, setDeactivatingDealership] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingDealership, setDeletingDealership] = useState(null);
   const [reviewForm, setReviewForm] = useState({
     status: "",
     reviewNotes: ""
@@ -49,6 +49,8 @@ export default function DealershipManagement() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [filteredApprovedDealerships, setFilteredApprovedDealerships] = useState([]);
+  // Track optimistically deleting dealership IDs
+  const [deletingIds, setDeletingIds] = useState(new Set());
 
   useEffect(() => {
     fetchData();
@@ -138,32 +140,56 @@ export default function DealershipManagement() {
     setShowReviewDialog(true);
   };
 
-  const handleDeactivateDealership = async (dealershipId) => {
+  const handleDeleteDealership = async (dealershipId) => {
     const dealership = approvedDealerships.find(d => d.id === dealershipId);
     if (dealership) {
-      setDeactivatingDealership(dealership);
-      setShowDeactivateDialog(true);
+      setDeletingDealership(dealership);
+      setShowDeleteDialog(true);
     }
   };
 
-  const confirmDeactivation = async () => {
-    if (!deactivatingDealership) return;
+  const confirmDeletion = async () => {
+    if (!deletingDealership) return;
+
+    const deletingId = deletingDealership.id;
+    // Close dialog immediately for snappy UX
+    setShowDeleteDialog(false);
+
+    // Snapshot current state for potential rollback
+    const prevApproved = approvedDealerships;
+
+    // Optimistically remove from UI and mark as deleting
+    setApprovedDealerships((prev) => prev.filter((d) => d.id !== deletingId));
+    setFilteredApprovedDealerships((prev) => prev.filter((d) => d.id !== deletingId));
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      next.add(deletingId);
+      return next;
+    });
 
     try {
-      const result = await deactivateDealership(deactivatingDealership.id);
+      const result = await deleteDealership(deletingId);
 
       if (!result.success) {
-        throw new Error(result.error || 'Failed to deactivate dealership');
+        throw new Error(result.error || 'Failed to delete dealership');
       }
 
-      // Refresh data
-      await fetchData();
-      toast.success("Dealership deactivated successfully");
-      setShowDeactivateDialog(false);
-      setDeactivatingDealership(null);
+      toast.success("Dealership deleted successfully");
+      setDeletingDealership(null);
+
+      // Optionally re-sync in background
+      fetchData();
     } catch (error) {
-      console.error('Error deactivating dealership:', error);
-      toast.error(error.message || "Failed to deactivate dealership");
+      console.error('Error deleting dealership:', error);
+      // Roll back optimistic update
+      setApprovedDealerships(prevApproved);
+      setFilteredApprovedDealerships(prevApproved);
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(deletingId);
+        return next;
+      });
+      toast.error(error.message || "Failed to delete dealership");
     }
   };
 
@@ -438,11 +464,12 @@ export default function DealershipManagement() {
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDeactivateDealership(dealership.id)}
+                              onClick={() => handleDeleteDealership(dealership.id)}
                               className="w-full sm:w-auto"
+                              disabled={deletingIds.has(dealership.id)}
                             >
-                              <XSquare className="w-4 h-4 mr-2" />
-                              Deactivate
+                              <XSquare className={`w-4 h-4 mr-2 ${deletingIds.has(dealership.id) ? 'animate-pulse' : ''}`} />
+                              {deletingIds.has(dealership.id) ? 'Deleting...' : 'Delete'}
                             </Button>
                           </div>
                         </div>
@@ -624,18 +651,18 @@ export default function DealershipManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Deactivate Confirmation Dialog */}
-      <Dialog open={showDeactivateDialog} onOpenChange={setShowDeactivateDialog}>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Confirm Deactivation</DialogTitle>
+            <DialogTitle>Confirm Delete</DialogTitle>
             <DialogDescription>
-              Are you sure you want to deactivate this dealership? This will remove their admin access and deactivate their account.
+              Are you sure you want to delete this dealership? This will permanently remove the dealership, all their cars, and reset user roles. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeactivateDialog(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmDeactivation}>Deactivate</Button>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeletion}>Delete</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

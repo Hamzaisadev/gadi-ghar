@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
   const lastUpdated = "January 1, 2024";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 py-12 lg:py-32">
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-12">

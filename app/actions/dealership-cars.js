@@ -42,21 +42,16 @@ async function getDealershipUser() {
 
 /**
  * Check if dealership has AI features enabled
+ * AI access is now enabled for all authenticated dealership users
  */
 export async function checkDealershipAIAccess() {
   try {
     const user = await getDealershipUser();
-    const dealership = user.dealership;
     
-    if (!dealership) {
-      return { success: false, error: "No dealership found" };
-    }
-    
-    const hasAIAccess = dealership.aiEnabled || user.role === 'ADMIN';
-    
+    // AI access is enabled for all authenticated dealership users
     return {
       success: true,
-      data: { hasAIAccess }
+      data: { hasAIAccess: true }
     };
   } catch (error) {
     return {

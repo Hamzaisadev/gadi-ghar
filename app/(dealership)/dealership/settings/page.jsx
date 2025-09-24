@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { deactivateDealership, getDealershipData } from "@/app/actions/dealership";
+import { deleteDealership, getDealershipData } from "@/app/actions/dealership";
 import React from "react";
 import { useEffect } from "react";
 import WorkingHoursEditor from "./_components/WorkingHoursEditor";
@@ -16,22 +16,29 @@ export default function DealershipSettingsPage() {
     document.title = "Settings | Dealership | Gadi Ghar";
   }, []);
   const [deleting, setDeleting] = useState(false);
+  const [optimisticallyDeleted, setOptimisticallyDeleted] = useState(false);
 
 
   async function handleDelete() {
     try {
       setDeleting(true);
+      setOptimisticallyDeleted(true); // Immediate UI feedback
+      
       const dealer = await getDealershipData();
       if (!dealer?.success) throw new Error(dealer?.error || "Unable to load dealership");
       const id = dealer.data.id;
+      
       // Use stronger delete that cascades cars
-      const res = await deactivateDealership(id);
+      const res = await deleteDealership(id);
       if (!res?.success) throw new Error(res?.error || "Failed to delete dealership");
+      
       toast.success("Dealership and its cars deleted. Redirecting...");
       setTimeout(() => {
         window.location.href = "/";
       }, 1200);
     } catch (e) {
+      // Revert optimistic state on error
+      setOptimisticallyDeleted(false);
       toast.error(e.message);
     } finally {
       setDeleting(false);
@@ -51,9 +58,24 @@ export default function DealershipSettingsPage() {
           <CardTitle>Danger Zone</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">Deleting your dealership will remove your public page and delete all cars.</p>
-          <Button variant="destructive" disabled={deleting} onClick={handleDelete}>
-            {deleting ? "Deleting..." : "Delete Dealership and Cars"}
+          <p className="text-sm text-muted-foreground">
+            {optimisticallyDeleted 
+              ? "Dealership deletion in progress. Your account will be reset shortly."
+              : "Deleting your dealership will remove your public page and delete all cars."
+            }
+          </p>
+          <Button 
+            variant="destructive" 
+            disabled={deleting || optimisticallyDeleted} 
+            onClick={handleDelete}
+            className={optimisticallyDeleted ? 'opacity-50' : ''}
+          >
+            {optimisticallyDeleted 
+              ? "Deletion Confirmed..." 
+              : deleting 
+                ? "Deleting..." 
+                : "Delete Dealership and Cars"
+            }
           </Button>
         </CardContent>
       </Card>

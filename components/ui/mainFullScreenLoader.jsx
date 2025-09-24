@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 export default function MainFullScreenLoader() {
   const [loadingComplete, setLoadingComplete] = useState(false);
@@ -156,7 +158,3 @@ export default function MainFullScreenLoader() {
     </motion.div>
   );
 }
-
-     
-
-

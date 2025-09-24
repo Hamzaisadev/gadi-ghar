@@ -99,7 +99,7 @@ const DealershipPublicPage = async ({ params }) => {
   };
 
   return (
-    <div className="bg-background min-h-screen py-8">
+    <div className="bg-background min-h-screen pt-28 pb-8 md:pt-32">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

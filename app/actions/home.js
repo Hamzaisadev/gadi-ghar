@@ -96,6 +96,55 @@ async function fileToBase64(file) {
   return buffer.toString("base64");
 }
 
+// Normalize AI response to match system body types
+function normalizeBodyType(bodyType) {
+  if (!bodyType) return "";
+  
+  const normalized = bodyType.toLowerCase().trim();
+  
+  // Define mapping for common variations
+  const mappings = {
+    "pickup truck": "Pickup",
+    "pickup": "Pickup",
+    "truck": "Pickup",
+    "light truck": "Pickup",
+    "suv": "SUV",
+    "sport utility vehicle": "SUV",
+    "crossover": "SUV",
+    "sedan": "Sedan",
+    "4-door": "Sedan",
+    "saloon": "Sedan",
+    "hatchback": "Hatchback",
+    "hatch": "Hatchback",
+    "compact": "Hatchback",
+    "convertible": "Convertible",
+    "cabriolet": "Convertible",
+    "roadster": "Convertible",
+    "coupe": "Coupe",
+    "coupé": "Coupe",
+    "2-door": "Coupe",
+    "wagon": "Wagon",
+    "estate": "Wagon",
+    "station wagon": "Wagon",
+    "touring": "Wagon"
+  };
+  
+  // Check for exact match first
+  if (mappings[normalized]) {
+    return mappings[normalized];
+  }
+  
+  // Check for partial matches
+  for (const [key, value] of Object.entries(mappings)) {
+    if (normalized.includes(key)) {
+      return value;
+    }
+  }
+  
+  // If no match found, return the original with proper capitalization
+  return bodyType.charAt(0).toUpperCase() + bodyType.slice(1).toLowerCase();
+}
+
 export async function processImageSearch(file) {
   try {
     const req = await request();
@@ -138,8 +187,17 @@ export async function processImageSearch(file) {
     const prompt = `
     Analyze this car image and extract the following information for a search query:
       1. Make (manufacturer)
-      2. Body type (SUV, Sedan, Hatchback, etc.)
+      2. Body type - MUST be one of these exact values: SUV, Sedan, Hatchback, Convertible, Coupe, Wagon, Pickup
       3. Color
+
+      IMPORTANT: For bodyType, only use these exact values:
+      - SUV (for sport utility vehicles, crossovers)
+      - Sedan (for 4-door sedans)
+      - Hatchback (for hatchbacks, compact cars)
+      - Convertible (for convertible cars)
+      - Coupe (for 2-door coupes)
+      - Wagon (for station wagons, estates)
+      - Pickup (for pickup trucks, light trucks)
 
       Format your response as a clean JSON object with these fields:
       {
@@ -157,13 +215,14 @@ export async function processImageSearch(file) {
     const result = await model.generateContent([imagePart, prompt]);
     const response = await result.response;
     const text = await response.text();
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
     try {
       const carDetails = JSON.parse(cleanedText);
+      
+      // Normalize the bodyType to match system expectations
+      if (carDetails.bodyType) {
+        carDetails.bodyType = normalizeBodyType(carDetails.bodyType);
+      }
 
       // Return success response with data
       return {

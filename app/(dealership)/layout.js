@@ -10,7 +10,7 @@ export const metadata = {
 export default function DealershipGroupLayout({ children }) {
   return (
     <PageWrapper>
-      <div className="min-h-screen bg-background pt-20">
+      <div className="min-h-screen bg-background py-12 lg:py-32">
         <main className="flex-1 w-full">
           {children}
         </main>

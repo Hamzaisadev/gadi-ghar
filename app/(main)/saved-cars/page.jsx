@@ -11,7 +11,7 @@ const SavedCarsPage = async () => {
     
     const savedCarsResult = await getSavedCars();
   return (
-    <div className="container mx-auto px-4 py-12 lg:py-32">
+    <div className="container mx-auto px-4 pt-32 pb-12 lg:pt-40 lg:pb-32">
       <h1 className="text-4xl lg:text-6xl font-bold bg-gradient-to-r from-car-red to-car-red-dark bg-clip-text text-transparent mb-6 py-5">
         Saved Cars
           </h1>

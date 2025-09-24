@@ -143,9 +143,7 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 className="md:w-44 w-36 h-auto object-contain"
                 style={{ height: "auto" }}
               />
-              {isAdminPage && (
-                <span className="text-xs font-extralight">admin</span>
-              )}
+              
             </Link>
 
             {/* Desktop */}

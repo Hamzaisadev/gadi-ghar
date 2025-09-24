@@ -40,13 +40,12 @@ import {
   Sparkles,
   X,
   Loader2,
-  Lock,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import useFetch from "@/hooks/use-fetch";
 import { processCarImageWithAI } from "@/app/actions/cars";
-import { addDealershipCar, checkDealershipAIAccess } from "@/app/actions/dealership-cars";
+import { addDealershipCar } from "@/app/actions/dealership-cars";
 import { useRouter } from "next/navigation";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
@@ -112,14 +111,7 @@ export const AddCarForm = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadedAiImage, setUploadedAiImage] = useState(null);
-  const [hasPaidForAI, setHasPaidForAI] = useState(false);
   const router = useRouter();
-  
-  const {
-    loading: checkingAIAccess,
-    fn: checkAIAccessFn,
-    data: aiAccessData,
-  } = useFetch(checkDealershipAIAccess);
   const removeManualImage = (index) => {
     setManualUploadedImages((prev) => prev.filter((_, i) => i !== index));
     toast.error("Image removed");
@@ -189,16 +181,6 @@ export const AddCarForm = () => {
   useEffect(() => {
     setAmount(watchedPrice || "");
   }, [watchedPrice]);
-  
-  useEffect(() => {
-    checkAIAccessFn();
-  }, []);
-  
-  useEffect(() => {
-    if (aiAccessData?.success) {
-      setHasPaidForAI(aiAccessData.data.hasAIAccess);
-    }
-  }, [aiAccessData]);
 
   const handleAmountChange = (e) => {
     // Remove all non-digit characters
@@ -306,11 +288,6 @@ export const AddCarForm = () => {
   } = useFetch(processCarImageWithAI);
 
   const processWithAI = async () => {
-    if (!hasPaidForAI) {
-      toast.error("AI feature is not available for your dealership");
-      return;
-    }
-
     if (!uploadedAiImage) {
       toast.error("Please upload an image");
       return;
@@ -464,12 +441,8 @@ export const AddCarForm = () => {
             value="ai"
             className="flex items-center gap-2 h-10 data-[state=active]:bg-red-600 data-[state=active]:text-white"
           >
-            {hasPaidForAI ? (
-              <Camera className="h-4 w-4" />
-            ) : (
-              <Lock className="h-4 w-4" />
-            )}
-            {hasPaidForAI ? "AI Extraction" : "AI (Locked)"}
+            <Camera className="h-4 w-4" />
+            AI Extraction
           </TabsTrigger>
         </TabsList>
         <TabsContent value="manual" className="animate-fade-in">
@@ -915,56 +888,41 @@ export const AddCarForm = () => {
             <CardHeader className="pb-8">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-gradient-to-r from-red-700 via-red-600 to-red-500 rounded-xl">
-                  {hasPaidForAI ? (
-                    <Sparkles className="w-6 h-6 text-white" />
-                  ) : (
-                    <Lock className="w-6 h-6 text-white" />
-                  )}
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-semibold text-black">{hasPaidForAI ? "AI-Powered Vehicle Analysis" : "Unlock AI-Powered Analysis"}</CardTitle>
-                  <CardDescription className="text-gray-500 mt-1">{hasPaidForAI ? "Upload a vehicle image and let our AI extract comprehensive details automatically." : "Purchase access to use AI image analysis for auto-filling car details."}</CardDescription>
+                  <CardTitle className="text-2xl font-semibold text-black">AI-Powered Vehicle Analysis</CardTitle>
+                  <CardDescription className="text-gray-500 mt-1">Upload a vehicle image and let our AI extract comprehensive details automatically.</CardDescription>
                 </div>
               </div>
             </CardHeader>
 
             <CardContent className="px-8 pb-8">
-              {hasPaidForAI ? (
-                <div className="space-y-8">
-                  <div className={`border-0 shadow-lg rounded-2xl p-12 text-center hover-scale transition-all duration-500 ${imagePreview ? "ring-2 ring-red-600 bg-red-50" : "hover:bg-red-50"}`}>
-                    {imagePreview ? (
-                      <div className="flex flex-col items-center animate-fade-in">
-                        <img src={imagePreview} alt="Vehicle preview" className="max-h-80 max-w-full object-contain mb-8 rounded-xl shadow-lg" />
-                        <div className="flex gap-4">
-                          <Button variant="outline" size="lg" onClick={() => { setImagePreview(null); setUploadedAiImage(null); }} className="px-6 border-2 hover:border-red-600 hover-lift">Remove Image</Button>
-                          <Button onClick={processWithAI} disabled={processImageLoading} size="lg" className="px-8 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:shadow-red hover:scale-105 transition-all duration-300">{processImageLoading ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" />Analyzing...</>) : (<><Camera className="mr-2 h-5 w-5" />Extract Vehicle Details</>)}</Button>
+              <div className="space-y-8">
+                <div className={`border-0 shadow-lg rounded-2xl p-12 text-center hover-scale transition-all duration-500 ${imagePreview ? "ring-2 ring-red-600 bg-red-50" : "hover:bg-red-50"}`}>
+                  {imagePreview ? (
+                    <div className="flex flex-col items-center animate-fade-in">
+                      <img src={imagePreview} alt="Vehicle preview" className="max-h-80 max-w-full object-contain mb-8 rounded-xl shadow-lg" />
+                      <div className="flex gap-4">
+                        <Button variant="outline" size="lg" onClick={() => { setImagePreview(null); setUploadedAiImage(null); }} className="px-6 border-2 hover:border-red-600 hover-lift">Remove Image</Button>
+                        <Button onClick={processWithAI} disabled={processImageLoading} size="lg" className="px-8 bg-gradient-to-r from-red-700 via-red-600 to-red-500 hover:shadow-red hover:scale-105 transition-all duration-300">{processImageLoading ? (<><Loader2 className="mr-2 h-5 w-5 animate-spin" />Analyzing...</>) : (<><Camera className="mr-2 h-5 w-5" />Extract Vehicle Details</>)}</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div {...getAiRootProps()} className="cursor-pointer">
+                        <input {...getAiInputProps()} />
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="p-6 bg-gradient-to-r from-red-700 via-red-600 to-red-500 rounded-3xl shadow-red mb-8"><Camera className="h-12 w-12 text-white" /></div>
+                          <h3 className="text-2xl font-semibold text-black mb-4">Upload Vehicle Image</h3>
+                          <p className="text-gray-500 mb-6 max-w-lg">Our AI will analyze your image and automatically extract vehicle details including make, model, year, color, and more.</p>
+                          <div className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-lg"><Info className="w-4 h-4" />JPG, PNG, WebP • Max 5MB • Best results with clear, full vehicle shots</div>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <div {...getAiRootProps()} className="cursor-pointer">
-                          <input {...getAiInputProps()} />
-                          <div className="flex flex-col items-center justify-center">
-                            <div className="p-6 bg-gradient-to-r from-red-700 via-red-600 to-red-500 rounded-3xl shadow-red mb-8"><Camera className="h-12 w-12 text-white" /></div>
-                            <h3 className="text-2xl font-semibold text-black mb-4">Upload Vehicle Image</h3>
-                            <p className="text-gray-500 mb-6 max-w-lg">Our AI will analyze your image and automatically extract vehicle details including make, model, year, color, and more.</p>
-                            <div className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-lg"><Info className="w-4 h-4" />JPG, PNG, WebP • Max 5MB • Best results with clear, full vehicle shots</div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center p-12 bg-red-50 rounded-2xl border border-red-100">
-                  <div className="p-4 bg-gradient-to-r from-red-700 via-red-600 to-red-500 rounded-2xl mb-6"><Lock className="w-10 h-10 text-white" /></div>
-                  <h3 className="text-2xl font-semibold text-black mb-2">AI Extraction is Locked</h3>
-                  <p className="text-gray-600 mb-6 max-w-xl">Upgrade to unlock AI-powered image analysis. Automatically extract car details from an image to speed up listing creation.</p>
-                  <div className="flex gap-3">
-                    <Button variant="outline" size="lg" onClick={() => setActiveTab("manual")}>Continue Manually</Button>
-                  </div>
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

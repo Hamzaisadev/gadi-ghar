@@ -32,7 +32,7 @@ import { formatPriceRange } from "@/components/utils/FormatCurrency";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function DealerOverviewPage() {
+export default function DealerOverviewPage({ dealershipId = null }) {
   const router = useRouter();
   const [dealership, setDealership] = useState(null);
   const [cars, setCars] = useState([]);
@@ -40,40 +40,148 @@ export default function DealerOverviewPage() {
   // Fetch dealership data
   const {
     loading: loadingDealership,
+    error: dealershipError,
     fn: fetchDealership,
     data: dealershipData,
-  } = useFetch(getDealershipData);
+  } = useFetch(async () => {
+    try {
+      console.log('🔍 Fetching dealership data for ID:', dealershipId);
+      
+      // If no dealershipId is provided, get current user's dealership
+      if (!dealershipId) {
+        console.log('ℹ️ No dealershipId provided, will use current user\'s dealership');
+        // Pass null to getDealershipData so it uses the current user's dealership
+      }
+      
+      const result = await getDealershipData(dealershipId);
+      
+      // Log the result structure for debugging
+      console.log('🔍 Dealership data result:', {
+        success: result?.success,
+        hasData: !!result?.data,
+        dataType: result?.data ? typeof result.data : 'undefined',
+        error: result?.error
+      });
+      
+      // Handle case where result is undefined or null
+      if (!result || result === undefined) {
+        const errorMessage = 'Received empty response from server';
+        console.error('❌ ' + errorMessage);
+        return { success: false, error: errorMessage };
+      }
+      
+      // If the request was not successful
+      if (result.success === false) {
+        const errorMessage = result.error || 'Failed to load dealership data';
+        console.error('❌ Error in dealership data:', errorMessage);
+        toast.error(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+      
+      // If no data was returned
+      if (!result.data) {
+        const errorMessage = 'No dealership data found';
+        console.error('❌ ' + errorMessage);
+        toast.error(errorMessage);
+        return { success: false, error: errorMessage };
+      }
+      
+      console.log('✅ Successfully fetched dealership data');
+      return result;
+      
+    } catch (error) {
+      const errorMessage = error.message || 'An unexpected error occurred';
+      console.error('❌ Error fetching dealership data:', error);
+      toast.error(`Failed to load dealership: ${errorMessage}`);
+      return { 
+        success: false, 
+        error: errorMessage,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      };
+    }
+  });
 
   // Fetch cars data
   const {
     loading: loadingCars,
+    error: carsError,
     fn: fetchCars,
     data: carsData,
-  } = useFetch(() =>
-    dealership ? getCarsByDealership(dealership.id) : Promise.resolve({ success: true, data: [] })
-  );
+  } = useFetch(async () => {
+    if (!dealership) return { success: true, data: [] };
+    try {
+      const result = await getCarsByDealership(dealership.id);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to load cars');
+      }
+      return result;
+    } catch (error) {
+      console.error('Error fetching cars:', error);
+      toast.error(`Failed to load cars: ${error.message}`);
+      throw error;
+    }
+  });
 
   useEffect(() => {
-    fetchDealership();
-  }, []);
+    const loadData = async () => {
+      try {
+        console.log('🚀 Loading dealership data...');
+        const result = await fetchDealership();
+        console.log('🚀 Dealership data loaded:', {
+          success: result?.success,
+          error: result?.error,
+          hasData: !!result?.data
+        });
+      } catch (error) {
+        console.error('❌ Error in loadData:', error);
+        toast.error(`Failed to load dealership: ${error.message}`);
+      }
+    };
+    
+    // Only load data if not already loading and no existing data
+    if (!loadingDealership && !dealershipData) {
+      loadData();
+    }
+  }, [fetchDealership, loadingDealership, dealershipData]);
 
   useEffect(() => {
-    if (dealershipData?.success) {
+    console.log('🔄 Updating dealership state:', {
+      hasData: !!dealershipData,
+      success: dealershipData?.success,
+      error: dealershipData?.error,
+      dealershipId: dealershipData?.data?.id
+    });
+    
+    if (dealershipData?.success && dealershipData.data) {
+      console.log('✅ Setting dealership data:', dealershipData.data.name);
       setDealership(dealershipData.data);
+    } else if (dealershipData?.error) {
+      console.error('❌ Error in dealership data:', dealershipData.error);
+      setDealership(null);
     }
   }, [dealershipData]);
 
   useEffect(() => {
-    if (dealership) {
+    if (dealership?.id) {
       fetchCars();
     }
-  }, [dealership]);
+  }, [dealership, fetchCars]);
 
   useEffect(() => {
     if (carsData?.success) {
       setCars(carsData.data || []);
     }
   }, [carsData]);
+
+  // Handle errors
+  useEffect(() => {
+    if (dealershipError) {
+      toast.error(`Failed to load dealership: ${dealershipError.message}`);
+    }
+    if (carsError) {
+      toast.error(`Failed to load cars: ${carsError.message}`);
+    }
+  }, [dealershipError, carsError]);
 
   // Calculate stats
   const totalCars = cars.length;
@@ -107,8 +215,28 @@ export default function DealerOverviewPage() {
     return (
       <div className="p-6">
         <Card>
-          <CardContent className="p-6 text-red-600">
-            Failed to load dealership information
+          <CardContent className="p-6">
+            <div className="text-center space-y-4">
+              <div className="text-red-600 text-lg font-semibold">
+                Failed to load dealership information
+              </div>
+              {dealershipData?.error && (
+                <div className="text-sm text-gray-600 bg-red-50 p-3 rounded">
+                  Error: {dealershipData.error}
+                </div>
+              )}
+              <Button 
+                onClick={() => {
+                  console.log('🏢 Retrying dealership data fetch...');
+                  fetchDealership();
+                }}
+                variant="outline"
+                className="mt-4"
+              >
+                <Loader2 className="w-4 h-4 mr-2" />
+                Retry Loading
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -301,7 +429,7 @@ export default function DealerOverviewPage() {
               <CardTitle className="text-xl">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <Button
                   variant="outline"
                   className="h-20 flex-col space-y-2"
@@ -317,6 +445,14 @@ export default function DealerOverviewPage() {
                 >
                   <Car className="w-6 h-6" />
                   <span>Manage Cars</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex-col space-y-2 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-150 border-blue-200"
+                  onClick={() => router.push("/dealership/test-drives")}
+                >
+                  <Calendar className="w-6 h-6 text-blue-600" />
+                  <span className="text-blue-700 font-medium">Test Drives</span>
                 </Button>
                 <Button
                   variant="outline"

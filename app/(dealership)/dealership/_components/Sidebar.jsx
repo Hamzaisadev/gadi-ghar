@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Building2, Car, Settings, Users, LayoutDashboard, User } from "lucide-react";
+import { Building2, Car, Settings, Users, LayoutDashboard, User, Calendar } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,7 @@ const DealershipSidebar = () => {
   const routes = [
     { label: "Overview", icon: LayoutDashboard, href: "/dealership" },
     { label: "Manage Cars", icon: Car, href: "/dealership/cars" },
+    { label: "Test Drives", icon: Calendar, href: "/dealership/test-drives" },
     { label: "Profile", icon: User, href: "/dealership/profile" },
     { label: "Team", icon: Users, href: "/dealership/team" },
     { label: "Settings", icon: Settings, href: "/dealership/settings" },

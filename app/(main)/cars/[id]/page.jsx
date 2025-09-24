@@ -33,7 +33,7 @@ const CarPage = async ({ params }) => {
   }
 
   return (
-    <div className="bg-background p-8 py-12 lg:py-32">
+    <div className="bg-background py-12 lg:py-32">
       <CarDetails car={result.data} testDriveInfo={result.data.testDriveInfo} />
     </div>
   );

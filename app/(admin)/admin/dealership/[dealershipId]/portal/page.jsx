@@ -5,16 +5,24 @@ import { useParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Car, Building2, Users, TrendingUp, ExternalLink, Eye } from "lucide-react";
+import {
+  ArrowLeft,
+  ExternalLink,
+  Building2,
+  Car,
+  TrendingUp,
+  Eye
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { PageSpinner } from "@/components/ui/loading-spinner";
 import { getDealershipById, getDealershipStats } from "@/app/actions/dealership";
+import { formatPriceWithCrore, formatPriceRange } from "@/components/utils/FormatCurrency";
 
 export default function AdminDealershipPortalView() {
   const params = useParams();
   const dealershipId = params.dealershipId;
-  
+
   const [dealership, setDealership] = useState(null);
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,23 +37,26 @@ export default function AdminDealershipPortalView() {
       setIsLoading(true);
       setError(null);
 
+      // Fetch both dealership data and stats
       const [dealershipResult, statsResult] = await Promise.all([
         getDealershipById(dealershipId),
         getDealershipStats(dealershipId)
       ]);
 
       if (!dealershipResult.success) {
-        throw new Error(dealershipResult.error || 'Failed to fetch dealership data');
+        throw new Error(
+          dealershipResult.error || "Failed to fetch dealership data"
+        );
       }
 
       if (!statsResult.success) {
-        console.warn('Failed to fetch stats:', statsResult.error);
+        console.warn("Failed to fetch stats:", statsResult.error);
       }
 
       setDealership(dealershipResult.data);
       setStats(statsResult.success ? statsResult.data : null);
     } catch (error) {
-      console.error('Error fetching dealership data:', error);
+      console.error("Error fetching dealership data:", error);
       setError(error.message);
       toast.error("Failed to load dealership data");
     } finally {
@@ -63,7 +74,9 @@ export default function AdminDealershipPortalView() {
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center">
             <Building2 className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Dealership Not Found</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Dealership Not Found
+            </h2>
             <p className="text-gray-600 mb-4">
               {error || "The dealership you're looking for could not be found."}
             </p>
@@ -92,7 +105,9 @@ export default function AdminDealershipPortalView() {
               <h1 className="text-3xl font-bold text-gray-900">
                 {dealership.name} Portal
               </h1>
-              <p className="text-gray-600">Admin view of dealership dashboard</p>
+              <p className="text-gray-600">
+                Admin view of dealership dashboard
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -100,9 +115,12 @@ export default function AdminDealershipPortalView() {
               Admin View
             </Badge>
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/dealership`} target="_blank">
+              <Link
+                href={`/admin/dealership/${dealershipId}/manage`}
+                target="_blank"
+              >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Open Full Portal
+                Manage Dealership
               </Link>
             </Button>
           </div>
@@ -114,15 +132,17 @@ export default function AdminDealershipPortalView() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {dealership.logo && (
-                  <img 
-                    src={dealership.logo} 
-                    alt="Dealership Logo" 
+                  <img
+                    src={dealership.logo}
+                    alt="Dealership Logo"
                     className="w-16 h-16 rounded-lg object-cover"
                   />
                 )}
                 <div>
                   <CardTitle className="text-2xl">{dealership.name}</CardTitle>
-                  <CardDescription>{dealership.description || "No description available"}</CardDescription>
+                  <CardDescription>
+                    {dealership.description || "No description available"}
+                  </CardDescription>
                 </div>
               </div>
               <Badge variant="default" className="bg-green-100 text-green-800">
@@ -158,7 +178,9 @@ export default function AdminDealershipPortalView() {
                     <Car className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.totalCars}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.totalCars}
+                    </p>
                     <p className="text-gray-600">Total Cars</p>
                   </div>
                 </div>
@@ -172,7 +194,9 @@ export default function AdminDealershipPortalView() {
                     <TrendingUp className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.availableCars}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.availableCars}
+                    </p>
                     <p className="text-gray-600">Available</p>
                   </div>
                 </div>
@@ -186,7 +210,9 @@ export default function AdminDealershipPortalView() {
                     <Car className="w-6 h-6 text-red-600" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">{stats.soldCars}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.soldCars}
+                    </p>
                     <p className="text-gray-600">Sold</p>
                   </div>
                 </div>
@@ -201,7 +227,7 @@ export default function AdminDealershipPortalView() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
-                      ${Math.round(stats.avgPrice).toLocaleString()}
+                      {formatPriceWithCrore(Math.round(stats.avgPrice))}
                     </p>
                     <p className="text-gray-600">Avg Price</p>
                   </div>
@@ -215,9 +241,14 @@ export default function AdminDealershipPortalView() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Cars ({dealership.cars?.length || 0})</CardTitle>
+              <CardTitle>
+                Recent Cars ({dealership.cars?.length || 0})
+              </CardTitle>
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/profile/${dealership.name.replace(/\s+/g, '-').toLowerCase()}`} target="_blank">
+                <Link
+                  href={`/profile/${dealership.name.replace(/\s+/g, "-").toLowerCase()}`}
+                  target="_blank"
+                >
                   <Eye className="w-4 h-4 mr-2" />
                   View Public Profile
                 </Link>
@@ -228,14 +259,23 @@ export default function AdminDealershipPortalView() {
             {dealership.cars && dealership.cars.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {dealership.cars.slice(0, 6).map((car) => (
-                  <div key={car.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div
+                    key={car.id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-gray-900">
                         {car.year} {car.make} {car.model}
                       </h3>
-                      <Badge 
-                        variant={car.status === 'AVAILABLE' ? 'default' : 'secondary'}
-                        className={car.status === 'AVAILABLE' ? 'bg-green-100 text-green-800' : ''}
+                      <Badge
+                        variant={
+                          car.status === "AVAILABLE" ? "default" : "secondary"
+                        }
+                        className={
+                          car.status === "AVAILABLE"
+                            ? "bg-green-100 text-green-800"
+                            : ""
+                        }
                       >
                         {car.status}
                       </Badge>
@@ -244,7 +284,14 @@ export default function AdminDealershipPortalView() {
                       <p>Color: {car.color}</p>
                       <p>Mileage: {car.mileage?.toLocaleString()} km</p>
                       <p className="font-medium text-gray-900">
-                        ${car.minPrice?.toLocaleString()} - ${car.maxPrice?.toLocaleString()}
+                        {car.minPrice || car.maxPrice
+                          ? formatPriceRange(
+                              car.minPrice || car.price,
+                              car.maxPrice
+                            )
+                          : car.price
+                            ? formatPriceWithCrore(car.price)
+                            : "TBD"}
                       </p>
                     </div>
                   </div>

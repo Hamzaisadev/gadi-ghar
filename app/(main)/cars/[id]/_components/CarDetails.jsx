@@ -5,6 +5,8 @@ import ShareDialog from "@/components/shareDialog";
 import { Button } from "@/components/ui/button";
 import OptimizedImage from "@/components/ui/optimized-image";
 import useFetch from "@/hooks/use-fetch";
+import ImageZoom from "./ImageZoom";
+import ImageModal from "./ImageModal";
 import { useAuth } from "@clerk/nextjs";
 import {
   CarIcon,
@@ -53,6 +55,8 @@ const CarDetails = ({ car, testDriveInfo }) => {
   const [carToShare, setCarToShare] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSharing, setIsSharing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   useEffect(() => {
     console.log("Current image index changed to:", currentImageIndex);
@@ -131,14 +135,23 @@ const CarDetails = ({ car, testDriveInfo }) => {
     router.push(`/test-drive/${car.id}`);
   };
 
+  const handleImageClick = (imageIndex = currentImageIndex) => {
+    setModalImageIndex(imageIndex);
+    setIsModalOpen(true);
+  };
+
+  const handleThumbnailClick = (index) => {
+    setCurrentImageIndex(index);
+  };
+
   return (
     <div>
       {/* Breadcrumb Navigation */}
-      <Breadcrumb 
+      <Breadcrumb
         items={[
           { label: "Home", href: "/" },
           { label: "Cars", href: "/cars" },
-          { label: `${car.year} ${car.make} ${car.model}` }
+          { label: `${car.year} ${car.make} ${car.model}` },
         ]}
         className="mb-6 mx-4"
       />
@@ -146,27 +159,21 @@ const CarDetails = ({ car, testDriveInfo }) => {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Image Gallery */}
         <div className="w-full lg:w-7/12">
-          <div className="group aspect-video rounded-lg overflow-hidden relative mb-4 bg-gray-100 cursor-zoom-in">
+          <div className="aspect-video rounded-lg overflow-hidden relative mb-4 bg-gray-100">
             {car.images && car.images.length > 0 ? (
-              <OptimizedImage
+              <ImageZoom
                 key={`main-image-${currentImageIndex}`}
                 src={car.images[currentImageIndex]}
                 alt={car.make + " " + car.model}
-                priority={false}
-                quality={100}
-                aspectRatio="h-full"
-                className="transition-transform duration-700 ease-in-out group-hover:scale-110"
+                onImageClick={() => handleImageClick(currentImageIndex)}
+                className="w-full h-full rounded-lg"
+                zoomLevel={2.0}
               />
             ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg transition-all duration-300 group-hover:bg-gray-200">
-                <CarIcon className="h-16 w-16 text-gray-400 transition-transform duration-300 group-hover:scale-110" />
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg transition-all duration-300 hover:bg-gray-200">
+                <CarIcon className="h-16 w-16 text-gray-400 transition-transform duration-300 hover:scale-110" />
               </div>
             )}
-            
-            {/* Zoom indicator */}
-            <div className="absolute top-4 right-4 bg-black/70 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              Click to zoom
-            </div>
           </div>
 
           {/* Thumbnails */}
@@ -190,8 +197,9 @@ const CarDetails = ({ car, testDriveInfo }) => {
                         "Current:",
                         currentImageIndex
                       );
-                      setCurrentImageIndex(index);
+                      handleThumbnailClick(index);
                     }}
+                    onDoubleClick={() => handleImageClick(index)}
                   >
                     <OptimizedImage
                       src={image}
@@ -201,7 +209,7 @@ const CarDetails = ({ car, testDriveInfo }) => {
                       aspectRatio="h-full"
                       className="transition-transform duration-300 group-hover:scale-110"
                     />
-                    
+
                     {/* Active indicator overlay */}
                     {index === currentImageIndex && (
                       <div className="absolute inset-0 bg-red-600/10 flex items-center justify-center">
@@ -219,8 +227,8 @@ const CarDetails = ({ car, testDriveInfo }) => {
             <Button
               variant={isWishlisted ? "default" : "outline"}
               className={`flex items-center gap-2 flex-1 transition-all duration-200 ${
-                isWishlisted 
-                  ? "bg-red-600 hover:bg-red-700 text-white border-red-600" 
+                isWishlisted
+                  ? "bg-red-600 hover:bg-red-700 text-white border-red-600"
                   : "border-red-600 text-red-600 hover:bg-red-50"
               }`}
               onClick={handleSaveCar}
@@ -252,7 +260,9 @@ const CarDetails = ({ car, testDriveInfo }) => {
         {/* Car Details */}
         <div className="w-full lg:w-5/12">
           <div className="flex items-center justify-between">
-            <Badge className="mb-2 bg-red-600 hover:bg-red-700 text-white border-red-600">{car.bodyType}</Badge>
+            <Badge className="mb-2 bg-red-600 hover:bg-red-700 text-white border-red-600">
+              {car.bodyType}
+            </Badge>
           </div>
 
           <h1 className="text-4xl font-bold mb-1">
@@ -291,7 +301,9 @@ const CarDetails = ({ car, testDriveInfo }) => {
                   <div className="text-sm text-gray-600">
                     Estimated Monthly Payment:{" "}
                     <span className="font-bold text-gray-900">
-                      {formatCurrency(((Number(car.minPrice) + Number(car.maxPrice)) / 2) / 60)}
+                      {formatCurrency(
+                        (Number(car.minPrice) + Number(car.maxPrice)) / 2 / 60
+                      )}
                     </span>{" "}
                     for 60 months
                   </div>
@@ -305,7 +317,7 @@ const CarDetails = ({ car, testDriveInfo }) => {
               <DialogHeader>
                 <DialogTitle>Car Loan Calculator</DialogTitle>
               </DialogHeader>
-              <EmiCalculator 
+              <EmiCalculator
                 price={(Number(car.minPrice) + Number(car.maxPrice)) / 2}
                 minPrice={Number(car.minPrice)}
                 maxPrice={Number(car.maxPrice)}
@@ -325,7 +337,10 @@ const CarDetails = ({ car, testDriveInfo }) => {
                 about this vehicle.
               </p>
               <a href="mailto:help@gadighar.com">
-                <Button variant="outline" className="w-full border-red-600 text-red-600 hover:bg-red-50 transition-all duration-200">
+                <Button
+                  variant="outline"
+                  className="w-full border-red-600 text-red-600 hover:bg-red-50 transition-all duration-200"
+                >
                   Request Info
                 </Button>
               </a>
@@ -366,7 +381,9 @@ const CarDetails = ({ car, testDriveInfo }) => {
       <div className="mt-12 p-6 bg-white rounded-lg shadow-sm border-l-4 border-l-red-600">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-2xl font-bold mb-6 text-gray-900">Description</h3>
+            <h3 className="text-2xl font-bold mb-6 text-gray-900">
+              Description
+            </h3>
             <p className="whitespace-pre-line text-gray-700 leading-relaxed">
               {car.description}
             </p>
@@ -403,7 +420,9 @@ const CarDetails = ({ car, testDriveInfo }) => {
 
       {/* Specifications Section */}
       <div className="mt-8 p-6 bg-white rounded-lg shadow-sm border-l-4 border-l-red-600">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Specifications</h2>
+        <h2 className="text-2xl font-bold mb-6 text-gray-900">
+          Specifications
+        </h2>
         <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg p-6 border border-red-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
             <div className="flex justify-between py-2 border-b">
@@ -453,16 +472,20 @@ const CarDetails = ({ car, testDriveInfo }) => {
       {/* Dealership Location Section */}
       <div className="mt-8 p-6 bg-white rounded-lg shadow-sm border-l-4 border-l-red-600">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Dealership Information</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Dealership Information
+          </h2>
           {(car.dealership?.name || testDriveInfo.dealership?.name) && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="border-red-600 text-red-600 hover:bg-red-50"
               onClick={() => {
-                const dealershipName = (car.dealership?.name || testDriveInfo.dealership?.name)
+                const dealershipName = (
+                  car.dealership?.name || testDriveInfo.dealership?.name
+                )
                   .toLowerCase()
-                  .replace(/[^a-z0-9\s]/g, '')
-                  .replace(/\s+/g, '-');
+                  .replace(/[^a-z0-9\s]/g, "")
+                  .replace(/\s+/g, "-");
                 router.push(`/profile/${dealershipName}`);
               }}
             >
@@ -478,10 +501,16 @@ const CarDetails = ({ car, testDriveInfo }) => {
               {/* Dealership Logo */}
               <div className="flex-shrink-0">
                 <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center border-2 border-red-300 shadow-sm">
-                  {(car.dealership?.logo || testDriveInfo.dealership?.logo) ? (
+                  {car.dealership?.logo || testDriveInfo.dealership?.logo ? (
                     <OptimizedImage
-                      src={car.dealership?.logo || testDriveInfo.dealership?.logo}
-                      alt={(car.dealership?.name || testDriveInfo.dealership?.name || "Dealership") + " logo"}
+                      src={
+                        car.dealership?.logo || testDriveInfo.dealership?.logo
+                      }
+                      alt={
+                        (car.dealership?.name ||
+                          testDriveInfo.dealership?.name ||
+                          "Dealership") + " logo"
+                      }
                       quality={90}
                       aspectRatio="w-full h-full object-contain"
                     />
@@ -490,30 +519,38 @@ const CarDetails = ({ car, testDriveInfo }) => {
                   )}
                 </div>
               </div>
-              
+
               {/* Dealership Details */}
               <div className="flex-1">
                 <h4 className="font-semibold text-xl text-gray-900 mb-2">
-                  {car.dealership?.name || testDriveInfo.dealership?.name || "Gadi Ghar"}
+                  {car.dealership?.name ||
+                    testDriveInfo.dealership?.name ||
+                    "Gadi Ghar"}
                 </h4>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-gray-700">
                     <LocateFixed className="h-4 w-4 text-red-600" />
                     <span className="text-sm">
-                      {car.dealership?.address || testDriveInfo.dealership?.address || "Address not available"}
+                      {car.dealership?.address ||
+                        testDriveInfo.dealership?.address ||
+                        "Address not available"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-700">
                     <Phone className="h-4 w-4 text-red-600" />
                     <span className="text-sm">
-                      {car.dealership?.phone || testDriveInfo.dealership?.phone || "Contact not available"}
+                      {car.dealership?.phone ||
+                        testDriveInfo.dealership?.phone ||
+                        "Contact not available"}
                     </span>
                   </div>
-                  {(car.dealership?.email || testDriveInfo.dealership?.email) && (
+                  {(car.dealership?.email ||
+                    testDriveInfo.dealership?.email) && (
                     <div className="flex items-center gap-2 text-gray-700">
                       <Mail className="h-4 w-4 text-red-600" />
                       <span className="text-sm">
-                        {car.dealership?.email || testDriveInfo.dealership?.email}
+                        {car.dealership?.email ||
+                          testDriveInfo.dealership?.email}
                       </span>
                     </div>
                   )}
@@ -549,9 +586,7 @@ const CarDetails = ({ car, testDriveInfo }) => {
                           <span className="text-gray-600">
                             {formatDayName(day.dayOfWeek)}
                           </span>
-                          <span>
-                            {formatWorkingHours(day)}
-                          </span>
+                          <span>{formatWorkingHours(day)}</span>
                         </div>
                       ))
                   : // Default hours if none provided
@@ -587,6 +622,19 @@ const CarDetails = ({ car, testDriveInfo }) => {
         onOpenChange={setShareDialogOpen}
         carToShare={carToShare}
         onShare={handleShare}
+      />
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        images={car.images || []}
+        currentIndex={modalImageIndex}
+        onIndexChange={(index) => {
+          setModalImageIndex(index);
+          setCurrentImageIndex(index); // Also update the main gallery
+        }}
+        carName={`${car.year} ${car.make} ${car.model}`}
       />
     </div>
   );
