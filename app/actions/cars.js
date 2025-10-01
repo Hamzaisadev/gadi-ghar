@@ -22,7 +22,7 @@ export async function processCarImageWithAI(file) {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
     const based64image = await fileToBase64(file);
 
@@ -47,7 +47,7 @@ export async function processCarImageWithAI(file) {
     - model (e.g., Alsvin, Alto, City)
     - year (estimated, the likely model year in Pakistan, e.g., 2021, 2023,2024 ,2025. If unsure but the car appears recent, use the most current or common production year for that model in Pakistan. For the Changan Alsvin, for instance, consider years from 2021 onwards.)
     - color (dominant exterior color)
-    - bodyType (e.g., Sedan, Hatchback, SUV, Crossover, Coupe, Van, Pickup)
+    - bodyType (e.g., Sedan, Hatchback, SUV, Crossover, Coupe, Van, Pickup,MPV)
 mileage (estimated **fuel efficiency in KM/L**, providing a realistic range based on variant, e.g., "12-18 KM/L" for Changan Alsvin)    - fuelType (Petrol, Diesel, Hybrid, or Electric)
     - transmission (Manual or Automatic/DCT/CVT - specify if possible, otherwise "Automatic")
     - minPrice (estimated minimum current market value in PKR)

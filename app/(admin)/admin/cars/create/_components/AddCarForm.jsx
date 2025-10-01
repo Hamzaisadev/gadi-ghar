@@ -58,6 +58,7 @@ const bodyTypes = [
   "Coupe",
   "Wagon",
   "Pickup",
+  "MPV",
 ];
 const carStatuses = ["AVAILABLE", "UNAVAILABLE", "SOLD"];
 
@@ -322,13 +323,13 @@ export const AddCarForm = () => {
       setValue("color", carDetails.color);
       setValue("bodyType", carDetails.bodyType);
       setValue("fuelType", carDetails.fuelType);
-      
+
       // Set price values from AI response (minPrice and maxPrice are already numbers)
       setValue("minPrice", carDetails.minPrice?.toString() || "");
       setValue("maxPrice", carDetails.maxPrice?.toString() || "");
       setMinAmount(carDetails.minPrice?.toString() || "");
       setMaxAmount(carDetails.maxPrice?.toString() || "");
-      
+
       setValue("mileage", carDetails.mileage);
       setValue("transmission", carDetails.transmission);
       setValue("description", carDetails.description);
@@ -895,8 +896,8 @@ export const AddCarForm = () => {
                                   status === "AVAILABLE"
                                     ? "bg-green-500"
                                     : status === "UNAVAILABLE"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
                                 }`}
                               />
                               {status.charAt(0) + status.slice(1).toLowerCase()}
