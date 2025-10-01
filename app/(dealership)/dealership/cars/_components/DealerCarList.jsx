@@ -631,10 +631,7 @@ const DealerCarList = () => {
                     <DropdownMenuRadioGroup
                       value={car.status?.toUpperCase()}
                       onValueChange={(val) =>
-                        handleStatusUpdate(
-                          car,
-                          val.charAt(0) + val.slice(1).toLowerCase()
-                        )
+                        handleStatusUpdate(car, val)
                       }
                     >
                       <DropdownMenuRadioItem
