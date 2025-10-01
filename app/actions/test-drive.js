@@ -96,9 +96,6 @@ async function sendDealershipTestDriveNotification({
       html: emailHtml,
     });
 
-    console.log(
-      `Test drive notification sent to dealership: ${dealership.email}`
-    );
   } catch (error) {
     console.error("Failed to send dealership notification email:", error);
     throw error;
@@ -372,11 +369,6 @@ export async function getDealershipTestDriveBookings(status = null) {
 
     if (!user) throw new Error("User not found");
 
-    console.log('📋 getDealershipTestDriveBookings: User info:', {
-      id: user.id,
-      role: user.role,
-      dealershipId: user.dealershipId
-    });
 
     // Check if user is a dealership admin or main admin
     if (user.role !== "DEALERSHIP_ADMIN" && user.role !== "ADMIN") {
@@ -412,12 +404,6 @@ export async function getDealershipTestDriveBookings(status = null) {
         };
       }
 
-      console.log('📋 getDealershipTestDriveBookings: Dealership found:', {
-        id: dealership.id,
-        name: dealership.name,
-        isActive: dealership.isActive,
-        isApproved: dealership.isApproved
-      });
     }
 
     // Build query conditions
@@ -437,7 +423,6 @@ export async function getDealershipTestDriveBookings(status = null) {
       whereCondition.status = status;
     }
 
-    console.log('📋 getDealershipTestDriveBookings: Query condition:', whereCondition);
 
     const bookings = await db.testDriveBooking.findMany({
       where: whereCondition,
@@ -690,7 +675,6 @@ async function sendCustomerConfirmationEmail({
       html: emailHtml,
     });
 
-    console.log(`Confirmation email sent to customer: ${customer.email}`);
   } catch (error) {
     console.error("Failed to send customer confirmation email:", error);
     throw error;

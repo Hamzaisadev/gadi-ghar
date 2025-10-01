@@ -9,8 +9,6 @@ import { safeAsync, GadiGharError, ErrorTypes } from "@/lib/error-utils";
 
 export async function getCarFilters() {
   try {
-    console.log('🔧 getCarFilters (Enhanced) - using advanced search system');
-    
     // Use the advanced search system's filter suggestions
     const filterResult = await getFilterSuggestions();
     
@@ -47,16 +45,6 @@ export async function getCarFilters() {
       orderBy: { color: "asc" },
     });
 
-    console.log('🔧 Enhanced filter data loaded:', {
-      makes: filterSuggestions.makes.length,
-      bodyTypes: filterSuggestions.bodyTypes.length,
-      fuelTypes: filterSuggestions.fuelTypes.length,
-      transmissions: filterSuggestions.transmissions.length,
-      dealerships: dealerships.length,
-      priceRange: filterSuggestions.priceRange,
-      yearRange: filterSuggestions.yearRange,
-      mileageRange: filterSuggestions.mileageRange
-    });
 
     return {
       success: true,
@@ -103,11 +91,6 @@ export async function getCars({
   limit = 8,
 }) {
   try {
-    console.log('🚗 getCars (Enhanced) called with params:', {
-      search, make, bodyType, fuelType, transmission, 
-      color, dealershipId, minPrice, maxPrice, minYear, maxYear, minMileage, maxMileage,
-      seats, featured, sortBy, page, limit
-    });
 
     // Get current user for wishlist status
     const { userId } = await auth();
@@ -186,18 +169,6 @@ export async function getCars({
       includeDealership: true
     });
     
-    console.log('Search parameters after conversion:', {
-      minPrice: minPrice === Number.MAX_SAFE_INTEGER ? 0 : Number(minPrice),
-      maxPrice: maxPrice === Number.MAX_SAFE_INTEGER ? 999999999 : Number(maxPrice),
-      seats: seats ? Number(seats) : null,
-      featured: featured === 'true' ? true : featured === 'false' ? false : null,
-      minYear: Number(minYearValue),
-      maxYear: Number(maxYearValue),
-      minMileage: Number(minMileageValue),
-      maxMileage: Number(maxMileageValue),
-    });
-
-    console.log('🔍 Raw search result:', searchResult);
 
     // Handle safeAsync result
     if (!searchResult.success) {
@@ -206,11 +177,6 @@ export async function getCars({
 
     const searchData = searchResult.data;
 
-    console.log('🔍 Advanced search results:', {
-      carsCount: searchData.cars?.length,
-      pagination: searchData.pagination,
-      appliedFilters: searchData.appliedFilters
-    });
 
     // Apply wishlist status to serialized cars with error handling
     let carsWithWishlist = [];
@@ -246,11 +212,6 @@ export async function getCars({
       },
     };
     
-    console.log('Final enhanced result:', {
-      success: result.success,
-      dataLength: result.data.length,
-      pagination: result.pagination
-    });
     
     return result;
   } catch (error) {

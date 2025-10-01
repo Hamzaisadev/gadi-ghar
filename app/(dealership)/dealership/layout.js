@@ -88,10 +88,10 @@ export default async function DealershipLayout({ children }) {
       <PageWrapper>
         <ErrorBoundary>
           <div className="min-h-screen bg-background pt-20">
-            <div className="flex">
+            <div className="flex h-full">
               <DealershipSidebar />
-              <main className="flex-1 md:ml-0 pb-20 md:pb-0 animate-fade-in">
-                <div className="p-6 md:p-8">{children}</div>
+              <main className="flex-1 w-full md:pl-0 pb-20 md:pb-0 animate-fade-in">
+                {children}
               </main>
             </div>
           </div>

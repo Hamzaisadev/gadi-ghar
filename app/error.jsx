@@ -55,14 +55,14 @@ export default function Error({ error, reset }) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertTitle className="text-lg font-semibold">
+    <div className="min-h-screen bg-background flex items-center justify-center container-responsive">
+      <div className="max-w-sm sm:max-w-md w-full">
+        <Alert variant="destructive" className="mb-4 sm:mb-6">
+          <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" />
+          <AlertTitle className="text-base sm:text-lg font-semibold">
             Oops! Something went wrong
           </AlertTitle>
-          <AlertDescription className="mt-2">
+          <AlertDescription className="mt-2 text-sm sm:text-base">
             We encountered an unexpected error. This might be a temporary issue.
           </AlertDescription>
         </Alert>
@@ -70,29 +70,31 @@ export default function Error({ error, reset }) {
         <div className="space-y-3">
           <Button 
             onClick={handleTryAgain}
-            className="w-full bg-car-red hover:bg-car-red-dark"
-            size="lg"
+            className="w-full bg-car-red hover:bg-car-red-dark touch-target text-sm sm:text-base"
+            size="default"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
           </Button>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <Button
               onClick={handleGoBack}
               variant="outline"
-              size="lg"
+              size="default"
+              className="touch-target text-xs sm:text-sm"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
+              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Go Back
             </Button>
 
             <Button
               onClick={handleGoHome}
               variant="outline"
-              size="lg"
+              size="default"
+              className="touch-target text-xs sm:text-sm"
             >
-              <Home className="h-4 w-4 mr-2" />
+              <Home className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Home
             </Button>
           </div>

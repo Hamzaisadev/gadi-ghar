@@ -93,12 +93,15 @@ export default function RootLayout({ children }) {
       <ViewTransitions>
         <html lang="en">
           <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0, shrink-to-fit=no, viewport-fit=cover, user-scalable=yes" />
             <meta name="theme-color" content="#dc2626" />
             <meta name="background-color" content="#ffffff" />
             <meta name="mobile-web-app-capable" content="yes" />
             <meta name="apple-mobile-web-app-capable" content="yes" />
-            <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
+            <meta name="HandheldFriendly" content="true" />
+            <meta name="MobileOptimized" content="width" />
             <meta name="apple-mobile-web-app-title" content="Gadi Ghar" />
             <meta name="application-name" content="Gadi Ghar" />
             <meta name="msapplication-TileColor" content="#dc2626" />
@@ -112,15 +115,18 @@ export default function RootLayout({ children }) {
             <InitialSplash />
             <PageWrapper>
               { <NavbarServer />}
-              <main className=" min-h-screen">{children}</main>
+              <main className="min-h-screen w-full overflow-x-hidden">{children}</main>
               <Toaster
                 richColors
                 expand
+                position="top-center"
                 toastOptions={{
                   style: {
-                    fontSize: "1.1rem",
-                    padding: "16px",
+                    fontSize: "0.95rem",
+                    padding: "12px 16px",
+                    maxWidth: "90vw",
                   },
+                  className: "sm:text-base",
                 }}
               />
               <Footer />

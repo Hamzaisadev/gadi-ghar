@@ -322,14 +322,13 @@ export const AddCarForm = () => {
       setValue("color", carDetails.color);
       setValue("bodyType", carDetails.bodyType);
       setValue("fuelType", carDetails.fuelType);
-      // Debug: log AI price and parse result
-      console.log("AI carDetails.price:", carDetails.price);
-      const { parseRangeFromAI } = require("@/components/utils/FormatCurrency");
-      const priceResult = parseRangeFromAI(carDetails.price);
+      
+      // Set price values from AI response (minPrice and maxPrice are already numbers)
       setValue("minPrice", carDetails.minPrice?.toString() || "");
       setValue("maxPrice", carDetails.maxPrice?.toString() || "");
       setMinAmount(carDetails.minPrice?.toString() || "");
       setMaxAmount(carDetails.maxPrice?.toString() || "");
+      
       setValue("mileage", carDetails.mileage);
       setValue("transmission", carDetails.transmission);
       setValue("description", carDetails.description);

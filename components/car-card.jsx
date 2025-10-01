@@ -69,9 +69,9 @@ const CarCard = ({ car }) => {
   };
 
   return (
-    <Card className="group overflow-hidden bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-2xl hover:shadow-red-600/10 hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+    <Card className="group overflow-hidden bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg border border-gray-100 hover:shadow-xl sm:hover:shadow-2xl hover:shadow-red-600/10 hover:scale-[1.01] sm:hover:scale-[1.02] transition-all duration-300 cursor-pointer w-full max-w-sm sm:max-w-none mx-auto">
       {/* Image */}
-      <div className="relative h-64 md:h-72 overflow-hidden">
+      <div className="relative h-48 xs:h-52 sm:h-56 md:h-64 lg:h-72 overflow-hidden">
         {car.images?.length > 0 ? (
           <OptimizedImage
             src={car.images[0]}
@@ -93,67 +93,69 @@ const CarCard = ({ car }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* Price bottom-left */}
-        <div className="absolute bottom-3 left-3 bg-red-600/95 text-white px-4 py-1.5 rounded-lg text-lg md:text-xl font-semibold shadow-lg">
+        <div className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 bg-red-600/95 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-md sm:rounded-lg font-semibold shadow-lg
+          text-sm xs:text-base sm:text-lg md:text-xl">
           {formatPriceRange(car.minPrice || car.price, car.maxPrice)}
         </div>
 
         {/* Heart Button */}
         <button
           onClick={handleToggleClick}
-          className={`absolute top-3 right-3 rounded-full p-2 bg-white/90 backdrop-blur-md shadow-md transition transform hover:scale-110
+          className={`absolute top-2 right-2 sm:top-3 sm:right-3 rounded-full p-1.5 sm:p-2 bg-white/90 backdrop-blur-md shadow-md transition transform hover:scale-110 touch-target-sm sm:touch-target
             ${isSaved ? "text-red-600" : "text-gray-700 hover:text-black"}`}
         >
           {isToggling ? (
-            <Loader2 className="h-4 w-4 animate-spin  " />
+            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
           ) : (
             <Heart
               className={`transition ${
                 isSaved ? "fill-current scale-110" : ""
               }`}
-              size={24}
+              size={20}
+              className="w-4 h-4 sm:w-5 sm:h-5"
             />
           )}
         </button>
       </div>
 
       {/* Content */}
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-5 md:p-6">
         {/* Title */}
-        <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 truncate">
+        <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 line-clamp-2 sm:truncate">
           {car.make} {car.model}{" "}
-          <span className="text-gray-500 font-medium">({car.year})</span>
+          <span className="text-gray-500 font-medium text-sm sm:text-base">({car.year})</span>
         </h3>
 
         {/* Specs Grid */}
-        <div className="grid grid-cols-2 gap-3 text-base md:text-lg text-gray-800 mb-5">
-          <div className="flex items-center gap-2">
-            <Settings size={20} className="text-red-600" />
-            <span className="font-medium">{car.transmission}</span>
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 text-sm sm:text-base md:text-lg text-gray-800 mb-4 sm:mb-5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Settings size={16} className="text-red-600 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="font-medium truncate">{car.transmission}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Fuel size={20} className="text-red-600" />
-            <span className="font-medium">{car.fuelType}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Fuel size={16} className="text-red-600 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="font-medium truncate">{car.fuelType}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Gauge size={20} className="text-red-600" />
-            <span className="font-medium">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Gauge size={16} className="text-red-600 sm:w-5 sm:h-5 flex-shrink-0" />
+            <span className="font-medium truncate">
               {car.mileage?.toLocaleString() || 0} mi
             </span>
           </div>
           {car.seats != null && (
-            <div className="flex items-center gap-2">
-              <Users size={20} className="text-red-600" />
-              <span className="font-medium">{car.seats} seats</span>
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <Users size={16} className="text-red-600 sm:w-5 sm:h-5 flex-shrink-0" />
+              <span className="font-medium truncate">{car.seats} seats</span>
             </div>
           )}
         </div>
 
         {/* Badges */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <Badge className="bg-black text-white rounded-full px-3 py-1 text-sm md:text-base font-medium">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-3">
+          <Badge className="bg-black text-white rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm md:text-base font-medium">
             {car.bodyType}
           </Badge>
-          <Badge className="bg-gray-200 text-gray-800 rounded-full px-3 py-1 text-sm md:text-base font-medium">
+          <Badge className="bg-gray-200 text-gray-800 rounded-full px-2 py-0.5 sm:px-3 sm:py-1 text-xs sm:text-sm md:text-base font-medium">
             {car.color}
           </Badge>
         </div>
@@ -176,14 +178,14 @@ const CarCard = ({ car }) => {
 
         {/* CTA */}
         <Button
-          className="w-full bg-red-600 hover:bg-red-700 hover:scale-[1.02] transition-transform duration-300 text-white font-medium py-3 rounded-lg text-base md:text-lg"
+          className="w-full bg-red-600 hover:bg-red-700 hover:scale-[1.01] sm:hover:scale-[1.02] transition-transform duration-300 text-white font-medium py-2.5 sm:py-3 rounded-md sm:rounded-lg text-sm sm:text-base md:text-lg touch-target"
           onClick={handleViewDetails}
           disabled={isNavigating}
         >
           {isNavigating ? (
             <div className="flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading...</span>
+              <span className="text-sm sm:text-base">Loading...</span>
             </div>
           ) : (
             "View Details"

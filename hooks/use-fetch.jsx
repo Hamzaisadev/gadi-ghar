@@ -7,12 +7,10 @@ const useFetch = (cb) => {
   const [error, setError] = useState(null);
 
   const fn = async (...args) => {
-    console.log("🔄 useFetch: Starting request...");
     setLoading(true);
     setError(null);
 
     try {
-      console.log("🔄 useFetch: Calling server action...");
       const response = await cb(...args);
       
       // Handle undefined or null response
@@ -25,12 +23,6 @@ const useFetch = (cb) => {
         return { success: false, error: errorMessage };
       }
       
-      console.log("✅ useFetch: Response received:", {
-        success: response?.success,
-        error: response?.error,
-        dataLength: response?.data ? (Array.isArray(response.data) ? response.data.length : Object.keys(response.data).length) : 0,
-      });
-
       // Handle error response with success: false
       if (response && response.success === false) {
         const message = response.message || response.error || "Request failed";
@@ -61,7 +53,6 @@ const useFetch = (cb) => {
       // Don't show toast here, let the component handle it
       return { success: false, error: errorMessage };
     } finally {
-      console.log("🏁 useFetch: Request completed");
       setLoading(false);
     }
   };

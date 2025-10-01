@@ -111,7 +111,10 @@ mileage (estimated **fuel efficiency in KM/L**, providing a realistic range base
       };
     } catch (error) {
       console.error("Failed to parse AI Response: ", error);
-      return null;
+      return {
+        success: false,
+        error: "Failed to parse AI response: " + error.message
+      };
     }
   } catch (error) {
     throw new Error("Gemini API Error: " + error.message);

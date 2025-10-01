@@ -121,7 +121,7 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
         className={`
         fixed top-0 left-0 w-full z-50
         transform transition-transform duration-300
-        py-4 md:py-5
+        py-2 sm:py-3 md:py-4 lg:py-5
         ${
           isVisible
             ? "translate-y-0"
@@ -130,24 +130,24 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
       `}
       >
         <div
-          className="  bg-black/10 backdrop-blur-[15px] border-neutral-400/20 container mx-auto py-4 rounded-xl
-       px-4 md:px-8"
+          className="bg-black/10 backdrop-blur-[15px] border-neutral-400/20 container mx-auto py-2 sm:py-3 md:py-4 rounded-xl
+       px-3 sm:px-4 md:px-6 lg:px-8"
         >
-          <div className="flex justify-between items-center">
-            <Link href={isAdminPage ? "/admin" : "/"} className="flex">
+          <div className="flex justify-between items-center w-full">
+            <Link href={isAdminPage ? "/admin" : "/"} className="flex flex-shrink-0">
               <Image
                 src={"/GariGharBlack.png"}
                 alt="Gadi Ghar Logo"
                 width={100}
                 height={60}
-                className="md:w-44 w-36 h-auto object-contain"
+                className="w-28 sm:w-32 md:w-36 lg:w-40 xl:w-44 h-auto object-contain"
                 style={{ height: "auto" }}
+                priority
               />
-              
             </Link>
 
             {/* Desktop */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-2 lg:space-x-3 xl:space-x-4">
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
@@ -296,13 +296,14 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 />
               </SignedIn>
             </div>
-            <div className="md:hidden flex  animate-in fade-in gap-x-3">
+            {/* Mobile Navigation */}
+            <div className="md:hidden flex items-center gap-x-1 sm:gap-x-2">
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
-                    <Button variant="outline">
-                      <ArrowLeft size={18} />
-                      <span>Back to app</span>
+                    <Button variant="outline" size="sm" className="touch-target">
+                      <ArrowLeft size={16} className="sm:mr-2" />
+                      <span className="hidden sm:inline">Back to app</span>
                     </Button>
                   </TransitionLink>
                 </>
@@ -315,12 +316,11 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                           <>
                             <TransitionLink
                               href={isReservationPage ? "/cars" : "/reservations"}
-                              className="text-gray-600 hover:text-car-red flex items-center gap-2"
                             >
-                              <Button variant="outline">
-                                <CarFront size={18} />
-                                <span className="hidden md:inline">
-                                  {isReservationPage ? "Browse Cars" : "My Reservations"}
+                              <Button variant="outline" size="sm" className="touch-target">
+                                <CarFront size={16} className="sm:mr-1" />
+                                <span className="hidden sm:inline text-xs">
+                                  {isReservationPage ? "Browse" : "Reservations"}
                                 </span>
                               </Button>
                             </TransitionLink>
@@ -330,9 +330,11 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                           </>
                         )}
                         <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
-                          <Button>
-                            <Heart size={18} />
-                            <span className="hidden md:inline">{isWishlistedPage ? "Browse Cars" : "Saved Cars"}</span>
+                          <Button size="sm" className="touch-target">
+                            <Heart size={16} className="sm:mr-1" />
+                            <span className="hidden sm:inline text-xs">
+                              {isWishlistedPage ? "Browse" : "Saved"}
+                            </span>
                           </Button>
                         </TransitionLink>
                         <MobNavbarMenu />
@@ -355,7 +357,8 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                           <SignInButton forceRedirectUrl="/">
                             <Button
                               variant="outline"
-                              className="bg-red-600 border-none text-white"
+                              size="sm"
+                              className="bg-red-600 border-none text-white touch-target text-xs"
                             >
                               Login
                             </Button>
@@ -427,7 +430,7 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                 <UserButton
                   appearance={{
                     elements: {
-                      avatarBox: "w-8 md:block  h-8",
+                      avatarBox: "w-8 h-8 sm:w-9 sm:h-9",
                     },
                   }}
                 />

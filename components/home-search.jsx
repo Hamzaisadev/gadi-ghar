@@ -135,10 +135,10 @@ const HomeSearch = () => {
     });
 
   return (
-    <div className="bg-black/10 backdrop-blur-[20px] border-2 border-black/20 rounded-xl p-4 shadow-xl max-w-2xl mx-auto mb-8">
+    <div className="bg-black/10 backdrop-blur-[20px] border-2 border-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-xl w-full mx-auto mb-6 sm:mb-8">
       <form
         onSubmit={handleTextSearch}
-        className="flex flex-col sm:flex-row gap-3"
+        className="flex flex-col gap-3 sm:gap-4"
       >
         <Button
           type="button"
@@ -150,59 +150,62 @@ const HomeSearch = () => {
               open();
             }
           }}
-          className="w-full sm:w-auto bg-black/40 text-white backdrop-blur-sm font-bold text-sm cursor-pointer h-12 px-4 border-2 border-dashed border-gray-300 hover:border-black hover:bg-red-700 transition-colors whitespace-nowrap"
+          className="w-full bg-black/40 text-white backdrop-blur-sm font-bold text-sm cursor-pointer h-11 sm:h-12 px-3 sm:px-4 border-2 border-dashed border-gray-300 hover:border-black hover:bg-red-700 transition-colors touch-target"
         >
-          <Camera className="  w-8 h-8 mr-2 cursor-pointer  " />
-          Upload Photo
+          <Camera className="w-5 h-5 sm:w-6 sm:h-6 mr-2 cursor-pointer" />
+          <span className="hidden xs:inline">Upload Photo</span>
+          <span className="xs:hidden">Photo</span>
         </Button>
-        <div className="flex gap-2 flex-1">
+        <div className="flex flex-col sm:flex-row gap-2 flex-1">
           <Input
             type="text"
             placeholder="Search by make, model..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-6 pr-6 pb-2  h-12  leading-tight focus-visible:ring-offset-0 focus-visible:ring-0 focus-visible:ring-white-500 focus-visible:border-white bg-red-/10  text-red-700  backdrop-blur-[1px] placeholder:text-black  placeholder:text-lg !text-2xl  "
+            className="flex-1 h-11 sm:h-12 text-base sm:text-lg text-red-700 placeholder:text-black/70 placeholder:text-sm sm:placeholder:text-base bg-white/80 backdrop-blur-sm border-2 border-white/50 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-red-500 px-3 sm:px-4"
           />
-          <Button
-            type="submit"
-            className=" h-12 px-6 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm whitespace-nowrap "
-            disabled={isProcessing || searchTerm.trim().length < 2}
-            aria-busy={isProcessing}
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="left-3 w-5 h-5 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Search className=" left-3 w-5 h-5" />
-                Search
-              </>
-            )}
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="h-12 px-4 whitespace-nowrap"
-            onClick={() => {
-              setSearchTerm("");
-              setSearchImage(null);
-              setImagePreview("");
-            }}
-          >
-            Clear
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              className="flex-1 sm:flex-none h-11 sm:h-12 px-4 sm:px-6 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm touch-target"
+              disabled={isProcessing || searchTerm.trim().length < 2}
+              aria-busy={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
+                  <span className="hidden sm:inline">Processing...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
+                  <span className="hidden xs:inline">Search</span>
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-11 sm:h-12 px-3 sm:px-4 touch-target text-sm"
+              onClick={() => {
+                setSearchTerm("");
+                setSearchImage(null);
+                setImagePreview("");
+              }}
+            >
+              Clear
+            </Button>
+          </div>
         </div>
       </form>
 
       {/* Inline helpers */}
-      <div className="mt-1 space-y-1">
+      <div className="mt-2 sm:mt-3 space-y-1">
         {searchTerm && searchTerm.trim().length < 2 && (
-          <p className="text-xs text-gray-300">Enter at least 2 characters to search.</p>
+          <p className="text-xs sm:text-sm text-gray-300">Enter at least 2 characters to search.</p>
         )}
         {isImageSearchActive && !searchImage && (
-          <p className="text-xs text-gray-300">Tip: add a car photo to analyze make/type/color.</p>
+          <p className="text-xs sm:text-sm text-gray-300">Tip: add a car photo to analyze make/type/color.</p>
         )}
         <p className="text-xs text-gray-400">Formats: .jpg, .png · max 5MB</p>
       </div>

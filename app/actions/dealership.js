@@ -361,13 +361,10 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
 
 export async function getDealershipData(dealershipId = null) {
   try {
-    console.log('🏢 getDealershipData: Starting with dealershipId:', dealershipId);
     
     const { userId } = await auth();
-    console.log('🏢 getDealershipData: Auth userId:', userId);
     
     if (!userId) {
-      console.log('❌ getDealershipData: No userId found');
       return { 
         success: false, 
         error: "Unauthorized: You must be logged in" 
@@ -375,17 +372,11 @@ export async function getDealershipData(dealershipId = null) {
     }
 
     // Use checkUser to ensure user exists in database
-    console.log('🏢 getDealershipData: Checking user in database');
     const { checkUser } = await import('@/lib/checkUser');
     const user = await checkUser();
-    console.log('🏢 getDealershipData: User from checkUser:', {
-      id: user?.id,
-      role: user?.role,
-      dealershipId: user?.dealershipId
-    });
+    
 
     if (!user) {
-      console.log('❌ getDealershipData: User not found in database');
       return { 
         success: false, 
         error: "User not found" 
@@ -394,11 +385,9 @@ export async function getDealershipData(dealershipId = null) {
 
     // If no dealershipId is provided, use the user's dealership (for dealer portal)
     const targetDealershipId = dealershipId || user.dealershipId;
-    console.log('🏢 getDealershipData: Target dealership ID:', targetDealershipId);
 
     // If user is not an admin and is trying to access a different dealership, deny access
     if (user.role !== 'ADMIN' && targetDealershipId !== user.dealershipId) {
-      console.log('❌ getDealershipData: Unauthorized access attempt');
       return {
         success: false,
         error: "Unauthorized: You can only access your own dealership"
@@ -406,14 +395,12 @@ export async function getDealershipData(dealershipId = null) {
     }
 
     if (!targetDealershipId) {
-      console.log('❌ getDealershipData: No dealership ID specified');
       return { 
         success: false, 
         error: "No dealership specified" 
       };
     }
 
-    console.log('🏢 getDealershipData: Querying database for dealership:', targetDealershipId);
     // Get dealership data with working hours
     const dealership = await db.dealershipInfo.findUnique({
       where: { id: targetDealershipId },
@@ -426,23 +413,15 @@ export async function getDealershipData(dealershipId = null) {
       },
     });
 
-    console.log('🏢 getDealershipData: Database query result:', {
-      found: !!dealership,
-      name: dealership?.name,
-      id: dealership?.id,
-      isActive: dealership?.isActive,
-      isApproved: dealership?.isApproved
-    });
+    
 
     if (!dealership) {
-      console.log('❌ getDealershipData: Dealership not found in database');
       return { 
         success: false, 
         error: "Dealership not found" 
       };
     }
 
-    console.log('✅ getDealershipData: Successfully retrieved dealership data');
     return {
       success: true,
       data: dealership,
@@ -563,14 +542,11 @@ export async function checkDealershipAuthorization() {
     const { userId } = await auth();
     
     if (!userId) {
-      console.log('Auth: No userId found');
       return {
         success: false,
         error: "Unauthorized: You must be logged in"
       };
     }
-
-    console.log('Auth: Checking for Clerk user ID:', userId);
 
     // Get the user with their dealership info
     const user = await db.user.findUnique({
@@ -580,27 +556,15 @@ export async function checkDealershipAuthorization() {
       }
     });
 
-    console.log('Auth: User found:', user ? {
-      id: user.id,
-      role: user.role,
-      dealershipId: user.dealershipId,
-      hasDealership: !!user.dealership
-    } : 'null');
-
     if (!user) {
-      console.log('Auth: User not found in database');
       return {
         success: false,
         error: "User not found"
       };
     }
 
-    console.log('Auth: User role:', user.role);
-    console.log('Auth: User dealershipId:', user.dealershipId);
-
     // Allow main admins to access dealership admin panel
     if (user.role === 'ADMIN') {
-      console.log('Auth: User is main admin, granting access');
       // For main admins, get the first approved dealership or create a default one
       let defaultDealership = await db.dealershipInfo.findFirst({
         where: { isApproved: true },
@@ -636,7 +600,6 @@ export async function checkDealershipAuthorization() {
       
       // If no dealership assigned, try to find one where user is admin
       if (!dealership) {
-        console.log('Auth: User is DEALERSHIP_ADMIN but has no dealership assigned');
         dealership = await db.dealershipInfo.findFirst({
           where: {
             admins: {
@@ -651,7 +614,6 @@ export async function checkDealershipAuthorization() {
         });
 
         if (dealership) {
-          console.log('Auth: Found dealership for admin, updating user record');
           // Update user with dealershipId
           await db.user.update({
             where: { id: user.id },
@@ -660,7 +622,6 @@ export async function checkDealershipAuthorization() {
           user.dealershipId = dealership.id;
           user.dealership = dealership;
         } else {
-          console.log('Auth: No dealership found for this admin');
           return {
             success: false,
             error: "No dealership assigned to your account. Please contact support."
@@ -679,12 +640,10 @@ export async function checkDealershipAuthorization() {
     }
 
     // For other users, try to fix their role
-    console.log('Auth: User is not an admin, trying to fix role...');
     try {
       const fixResult = await checkAndFixDealershipAdminRole();
       
       if (fixResult.success && fixResult.data.role === 'DEALERSHIP_ADMIN') {
-        console.log('Auth: Role fixed successfully');
         return fixResult;
       }
     } catch (error) {
@@ -692,7 +651,6 @@ export async function checkDealershipAuthorization() {
       // Continue with the normal flow if role fixing fails
     }
     
-    console.log('Auth: User does not have dealership admin access');
     return {
       success: false,
       error: 'You do not have permission to access the dealership admin panel.',
@@ -1006,23 +964,17 @@ export async function checkAndFixDealershipAdminRole() {
       };
     }
 
-    console.log('Fix: Checking user role for Clerk ID:', userId);
-
     // Get user by Clerk ID
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
     });
 
     if (!user) {
-      console.log('Fix: User not found');
       return { 
         success: false, 
         error: "User not found" 
       };
     }
-
-    console.log('Fix: Current user role:', user.role);
-    console.log('Fix: Current dealershipId:', user.dealershipId);
 
     // Check if user has an approved dealership application
     const approvedApplication = await db.dealershipApplication.findFirst({
@@ -1034,7 +986,6 @@ export async function checkAndFixDealershipAdminRole() {
     });
 
     if (approvedApplication) {
-      console.log('Fix: Found approved application');
       
       // Check if dealership exists
       const dealership = await db.dealershipInfo.findFirst({
@@ -1046,11 +997,9 @@ export async function checkAndFixDealershipAdminRole() {
       });
 
       if (dealership) {
-        console.log('Fix: Found approved dealership:', dealership.id);
         
         // Update user role and dealershipId if needed
         if (user.role !== 'DEALERSHIP_ADMIN' || user.dealershipId !== dealership.id) {
-          console.log('Fix: Updating user role and dealershipId');
           
           await db.user.update({
             where: { id: user.id },
@@ -1059,8 +1008,6 @@ export async function checkAndFixDealershipAdminRole() {
               dealershipId: dealership.id,
             },
           });
-
-          console.log('Fix: User role updated successfully');
           
           return {
             success: true,
@@ -1070,7 +1017,6 @@ export async function checkAndFixDealershipAdminRole() {
             },
           };
         } else {
-          console.log('Fix: User role is already correct');
           return {
             success: true,
             data: {
@@ -1079,11 +1025,7 @@ export async function checkAndFixDealershipAdminRole() {
             },
           };
         }
-      } else {
-        console.log('Fix: No approved dealership found');
       }
-    } else {
-      console.log('Fix: No approved application found');
     }
 
     return {

@@ -17,7 +17,7 @@ import ElectricCarsSection from "@/components/sections/ElectricCarsSection";
 export default function Home() {
   return (
     <PageWrapper>
-      <div className="bg-white flex flex-col">
+      <div className="bg-white flex flex-col min-h-screen overflow-x-hidden">
         <HeroSection />
         <FeaturedCars />
         <AICarMatching />

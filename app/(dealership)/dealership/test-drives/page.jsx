@@ -157,8 +157,8 @@ export default function DealershipTestDrivesPage() {
   // Handle no dealership associated case
   if (bookingsError === 'NO_DEALERSHIP_ASSOCIATED') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/20 pt-20 md:pt-24">
-        <div className="container mx-auto px-6 py-12">
+      <div className="bg-gradient-to-br from-slate-50 via-white to-blue-50/20 py-8">
+        <div className="container mx-auto px-4 sm:px-6 py-8">
           <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-8 text-center">
               <div className="flex justify-center mb-6">
@@ -191,10 +191,10 @@ export default function DealershipTestDrivesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 min-h-full">
       {/* Modern Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center space-x-4">
               <div className="bg-gradient-to-r from-red-500 to-red-600 p-3 rounded-xl shadow-lg">
@@ -228,18 +228,18 @@ export default function DealershipTestDrivesPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Modern Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Total Bookings Card */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-4 sm:p-6 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200">
             <div className="flex items-center">
-              <div className="bg-blue-500 p-3 rounded-xl shadow-lg">
-                <Calendar className="h-6 w-6 text-white" />
+              <div className="bg-blue-500 p-2 sm:p-3 rounded-xl shadow-lg">
+                <Calendar className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-blue-700">Total Bookings</p>
-                <p className="text-2xl font-bold text-blue-900">{bookings.length}</p>
+              <div className="ml-3 sm:ml-4">
+                <p className="text-xs sm:text-sm font-medium text-blue-700">Total Bookings</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-900">{bookings.length}</p>
               </div>
             </div>
           </div>
@@ -269,17 +269,17 @@ export default function DealershipTestDrivesPage() {
             const iconBg = iconColorMap[config.color] || 'bg-gray-500';
             
             return (
-              <div key={status} className={`bg-gradient-to-br ${gradientClass} rounded-2xl p-6 border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer`}
+              <div key={status} className={`bg-gradient-to-br ${gradientClass} rounded-2xl p-4 sm:p-6 border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer`}
                    onClick={() => setSelectedStatus(status)}>
                 <div className="flex items-center">
-                  <div className={`${iconBg} p-3 rounded-xl shadow-lg`}>
-                    <Icon className="h-6 w-6 text-white" />
+                  <div className={`${iconBg} p-2 sm:p-3 rounded-xl shadow-lg`}>
+                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                   </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium opacity-80">
+                  <div className="ml-3 sm:ml-4">
+                    <p className="text-xs sm:text-sm font-medium opacity-80">
                       {config.label}
                     </p>
-                    <p className="text-2xl font-bold">{count}</p>
+                    <p className="text-xl sm:text-2xl font-bold">{count}</p>
                     <p className="text-xs opacity-60">{percentage}% of total</p>
                   </div>
                 </div>
@@ -289,7 +289,7 @@ export default function DealershipTestDrivesPage() {
         </div>
 
         {/* Modern Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center space-x-3">
               <div className="bg-gray-100 p-2 rounded-lg">
@@ -301,9 +301,9 @@ export default function DealershipTestDrivesPage() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-48 border-gray-300 focus:border-red-300 focus:ring-red-200">
+                <SelectTrigger className="w-full sm:w-48 border-gray-300 focus:border-red-300 focus:ring-red-200">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,7 +319,7 @@ export default function DealershipTestDrivesPage() {
                 </SelectContent>
               </Select>
               
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 text-center sm:text-left">
                 {bookings.filter(b => selectedStatus === 'all' || b.status === selectedStatus).length} appointments
               </div>
             </div>
@@ -328,7 +328,7 @@ export default function DealershipTestDrivesPage() {
 
         {/* Modern Bookings List */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="bg-red-100 p-2 rounded-lg">
@@ -343,7 +343,7 @@ export default function DealershipTestDrivesPage() {
               </div>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {loadingBookings ? (
               <div className="flex flex-col items-center justify-center h-64 space-y-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -418,18 +418,18 @@ export default function DealershipTestDrivesPage() {
                     key={booking.id}
                     className="group bg-gradient-to-r from-white via-gray-50 to-white rounded-xl border border-gray-200 hover:border-red-200 hover:shadow-lg transition-all duration-300 overflow-hidden"
                   >
-                    <div className="p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
+                    <div className="p-4 sm:p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
+                        <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
                           {/* Car Icon */}
-                          <div className="bg-gradient-to-br from-red-500 to-red-600 p-3 rounded-xl shadow-lg">
-                            <Car className="w-6 h-6 text-white" />
+                          <div className="bg-gradient-to-br from-red-500 to-red-600 p-2 sm:p-3 rounded-xl shadow-lg flex-shrink-0">
+                            <Car className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                           </div>
                           
                           {/* Main Content */}
                           <div className="flex-1 min-w-0">
                             {/* Car Info & Status */}
-                            <div className="flex items-center justify-between mb-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
                               <div>
                                 <h3 className="text-lg font-bold text-gray-900 group-hover:text-red-600 transition-colors">
                                   {booking.car.year} {booking.car.make} {booking.car.model}
@@ -442,31 +442,31 @@ export default function DealershipTestDrivesPage() {
                             </div>
                             
                             {/* Appointment Details */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                              <div className="flex items-center space-x-3 bg-blue-50 rounded-lg p-3">
-                                <Calendar className="w-5 h-5 text-blue-600" />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+                              <div className="flex items-center space-x-2 sm:space-x-3 bg-blue-50 rounded-lg p-2 sm:p-3">
+                                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                                 <div>
-                                  <p className="text-sm font-medium text-blue-900">
+                                  <p className="text-xs sm:text-sm font-medium text-blue-900">
                                     {format(new Date(booking.bookingDate), "MMM d, yyyy")}
                                   </p>
                                   <p className="text-xs text-blue-600">Appointment Date</p>
                                 </div>
                               </div>
                               
-                              <div className="flex items-center space-x-3 bg-green-50 rounded-lg p-3">
-                                <Clock className="w-5 h-5 text-green-600" />
+                              <div className="flex items-center space-x-2 sm:space-x-3 bg-green-50 rounded-lg p-2 sm:p-3">
+                                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                                 <div>
-                                  <p className="text-sm font-medium text-green-900">
+                                  <p className="text-xs sm:text-sm font-medium text-green-900">
                                     {booking.startTime} - {booking.endTime}
                                   </p>
                                   <p className="text-xs text-green-600">Time Slot</p>
                                 </div>
                               </div>
                               
-                              <div className="flex items-center space-x-3 bg-purple-50 rounded-lg p-3">
-                                <User className="w-5 h-5 text-purple-600" />
-                                <div>
-                                  <p className="text-sm font-medium text-purple-900 truncate">
+                              <div className="flex items-center space-x-2 sm:space-x-3 bg-purple-50 rounded-lg p-2 sm:p-3 sm:col-span-2 lg:col-span-1">
+                                <User className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                                <div className="min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium text-purple-900 truncate">
                                     {booking.customer.name || booking.customer.email}
                                   </p>
                                   <p className="text-xs text-purple-600">Customer</p>
@@ -476,8 +476,8 @@ export default function DealershipTestDrivesPage() {
                             
                             {/* Customer Notes */}
                             {booking.notes && (
-                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
-                                <p className="text-sm text-amber-800">
+                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2 sm:p-3 mb-4">
+                                <p className="text-xs sm:text-sm text-amber-800">
                                   <span className="font-medium">Note:</span> {booking.notes}
                                 </p>
                               </div>
@@ -486,14 +486,14 @@ export default function DealershipTestDrivesPage() {
                         </div>
                         
                         {/* Action Button */}
-                        <div className="ml-4">
+                        <div className="w-full lg:w-auto lg:ml-4">
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setSelectedBooking(booking)}
-                                className="border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50"
+                                className="w-full lg:w-auto border-gray-300 hover:border-red-300 hover:text-red-600 hover:bg-red-50"
                               >
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details

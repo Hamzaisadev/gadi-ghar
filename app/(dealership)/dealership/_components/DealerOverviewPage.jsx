@@ -45,23 +45,7 @@ export default function DealerOverviewPage({ dealershipId = null }) {
     data: dealershipData,
   } = useFetch(async () => {
     try {
-      console.log('🔍 Fetching dealership data for ID:', dealershipId);
-      
-      // If no dealershipId is provided, get current user's dealership
-      if (!dealershipId) {
-        console.log('ℹ️ No dealershipId provided, will use current user\'s dealership');
-        // Pass null to getDealershipData so it uses the current user's dealership
-      }
-      
       const result = await getDealershipData(dealershipId);
-      
-      // Log the result structure for debugging
-      console.log('🔍 Dealership data result:', {
-        success: result?.success,
-        hasData: !!result?.data,
-        dataType: result?.data ? typeof result.data : 'undefined',
-        error: result?.error
-      });
       
       // Handle case where result is undefined or null
       if (!result || result === undefined) {
@@ -86,7 +70,6 @@ export default function DealerOverviewPage({ dealershipId = null }) {
         return { success: false, error: errorMessage };
       }
       
-      console.log('✅ Successfully fetched dealership data');
       return result;
       
     } catch (error) {
@@ -125,13 +108,7 @@ export default function DealerOverviewPage({ dealershipId = null }) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('🚀 Loading dealership data...');
         const result = await fetchDealership();
-        console.log('🚀 Dealership data loaded:', {
-          success: result?.success,
-          error: result?.error,
-          hasData: !!result?.data
-        });
       } catch (error) {
         console.error('❌ Error in loadData:', error);
         toast.error(`Failed to load dealership: ${error.message}`);
@@ -145,15 +122,7 @@ export default function DealerOverviewPage({ dealershipId = null }) {
   }, [fetchDealership, loadingDealership, dealershipData]);
 
   useEffect(() => {
-    console.log('🔄 Updating dealership state:', {
-      hasData: !!dealershipData,
-      success: dealershipData?.success,
-      error: dealershipData?.error,
-      dealershipId: dealershipData?.data?.id
-    });
-    
     if (dealershipData?.success && dealershipData.data) {
-      console.log('✅ Setting dealership data:', dealershipData.data.name);
       setDealership(dealershipData.data);
     } else if (dealershipData?.error) {
       console.error('❌ Error in dealership data:', dealershipData.error);
@@ -227,7 +196,6 @@ export default function DealerOverviewPage({ dealershipId = null }) {
               )}
               <Button 
                 onClick={() => {
-                  console.log('🏢 Retrying dealership data fetch...');
                   fetchDealership();
                 }}
                 variant="outline"
