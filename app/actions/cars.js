@@ -11,14 +11,29 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function processCarImageWithAI(file) {
   async function fileToBase64() {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    return buffer.toString("base64");
+    try {
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      return buffer.toString("base64");
+    } catch (error) {
+      console.error("Error converting file to base64:", error);
+      throw new Error("Failed to process file: " + error.message);
+    }
   }
+  
   try {
+    // Validate input file
+    if (!file) {
+      throw new Error("No file provided");
+    }
+    
+    if (!file.type || !file.type.startsWith('image/')) {
+      throw new Error("Invalid file type. Please provide an image file.");
+    }
+    
     // check if api is available
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error("Gemini API key is not set");
+      throw new Error("Gemini API key is not configured");
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -47,8 +62,9 @@ export async function processCarImageWithAI(file) {
     - model (e.g., Alsvin, Alto, City)
     - year (estimated, the likely model year in Pakistan, e.g., 2021, 2023,2024 ,2025. If unsure but the car appears recent, use the most current or common production year for that model in Pakistan. For the Changan Alsvin, for instance, consider years from 2021 onwards.)
     - color (dominant exterior color)
-    - bodyType (e.g., Sedan, Hatchback, SUV, Crossover, Coupe, Van, Pickup,MPV)
-mileage (estimated **fuel efficiency in KM/L**, providing a realistic range based on variant, e.g., "12-18 KM/L" for Changan Alsvin)    - fuelType (Petrol, Diesel, Hybrid, or Electric)
+    - bodyType (e.g., Sedan, Hatchback, SUV, Crossover, Coupe, Van, Pickup)
+    - mileage (estimated **fuel efficiency in KM/L**, providing a realistic range based on variant, e.g., "12-18 KM/L" for Changan Alsvin)
+    - fuelType (Petrol, Diesel, Hybrid, or Electric)
     - transmission (Manual or Automatic/DCT/CVT - specify if possible, otherwise "Automatic")
     - minPrice (estimated minimum current market value in PKR)
     - maxPrice (estimated maximum current market value in PKR)
@@ -382,7 +398,7 @@ export async function updateCarStatus(id, status, featured) {
 
     return {
       success: true,
-      data: updatedCar,
+      data: serializeCarData(updatedCar),
     };
   } catch (error) {
     console.error('Error updating car status:', error);

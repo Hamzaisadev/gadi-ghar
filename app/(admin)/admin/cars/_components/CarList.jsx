@@ -223,7 +223,8 @@ const CarList = () => {
   const handleToggleFeatured = async (car) => {
     setLoadingFeature((prev) => ({ ...prev, [car.id]: true }));
     try {
-      await updateCarStatusFn(car.id, { featured: !car.featured });
+      // Call updateCarStatus(id, status, featured) - preserve current status, only update featured
+      await updateCarStatusFn(car.id, car.status, !car.featured);
       // Update local state after API call
       setLocalCars((prev) =>
         prev.map((c) =>
@@ -231,7 +232,7 @@ const CarList = () => {
         )
       );
     } catch (error) {
-      // handle error, maybe show a toast
+      toast.error("Failed to update featured status");
     }
     setLoadingFeature((prev) => ({ ...prev, [car.id]: false }));
   };
@@ -240,11 +241,13 @@ const CarList = () => {
   const handleStatusUpdate = async (car, newStatus) => {
     setLoadingStatus((prev) => ({ ...prev, [car.id]: true }));
     try {
-      await updateCarStatusFn(car.id, { status: newStatus.toUpperCase() });
+      // Ensure status is uppercase and call updateCarStatus(id, status, featured)
+      const upperCaseStatus = newStatus.toUpperCase();
+      await updateCarStatusFn(car.id, upperCaseStatus, car.featured);
       // Update local state after API call
       setLocalCars((prev) =>
         prev.map((c) =>
-          c.id === car.id ? { ...c, status: newStatus.toUpperCase() } : c
+          c.id === car.id ? { ...c, status: upperCaseStatus } : c
         )
       );
     } catch (err) {
@@ -527,10 +530,7 @@ const CarList = () => {
                     <DropdownMenuRadioGroup
                       value={car.status?.toUpperCase()}
                       onValueChange={(val) =>
-                        handleStatusUpdate(
-                          car,
-                          val.charAt(0) + val.slice(1).toLowerCase()
-                        )
+                        handleStatusUpdate(car, val)
                       }
                     >
                       <DropdownMenuRadioItem
