@@ -112,10 +112,14 @@ const GadiGharInfo = () => {
             <div className="space-y-4">
               <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
                 Pakistan's Premier Car Marketplace
-                <span className="block text-red-600">Buy, Sell & Finance With Ease</span>
+                <span className="block text-red-600">
+                  Buy, Sell & Finance With Ease
+                </span>
               </h2>
               <p className="text-lg text-gray-600 leading-relaxed">
-                From Suzuki Alto to luxury imports, we connect Pakistani car buyers with verified sellers nationwide. Get instant financing, comprehensive insurance, and seamless documentation services.
+                From Suzuki Alto to luxury imports, we connect Pakistani car
+                buyers with verified sellers nationwide. Get instant financing,
+                comprehensive insurance, and seamless documentation services.
               </p>
             </div>
 
@@ -142,44 +146,53 @@ const GadiGharInfo = () => {
         </div>
 
         {/* Stats Section */}
-        <div className="mt-16 -mx-4">
-          <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 px-4 py-16 relative overflow-hidden">
-            {/* Background decorative elements */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-10 right-20 w-40 h-40 bg-white rounded-full blur-2xl"></div>
-              <div className="absolute bottom-10 left-20 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+      </div>
+      <div className="py-16 sm:py-20 ">
+        <div className="bg-gradient-to-r from-red-600 via-red-700 to-red-800 px-4 py-16 relative overflow-hidden">
+          {/* Background decorative elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-10 right-20 w-40 h-40 bg-white rounded-full blur-2xl"></div>
+            <div className="absolute bottom-10 left-20 w-32 h-32 bg-white rounded-full blur-2xl"></div>
+          </div>
+
+          <div
+            ref={statsSectionRef}
+            className="container mx-auto relative z-10"
+          >
+            <div className="text-center mb-12">
+              <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Pakistan's Trusted Numbers
+              </h3>
+              <p className="text-xl text-red-100">
+                Real statistics from across the country
+              </p>
             </div>
-            
-            <div ref={statsSectionRef} className="container mx-auto relative z-10">
-              <div className="text-center mb-12">
-                <h3 className="text-3xl md:text-4xl font-bold text-white mb-4">Pakistan's Trusted Numbers</h3>
-                <p className="text-xl text-red-100">Real statistics from across the country</p>
-              </div>
-              
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                {stats.map((stat, index) => {
-                  const IconComponent = stat.icon;
-                  return (
-                    <div
-                      key={index}
-                      className="text-center group bg-white rounded-2xl p-6 md:p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-0 shadow-xl"
-                    >
-                      <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
-                        <IconComponent className="w-8 h-8 text-red-600 group-hover:text-white" />
-                      </div>
-                      <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-1">
-                        <AnimatedNumber
-                          value={stat.number}
-                          duration={2}
-                          inView={isInView}
-                        />
-                        {stat.suffix}
-                      </h3>
-                      <p className="text-lg md:text-xl text-gray-600 font-medium">{stat.title}</p>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+              {stats.map((stat, index) => {
+                const IconComponent = stat.icon;
+                return (
+                  <div
+                    key={index}
+                    className="text-center group bg-white rounded-2xl p-6 md:p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-0 shadow-xl"
+                  >
+                    <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300">
+                      <IconComponent className="w-8 h-8 text-red-600 group-hover:text-white" />
                     </div>
-                  );
-                })}
-              </div>
+                    <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 flex items-center justify-center gap-1">
+                      <AnimatedNumber
+                        value={stat.number}
+                        duration={2}
+                        inView={isInView}
+                      />
+                      {stat.suffix}
+                    </h3>
+                    <p className="text-lg md:text-xl text-gray-600 font-medium">
+                      {stat.title}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
