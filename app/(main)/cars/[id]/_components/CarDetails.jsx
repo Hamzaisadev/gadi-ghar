@@ -484,7 +484,6 @@ const CarDetails = ({ car, testDriveInfo }) => {
                   car.dealership?.name || testDriveInfo.dealership?.name
                 )
                   .toLowerCase()
-                  .replace(/[^a-z0-9\s]/g, "")
                   .replace(/\s+/g, "-");
                 router.push(`/profile/${dealershipName}`);
               }}
@@ -605,8 +604,8 @@ const CarDetails = ({ car, testDriveInfo }) => {
                           {index < 5
                             ? "9:00 AM - 6:00 PM"
                             : index === 5
-                            ? "10:00 AM - 4:00 PM"
-                            : "Closed"}
+                              ? "10:00 AM - 4:00 PM"
+                              : "Closed"}
                         </span>
                       </div>
                     ))}

@@ -25,11 +25,11 @@ export async function getDealership() {
 export async function submitDealershipApplication(applicationData) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in to submit an application" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in to submit an application",
       };
     }
 
@@ -39,9 +39,9 @@ export async function submitDealershipApplication(applicationData) {
     });
 
     if (!user) {
-      return { 
-        success: false, 
-        error: "User not found" 
+      return {
+        success: false,
+        error: "User not found",
       };
     }
 
@@ -49,7 +49,7 @@ export async function submitDealershipApplication(applicationData) {
     let logoUrl = applicationData.logo;
 
     // If no logo provided, generate placeholder
-    if (!logoUrl || logoUrl === 'null' || logoUrl === 'undefined') {
+    if (!logoUrl || logoUrl === "null" || logoUrl === "undefined") {
       logoUrl = generatePlaceholderLogo(applicationData.ownerName);
     }
 
@@ -74,7 +74,7 @@ export async function submitDealershipApplication(applicationData) {
         twitter: applicationData.twitter || null,
         instagram: applicationData.instagram || null,
         whatsapp: applicationData.whatsapp || null,
-        status: 'PENDING',
+        status: "PENDING",
       },
     });
 
@@ -86,10 +86,10 @@ export async function submitDealershipApplication(applicationData) {
       data: application,
     };
   } catch (error) {
-    console.error('Error submitting dealership application:', error);
+    console.error("Error submitting dealership application:", error);
     return {
       success: false,
-      error: error.message || 'Failed to submit application',
+      error: error.message || "Failed to submit application",
     };
   }
 }
@@ -97,11 +97,11 @@ export async function submitDealershipApplication(applicationData) {
 export async function getDealershipApplications() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return {
         success: false,
-        error: "Unauthorized"
+        error: "Unauthorized",
       };
     }
 
@@ -110,10 +110,10 @@ export async function getDealershipApplications() {
       where: { clerkUserId: userId },
     });
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || user.role !== "ADMIN") {
       return {
         success: false,
-        error: "Unauthorized: Admin access required"
+        error: "Unauthorized: Admin access required",
       };
     }
 
@@ -134,7 +134,7 @@ export async function getDealershipApplications() {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
@@ -143,10 +143,10 @@ export async function getDealershipApplications() {
       data: applications,
     };
   } catch (error) {
-    console.error('Error fetching dealership applications:', error);
+    console.error("Error fetching dealership applications:", error);
     return {
       success: false,
-      error: error.message || "Failed to fetch applications"
+      error: error.message || "Failed to fetch applications",
     };
   }
 }
@@ -155,11 +155,11 @@ export async function getDealershipApplications() {
 export async function getApprovedDealerships() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return {
         success: false,
-        error: "Unauthorized"
+        error: "Unauthorized",
       };
     }
 
@@ -168,39 +168,39 @@ export async function getApprovedDealerships() {
       where: { clerkUserId: userId },
     });
 
-    if (!user || user.role !== 'ADMIN') {
+    if (!user || user.role !== "ADMIN") {
       return {
         success: false,
-        error: "Unauthorized: Admin access required"
+        error: "Unauthorized: Admin access required",
       };
     }
 
     const dealerships = await db.dealershipInfo.findMany({
-      where: { 
+      where: {
         isApproved: true,
-        isActive: true
+        isActive: true,
       },
       include: {
         cars: {
           select: {
-            id: true
-          }
+            id: true,
+          },
         },
         admins: {
           select: {
             id: true,
             name: true,
-            email: true
-          }
+            email: true,
+          },
         },
         approvedByUser: {
           select: {
-            name: true
-          }
-        }
+            name: true,
+          },
+        },
       },
       orderBy: {
-        approvedAt: 'desc',
+        approvedAt: "desc",
       },
     });
 
@@ -211,16 +211,16 @@ export async function getApprovedDealerships() {
           where: {
             dealershipName: dealership.name,
             businessEmail: dealership.email,
-            status: 'APPROVED'
+            status: "APPROVED",
           },
           orderBy: {
-            createdAt: 'desc'
-          }
+            createdAt: "desc",
+          },
         });
 
         return {
           ...dealership,
-          application: application || null
+          application: application || null,
         };
       })
     );
@@ -230,10 +230,10 @@ export async function getApprovedDealerships() {
       data: dealershipsWithApplications,
     };
   } catch (error) {
-    console.error('Error fetching approved dealerships:', error);
+    console.error("Error fetching approved dealerships:", error);
     return {
       success: false,
-      error: error.message || "Failed to fetch approved dealerships"
+      error: error.message || "Failed to fetch approved dealerships",
     };
   }
 }
@@ -241,11 +241,11 @@ export async function getApprovedDealerships() {
 export async function reviewDealershipApplication(applicationId, reviewData) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in to review applications" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in to review applications",
       };
     }
 
@@ -254,17 +254,17 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
       where: { clerkUserId: userId },
     });
 
-    if (!user || user.role !== 'ADMIN') {
-      return { 
-        success: false, 
-        error: "Unauthorized: Admin access required" 
+    if (!user || user.role !== "ADMIN") {
+      return {
+        success: false,
+        error: "Unauthorized: Admin access required",
       };
     }
 
     // Get the application
     const application = await db.dealershipApplication.findUnique({
       where: { id: applicationId },
-      include: { 
+      include: {
         user: {
           select: {
             id: true,
@@ -276,9 +276,9 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
     });
 
     if (!application) {
-      return { 
-        success: false, 
-        error: "Application not found" 
+      return {
+        success: false,
+        error: "Application not found",
       };
     }
 
@@ -294,7 +294,7 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
     });
 
     // If approved, create dealership info and update user role
-    if (reviewData.status === 'APPROVED') {
+    if (reviewData.status === "APPROVED") {
       // Create dealership info
       const dealershipInfo = await db.dealershipInfo.create({
         data: {
@@ -320,27 +320,57 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
       // Note: We'll need to store working hours in the application or retrieve them from the form data
       // For now, we'll create default working hours
       const defaultWorkingHours = [
-        { dayOfWeek: 'MONDAY', openTime: '09:00', closeTime: '18:00', isOpen: true },
-        { dayOfWeek: 'TUESDAY', openTime: '09:00', closeTime: '18:00', isOpen: true },
-        { dayOfWeek: 'WEDNESDAY', openTime: '09:00', closeTime: '18:00', isOpen: true },
-        { dayOfWeek: 'THURSDAY', openTime: '09:00', closeTime: '18:00', isOpen: true },
-        { dayOfWeek: 'FRIDAY', openTime: '09:00', closeTime: '18:00', isOpen: true },
-        { dayOfWeek: 'SATURDAY', openTime: '09:00', closeTime: '17:00', isOpen: true },
-        { dayOfWeek: 'SUNDAY', openTime: '', closeTime: '', isOpen: false },
+        {
+          dayOfWeek: "MONDAY",
+          openTime: "09:00",
+          closeTime: "18:00",
+          isOpen: true,
+        },
+        {
+          dayOfWeek: "TUESDAY",
+          openTime: "09:00",
+          closeTime: "18:00",
+          isOpen: true,
+        },
+        {
+          dayOfWeek: "WEDNESDAY",
+          openTime: "09:00",
+          closeTime: "18:00",
+          isOpen: true,
+        },
+        {
+          dayOfWeek: "THURSDAY",
+          openTime: "09:00",
+          closeTime: "18:00",
+          isOpen: true,
+        },
+        {
+          dayOfWeek: "FRIDAY",
+          openTime: "09:00",
+          closeTime: "18:00",
+          isOpen: true,
+        },
+        {
+          dayOfWeek: "SATURDAY",
+          openTime: "09:00",
+          closeTime: "17:00",
+          isOpen: true,
+        },
+        { dayOfWeek: "SUNDAY", openTime: "", closeTime: "", isOpen: false },
       ];
 
       await db.workingHour.createMany({
-        data: defaultWorkingHours.map(hours => ({
+        data: defaultWorkingHours.map((hours) => ({
           ...hours,
-          dealershipId: dealershipInfo.id
-        }))
+          dealershipId: dealershipInfo.id,
+        })),
       });
 
       // Update user role to dealership admin and link to dealership
       await db.user.update({
         where: { id: application.userId },
-        data: { 
-          role: 'DEALERSHIP_ADMIN',
+        data: {
+          role: "DEALERSHIP_ADMIN",
           dealershipId: dealershipInfo.id,
         },
       });
@@ -351,35 +381,33 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
       data: updatedApplication,
     };
   } catch (error) {
-    console.error('Error reviewing dealership application:', error);
+    console.error("Error reviewing dealership application:", error);
     return {
       success: false,
-      error: error.message || 'Failed to review application',
+      error: error.message || "Failed to review application",
     };
   }
 }
 
 export async function getDealershipData(dealershipId = null) {
   try {
-    
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in",
       };
     }
 
     // Use checkUser to ensure user exists in database
-    const { checkUser } = await import('@/lib/checkUser');
+    const { checkUser } = await import("@/lib/checkUser");
     const user = await checkUser();
-    
 
     if (!user) {
-      return { 
-        success: false, 
-        error: "User not found" 
+      return {
+        success: false,
+        error: "User not found",
       };
     }
 
@@ -387,17 +415,17 @@ export async function getDealershipData(dealershipId = null) {
     const targetDealershipId = dealershipId || user.dealershipId;
 
     // If user is not an admin and is trying to access a different dealership, deny access
-    if (user.role !== 'ADMIN' && targetDealershipId !== user.dealershipId) {
+    if (user.role !== "ADMIN" && targetDealershipId !== user.dealershipId) {
       return {
         success: false,
-        error: "Unauthorized: You can only access your own dealership"
+        error: "Unauthorized: You can only access your own dealership",
       };
     }
 
     if (!targetDealershipId) {
-      return { 
-        success: false, 
-        error: "No dealership specified" 
+      return {
+        success: false,
+        error: "No dealership specified",
       };
     }
 
@@ -407,18 +435,16 @@ export async function getDealershipData(dealershipId = null) {
       include: {
         workingHours: {
           orderBy: {
-            dayOfWeek: 'asc',
+            dayOfWeek: "asc",
           },
         },
       },
     });
 
-    
-
     if (!dealership) {
-      return { 
-        success: false, 
-        error: "Dealership not found" 
+      return {
+        success: false,
+        error: "Dealership not found",
       };
     }
 
@@ -427,10 +453,10 @@ export async function getDealershipData(dealershipId = null) {
       data: dealership,
     };
   } catch (error) {
-    console.error('❌ getDealershipData: Error occurred:', error);
+    console.error("❌ getDealershipData: Error occurred:", error);
     return {
       success: false,
-      error: error.message || 'Failed to fetch dealership data',
+      error: error.message || "Failed to fetch dealership data",
     };
   }
 }
@@ -438,11 +464,11 @@ export async function getDealershipData(dealershipId = null) {
 export async function checkUserApplicationStatus() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in",
       };
     }
 
@@ -450,7 +476,7 @@ export async function checkUserApplicationStatus() {
       where: { clerkUserId: userId },
       include: {
         dealershipApplications: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: 1,
         },
         dealership: true,
@@ -458,18 +484,18 @@ export async function checkUserApplicationStatus() {
     });
 
     if (!user) {
-      return { 
-        success: false, 
-        error: "User not found" 
+      return {
+        success: false,
+        error: "User not found",
       };
     }
 
     // If user is already a dealership admin
-    if (user.role === 'DEALERSHIP_ADMIN' && user.dealership) {
+    if (user.role === "DEALERSHIP_ADMIN" && user.dealership) {
       return {
         success: true,
         data: {
-          status: 'APPROVED',
+          status: "APPROVED",
           dealership: user.dealership,
           application: null,
         },
@@ -493,16 +519,16 @@ export async function checkUserApplicationStatus() {
     return {
       success: true,
       data: {
-        status: 'NO_APPLICATION',
+        status: "NO_APPLICATION",
         application: null,
         dealership: null,
       },
     };
   } catch (error) {
-    console.error('Error checking user application status:', error);
+    console.error("Error checking user application status:", error);
     return {
       success: false,
-      error: error.message || 'Failed to check application status',
+      error: error.message || "Failed to check application status",
     };
   }
 }
@@ -511,28 +537,28 @@ export async function checkUserApplicationStatus() {
 export async function safeCheckUserApplicationStatus() {
   try {
     const result = await checkUserApplicationStatus();
-    
+
     // Double-check that we have a valid response structure
-    if (!result || typeof result !== 'object') {
+    if (!result || typeof result !== "object") {
       return {
         success: false,
-        error: 'Invalid response from server',
-        data: null
+        error: "Invalid response from server",
+        data: null,
       };
     }
-    
+
     // Ensure all required properties exist
     return {
       success: result.success || false,
       error: result.error || null,
-      data: result.data || null
+      data: result.data || null,
     };
   } catch (error) {
-    console.error('Critical error in safeCheckUserApplicationStatus:', error);
+    console.error("Critical error in safeCheckUserApplicationStatus:", error);
     return {
       success: false,
-      error: 'Critical server error occurred',
-      data: null
+      error: "Critical server error occurred",
+      data: null,
     };
   }
 }
@@ -540,11 +566,11 @@ export async function safeCheckUserApplicationStatus() {
 export async function checkDealershipAuthorization() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return {
         success: false,
-        error: "Unauthorized: You must be logged in"
+        error: "Unauthorized: You must be logged in",
       };
     }
 
@@ -552,39 +578,39 @@ export async function checkDealershipAuthorization() {
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
       include: {
-        dealership: true // Include the dealership relation
-      }
+        dealership: true, // Include the dealership relation
+      },
     });
 
     if (!user) {
       return {
         success: false,
-        error: "User not found"
+        error: "User not found",
       };
     }
 
     // Allow main admins to access dealership admin panel
-    if (user.role === 'ADMIN') {
+    if (user.role === "ADMIN") {
       // For main admins, get the first approved dealership or create a default one
       let defaultDealership = await db.dealershipInfo.findFirst({
         where: { isApproved: true },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: "desc" },
       });
 
       if (!defaultDealership) {
         // Create a default dealership if none exists
         defaultDealership = await db.dealershipInfo.create({
           data: {
-            name: 'Default Dealership',
-            email: 'admin@example.com',
-            phone: '123-456-7890',
-            address: '123 Main St',
+            name: "Default Dealership",
+            email: "admin@example.com",
+            phone: "123-456-7890",
+            address: "123 Main St",
             isApproved: true,
-            isActive: true
-          }
+            isActive: true,
+          },
         });
       }
-      
+
       return {
         success: true,
         data: {
@@ -595,36 +621,37 @@ export async function checkDealershipAuthorization() {
     }
 
     // Handle DEALERSHIP_ADMIN role
-    if (user.role === 'DEALERSHIP_ADMIN') {
+    if (user.role === "DEALERSHIP_ADMIN") {
       let dealership = user.dealership;
-      
+
       // If no dealership assigned, try to find one where user is admin
       if (!dealership) {
         dealership = await db.dealershipInfo.findFirst({
           where: {
             admins: {
               some: {
-                id: user.id
-              }
-            }
+                id: user.id,
+              },
+            },
           },
           include: {
-            workingHours: true
-          }
+            workingHours: true,
+          },
         });
 
         if (dealership) {
           // Update user with dealershipId
           await db.user.update({
             where: { id: user.id },
-            data: { dealershipId: dealership.id }
+            data: { dealershipId: dealership.id },
           });
           user.dealershipId = dealership.id;
           user.dealership = dealership;
         } else {
           return {
             success: false,
-            error: "No dealership assigned to your account. Please contact support."
+            error:
+              "No dealership assigned to your account. Please contact support.",
           };
         }
       }
@@ -642,28 +669,28 @@ export async function checkDealershipAuthorization() {
     // For other users, try to fix their role
     try {
       const fixResult = await checkAndFixDealershipAdminRole();
-      
-      if (fixResult.success && fixResult.data.role === 'DEALERSHIP_ADMIN') {
+
+      if (fixResult.success && fixResult.data.role === "DEALERSHIP_ADMIN") {
         return fixResult;
       }
     } catch (error) {
-      console.error('Error fixing user role:', error);
+      console.error("Error fixing user role:", error);
       // Continue with the normal flow if role fixing fails
     }
-    
+
     return {
       success: false,
-      error: 'You do not have permission to access the dealership admin panel.',
+      error: "You do not have permission to access the dealership admin panel.",
       data: {
         role: user.role,
         dealership: null,
       },
     };
   } catch (error) {
-    console.error('Error checking dealership authorization:', error);
+    console.error("Error checking dealership authorization:", error);
     return {
       success: false,
-      error: error.message || 'Failed to check authorization',
+      error: error.message || "Failed to check authorization",
     };
   }
 }
@@ -679,8 +706,9 @@ export async function deleteDealership(dealershipId) {
     // Permissions
     const user = await db.user.findUnique({ where: { clerkUserId: userId } });
     if (!user) return { success: false, error: "User not found" };
-    const isAdmin = user.role === 'ADMIN';
-    const isDealershipAdmin = user.role === 'DEALERSHIP_ADMIN' && user.dealershipId === dealershipId;
+    const isAdmin = user.role === "ADMIN";
+    const isDealershipAdmin =
+      user.role === "DEALERSHIP_ADMIN" && user.dealershipId === dealershipId;
     if (!isAdmin && !isDealershipAdmin) {
       return { success: false, error: "Unauthorized: Admin access required" };
     }
@@ -688,18 +716,23 @@ export async function deleteDealership(dealershipId) {
     // Fetch target dealership and related IDs first (outside of transaction)
     const target = await db.dealershipInfo.findUnique({
       where: { id: dealershipId },
-      include: { admins: { select: { id: true } } }
+      include: { admins: { select: { id: true } } },
     });
     if (!target) {
       return { success: false, error: "Dealership not found" };
     }
 
-    const cars = await db.car.findMany({ where: { dealershipId }, select: { id: true } });
-    const carIds = cars.map(c => c.id);
+    const cars = await db.car.findMany({
+      where: { dealershipId },
+      select: { id: true },
+    });
+    const carIds = cars.map((c) => c.id);
 
     // Clean up dependent data sequentially to avoid long interactive transactions in serverless
     if (carIds.length > 0) {
-      await db.testDriveBooking.deleteMany({ where: { carId: { in: carIds } } });
+      await db.testDriveBooking.deleteMany({
+        where: { carId: { in: carIds } },
+      });
       await db.userSavedCar.deleteMany({ where: { carId: { in: carIds } } });
     }
 
@@ -708,7 +741,7 @@ export async function deleteDealership(dealershipId) {
     await db.workingHour.deleteMany({ where: { dealershipId } });
 
     // Delete related dealership applications (for admins or by matching business details)
-    const userIds = target.admins.map(admin => admin.id);
+    const userIds = target.admins.map((admin) => admin.id);
     if (userIds.length > 0) {
       await db.dealershipApplication.deleteMany({
         where: {
@@ -717,33 +750,39 @@ export async function deleteDealership(dealershipId) {
             {
               AND: [
                 { dealershipName: target.name },
-                { businessEmail: target.email }
-              ]
-            }
-          ]
-        }
+                { businessEmail: target.email },
+              ],
+            },
+          ],
+        },
       });
     } else {
       await db.dealershipApplication.deleteMany({
         where: {
           AND: [
             { dealershipName: target.name },
-            { businessEmail: target.email }
-          ]
-        }
+            { businessEmail: target.email },
+          ],
+        },
       });
     }
 
     // Reset user roles for users belonging to this dealership
-    await db.user.updateMany({ where: { dealershipId }, data: { role: 'USER', dealershipId: null } });
+    await db.user.updateMany({
+      where: { dealershipId },
+      data: { role: "USER", dealershipId: null },
+    });
 
     // Finally delete the dealership itself
     await db.dealershipInfo.delete({ where: { id: dealershipId } });
 
     return { success: true, data: { id: dealershipId } };
   } catch (error) {
-    console.error('Error deleting dealership:', error);
-    return { success: false, error: error.message || 'Failed to delete dealership' };
+    console.error("Error deleting dealership:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to delete dealership",
+    };
   }
 }
 
@@ -756,11 +795,11 @@ export async function deactivateDealership(dealershipId) {
 export async function updateDealershipInfo(dealershipData) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in",
       };
     }
 
@@ -769,17 +808,17 @@ export async function updateDealershipInfo(dealershipData) {
       include: { dealership: true },
     });
 
-    if (!user || (user.role !== 'DEALERSHIP_ADMIN' && user.role !== 'ADMIN')) {
+    if (!user || (user.role !== "DEALERSHIP_ADMIN" && user.role !== "ADMIN")) {
       return {
         success: false,
-        error: "Unauthorized: Dealership admin access required"
+        error: "Unauthorized: Dealership admin access required",
       };
     }
 
     if (!user.dealership) {
-      return { 
-        success: false, 
-        error: "No dealership found for this user" 
+      return {
+        success: false,
+        error: "No dealership found for this user",
       };
     }
 
@@ -810,10 +849,10 @@ export async function updateDealershipInfo(dealershipData) {
       data: updatedDealership,
     };
   } catch (error) {
-    console.error('Error updating dealership info:', error);
+    console.error("Error updating dealership info:", error);
     return {
       success: false,
-      error: error.message || 'Failed to update dealership information',
+      error: error.message || "Failed to update dealership information",
     };
   }
 }
@@ -824,11 +863,11 @@ import { serializeCarData } from "@/lib/helper";
 export async function addCarToDealership(carData) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in",
       };
     }
 
@@ -837,17 +876,17 @@ export async function addCarToDealership(carData) {
       include: { dealership: true },
     });
 
-    if (!user || (user.role !== 'DEALERSHIP_ADMIN' && user.role !== 'ADMIN')) {
+    if (!user || (user.role !== "DEALERSHIP_ADMIN" && user.role !== "ADMIN")) {
       return {
         success: false,
-        error: "Unauthorized: Dealership admin access required"
+        error: "Unauthorized: Dealership admin access required",
       };
     }
 
     if (!user.dealership) {
-      return { 
-        success: false, 
-        error: "No dealership found for this user" 
+      return {
+        success: false,
+        error: "No dealership found for this user",
       };
     }
 
@@ -867,7 +906,7 @@ export async function addCarToDealership(carData) {
         minPrice: parseFloat(carData.minPrice),
         maxPrice: parseFloat(carData.maxPrice),
         dealershipId: user.dealership.id,
-        status: 'AVAILABLE',
+        status: "AVAILABLE",
         featured: false,
         images: carData.images || [],
       },
@@ -878,10 +917,10 @@ export async function addCarToDealership(carData) {
       data: serializeCarData(car),
     };
   } catch (error) {
-    console.error('Error adding car to dealership:', error);
+    console.error("Error adding car to dealership:", error);
     return {
       success: false,
-      error: error.message || 'Failed to add car',
+      error: error.message || "Failed to add car",
     };
   }
 }
@@ -890,11 +929,11 @@ export async function addCarToDealership(carData) {
 export async function deleteCarFromDealership(carId) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in",
       };
     }
 
@@ -903,32 +942,32 @@ export async function deleteCarFromDealership(carId) {
       include: { dealership: true },
     });
 
-    if (!user || (user.role !== 'DEALERSHIP_ADMIN' && user.role !== 'ADMIN')) {
+    if (!user || (user.role !== "DEALERSHIP_ADMIN" && user.role !== "ADMIN")) {
       return {
         success: false,
-        error: "Unauthorized: Dealership admin access required"
+        error: "Unauthorized: Dealership admin access required",
       };
     }
 
     if (!user.dealership) {
-      return { 
-        success: false, 
-        error: "No dealership found for this user" 
+      return {
+        success: false,
+        error: "No dealership found for this user",
       };
     }
 
     // Verify the car belongs to this dealership
     const car = await db.car.findFirst({
-      where: { 
+      where: {
         id: carId,
-        dealershipId: user.dealership.id 
+        dealershipId: user.dealership.id,
       },
     });
 
     if (!car) {
-      return { 
-        success: false, 
-        error: "Car not found or not authorized to delete" 
+      return {
+        success: false,
+        error: "Car not found or not authorized to delete",
       };
     }
 
@@ -942,25 +981,23 @@ export async function deleteCarFromDealership(carId) {
       data: { message: "Car deleted successfully" },
     };
   } catch (error) {
-    console.error('Error deleting car from dealership:', error);
+    console.error("Error deleting car from dealership:", error);
     return {
       success: false,
-      error: error.message || 'Failed to delete car',
+      error: error.message || "Failed to delete car",
     };
   }
 }
-
-
 
 // Function to manually check and fix user roles for dealership admins
 export async function checkAndFixDealershipAdminRole() {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in",
       };
     }
 
@@ -970,9 +1007,9 @@ export async function checkAndFixDealershipAdminRole() {
     });
 
     if (!user) {
-      return { 
-        success: false, 
-        error: "User not found" 
+      return {
+        success: false,
+        error: "User not found",
       };
     }
 
@@ -980,39 +1017,39 @@ export async function checkAndFixDealershipAdminRole() {
     const approvedApplication = await db.dealershipApplication.findFirst({
       where: {
         userId: user.id,
-        status: 'APPROVED'
+        status: "APPROVED",
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     if (approvedApplication) {
-      
       // Check if dealership exists
       const dealership = await db.dealershipInfo.findFirst({
         where: {
           name: approvedApplication.dealershipName,
           email: approvedApplication.businessEmail,
-          isApproved: true
-        }
+          isApproved: true,
+        },
       });
 
       if (dealership) {
-        
         // Update user role and dealershipId if needed
-        if (user.role !== 'DEALERSHIP_ADMIN' || user.dealershipId !== dealership.id) {
-          
+        if (
+          user.role !== "DEALERSHIP_ADMIN" ||
+          user.dealershipId !== dealership.id
+        ) {
           await db.user.update({
             where: { id: user.id },
             data: {
-              role: 'DEALERSHIP_ADMIN',
+              role: "DEALERSHIP_ADMIN",
               dealershipId: dealership.id,
             },
           });
-          
+
           return {
             success: true,
             data: {
-              role: 'DEALERSHIP_ADMIN',
+              role: "DEALERSHIP_ADMIN",
               dealership: dealership,
             },
           };
@@ -1036,10 +1073,10 @@ export async function checkAndFixDealershipAdminRole() {
       },
     };
   } catch (error) {
-    console.error('Error checking and fixing dealership admin role:', error);
+    console.error("Error checking and fixing dealership admin role:", error);
     return {
       success: false,
-      error: error.message || 'Failed to check and fix role',
+      error: error.message || "Failed to check and fix role",
     };
   }
 }
@@ -1055,37 +1092,37 @@ export async function getDealershipById(dealershipId) {
       where: {
         id: dealershipId,
         isActive: true,
-        isApproved: true
+        isApproved: true,
       },
       include: {
         workingHours: {
           orderBy: {
-            dayOfWeek: 'asc'
-          }
+            dayOfWeek: "asc",
+          },
         },
         cars: {
           where: {
             status: {
-              in: ['AVAILABLE', 'UNAVAILABLE']
-            }
+              in: ["AVAILABLE", "UNAVAILABLE"],
+            },
           },
           orderBy: {
-            createdAt: 'desc'
+            createdAt: "desc",
           },
-          take: 12
+          take: 12,
         },
         _count: {
           select: {
             cars: {
               where: {
                 status: {
-                  in: ['AVAILABLE', 'UNAVAILABLE']
-                }
-              }
-            }
-          }
-        }
-      }
+                  in: ["AVAILABLE", "UNAVAILABLE"],
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!dealership) {
@@ -1095,11 +1132,11 @@ export async function getDealershipById(dealershipId) {
     // Convert Decimal objects to numbers for client components
     const serializedDealership = {
       ...dealership,
-      cars: dealership.cars.map(car => ({
+      cars: dealership.cars.map((car) => ({
         ...car,
         minPrice: Number(car.minPrice),
-        maxPrice: Number(car.maxPrice)
-      }))
+        maxPrice: Number(car.maxPrice),
+      })),
     };
 
     return { success: true, data: serializedDealership };
@@ -1109,14 +1146,19 @@ export async function getDealershipById(dealershipId) {
   }
 }
 
-export async function getDealershipCarsById(dealershipId, page = 1, limit = 12, filters = {}) {
+export async function getDealershipCarsById(
+  dealershipId,
+  page = 1,
+  limit = 12,
+  filters = {}
+) {
   try {
     const skip = (page - 1) * limit;
-    
+
     const where = {
       dealershipId,
       status: {
-        in: ['AVAILABLE', 'UNAVAILABLE']
+        in: ["AVAILABLE", "UNAVAILABLE"],
       },
       ...(filters.make && { make: filters.make }),
       ...(filters.year && { year: parseInt(filters.year) }),
@@ -1125,29 +1167,33 @@ export async function getDealershipCarsById(dealershipId, page = 1, limit = 12, 
       ...(filters.bodyType && { bodyType: filters.bodyType }),
       ...(filters.color && { color: filters.color }),
       ...(filters.seats && { seats: parseInt(filters.seats) }),
-      ...(filters.minPrice && { minPrice: { gte: parseFloat(filters.minPrice) } }),
-      ...(filters.maxPrice && { maxPrice: { lte: parseFloat(filters.maxPrice) } }),
+      ...(filters.minPrice && {
+        minPrice: { gte: parseFloat(filters.minPrice) },
+      }),
+      ...(filters.maxPrice && {
+        maxPrice: { lte: parseFloat(filters.maxPrice) },
+      }),
     };
 
     const [cars, totalCount] = await Promise.all([
       db.car.findMany({
         where,
         orderBy: {
-          createdAt: 'desc'
+          createdAt: "desc",
         },
         skip,
-        take: limit
+        take: limit,
       }),
-      db.car.count({ where })
+      db.car.count({ where }),
     ]);
 
     const totalPages = Math.ceil(totalCount / limit);
 
     // Convert Decimal objects to numbers for client components
-    const serializedCars = cars.map(car => ({
+    const serializedCars = cars.map((car) => ({
       ...car,
       minPrice: Number(car.minPrice),
-      maxPrice: Number(car.maxPrice)
+      maxPrice: Number(car.maxPrice),
     }));
 
     return {
@@ -1159,9 +1205,9 @@ export async function getDealershipCarsById(dealershipId, page = 1, limit = 12, 
           totalPages,
           totalCount,
           hasNext: page < totalPages,
-          hasPrevious: page > 1
-        }
-      }
+          hasPrevious: page > 1,
+        },
+      },
     };
   } catch (error) {
     console.error("Error fetching dealership cars:", error);
@@ -1176,18 +1222,18 @@ export async function getDealershipStats(dealershipId) {
       include: {
         _count: {
           select: {
-            cars: true
-          }
+            cars: true,
+          },
         },
         cars: {
           select: {
             status: true,
             minPrice: true,
             maxPrice: true,
-            featured: true
-          }
-        }
-      }
+            featured: true,
+          },
+        },
+      },
     });
 
     if (!stats) {
@@ -1195,10 +1241,15 @@ export async function getDealershipStats(dealershipId) {
     }
 
     const totalCars = stats._count.cars;
-    const availableCars = stats.cars.filter(car => car.status === 'AVAILABLE').length;
-    const soldCars = stats.cars.filter(car => car.status === 'SOLD').length;
-    const featuredCars = stats.cars.filter(car => car.featured).length;
-    const totalValue = stats.cars.reduce((sum, car) => sum + (Number(car.maxPrice) || 0), 0);
+    const availableCars = stats.cars.filter(
+      (car) => car.status === "AVAILABLE"
+    ).length;
+    const soldCars = stats.cars.filter((car) => car.status === "SOLD").length;
+    const featuredCars = stats.cars.filter((car) => car.featured).length;
+    const totalValue = stats.cars.reduce(
+      (sum, car) => sum + (Number(car.maxPrice) || 0),
+      0
+    );
     const avgPrice = totalCars > 0 ? totalValue / totalCars : 0;
 
     return {
@@ -1210,8 +1261,11 @@ export async function getDealershipStats(dealershipId) {
         featuredCars,
         totalValue,
         avgPrice,
-        yearsInBusiness: Math.floor((new Date() - new Date(stats.createdAt)) / (365.25 * 24 * 60 * 60 * 1000))
-      }
+        yearsInBusiness: Math.floor(
+          (new Date() - new Date(stats.createdAt)) /
+            (365.25 * 24 * 60 * 60 * 1000)
+        ),
+      },
     };
   } catch (error) {
     console.error("Error fetching dealership stats:", error);
@@ -1225,47 +1279,47 @@ export async function getDealershipByName(dealershipName) {
       return { success: false, error: "Dealership name is required" };
     }
 
-    // Convert URL-friendly name back to search format
-    const searchName = dealershipName.replace(/-/g, ' ');
+    // Convert hyphen-separated name back to spaces for search
+    const searchName = dealershipName.replace(/-/g, " ");
 
     const dealership = await db.dealershipInfo.findFirst({
       where: {
         name: {
-          contains: searchName,
-          mode: 'insensitive'
+          equals: searchName,
+          mode: "insensitive",
         },
         isActive: true,
-        isApproved: true
+        isApproved: true,
       },
       include: {
         workingHours: {
           orderBy: {
-            dayOfWeek: 'asc'
-          }
+            dayOfWeek: "asc",
+          },
         },
         cars: {
           where: {
             status: {
-              in: ['AVAILABLE', 'UNAVAILABLE']
-            }
+              in: ["AVAILABLE", "UNAVAILABLE"],
+            },
           },
           orderBy: {
-            createdAt: 'desc'
+            createdAt: "desc",
           },
-          take: 12
+          take: 12,
         },
         _count: {
           select: {
             cars: {
               where: {
                 status: {
-                  in: ['AVAILABLE', 'UNAVAILABLE']
-                }
-              }
-            }
-          }
-        }
-      }
+                  in: ["AVAILABLE", "UNAVAILABLE"],
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!dealership) {
@@ -1275,11 +1329,11 @@ export async function getDealershipByName(dealershipName) {
     // Convert Decimal objects to numbers for client components
     const serializedDealership = {
       ...dealership,
-      cars: dealership.cars.map(car => ({
+      cars: dealership.cars.map((car) => ({
         ...car,
         minPrice: Number(car.minPrice),
-        maxPrice: Number(car.maxPrice)
-      }))
+        maxPrice: Number(car.maxPrice),
+      })),
     };
 
     return { success: true, data: serializedDealership };
