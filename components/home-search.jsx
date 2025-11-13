@@ -40,7 +40,10 @@ const HomeSearch = () => {
     try {
       const trimmed = term.trim();
       if (!trimmed) return;
-      const next = [trimmed, ...recentSearches.filter((t) => t !== trimmed)].slice(0, 5);
+      const next = [
+        trimmed,
+        ...recentSearches.filter((t) => t !== trimmed),
+      ].slice(0, 5);
       setRecentSearches(next);
       localStorage.setItem("recentSearches", JSON.stringify(next));
     } catch {}
@@ -58,11 +61,24 @@ const HomeSearch = () => {
 
   const handleImageSearch = async (e) => {
     e.preventDefault();
-    if (!searchImage) {
+    if (!searchImage || !imagePreview) {
       // show inline helper instead of toast
       return;
     }
-    await processImageSearchFn(searchImage);
+
+    const match = imagePreview.match(/^data:(.+);base64,(.+)$/);
+    if (!match) {
+      toast.error("Invalid image data. Please re-upload the photo.");
+      return;
+    }
+
+    const [, mimeType, base64Data] = match;
+
+    await processImageSearchFn({
+      data: base64Data,
+      type: mimeType,
+      name: searchImage.name || "search-image",
+    });
   };
 
   useEffect(() => {
@@ -86,7 +102,9 @@ const HomeSearch = () => {
         if (query) {
           router.push(`/cars?${query}`);
         } else {
-          toast.warning("Couldn't confidently detect details. Showing all cars.");
+          toast.warning(
+            "Couldn't confidently detect details. Showing all cars."
+          );
           router.push(`/cars`);
         }
       } else if (processImageSearchData.success === false) {
@@ -202,10 +220,14 @@ const HomeSearch = () => {
       {/* Inline helpers */}
       <div className="mt-2 sm:mt-3 space-y-1">
         {searchTerm && searchTerm.trim().length < 2 && (
-          <p className="text-xs sm:text-sm text-gray-300">Enter at least 2 characters to search.</p>
+          <p className="text-xs sm:text-sm text-gray-300">
+            Enter at least 2 characters to search.
+          </p>
         )}
         {isImageSearchActive && !searchImage && (
-          <p className="text-xs sm:text-sm text-gray-300">Tip: add a car photo to analyze make/type/color.</p>
+          <p className="text-xs sm:text-sm text-gray-300">
+            Tip: add a car photo to analyze make/type/color.
+          </p>
         )}
         <p className="text-xs text-gray-400">Formats: .jpg, .png · max 5MB</p>
       </div>
@@ -213,7 +235,10 @@ const HomeSearch = () => {
       {isImageSearchActive && (
         <div className="mt-4">
           <form onSubmit={handleImageSearch}>
-            <div {...getRootProps()} className="border-2 border-dashed border-red-500 rounded-3xl p-8 text-center min-h-56 cursor-pointer">
+            <div
+              {...getRootProps()}
+              className="border-2 border-dashed border-red-500 rounded-3xl p-8 text-center min-h-56 cursor-pointer"
+            >
               <input {...getInputProps()} />
               {imagePreview ? (
                 <div>
@@ -258,7 +283,9 @@ const HomeSearch = () => {
                   {isDragReject && (
                     <p className="text-red-500 mb-2">Invalid image type</p>
                   )}
-                  <p className="text-white text-sm">Supports : JPG, PNG (max 5MB)</p>
+                  <p className="text-white text-sm">
+                    Supports : JPG, PNG (max 5MB)
+                  </p>
                 </div>
               )}
             </div>

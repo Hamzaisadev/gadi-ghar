@@ -480,12 +480,17 @@ const CarDetails = ({ car, testDriveInfo }) => {
               variant="outline"
               className="border-red-600 text-red-600 hover:bg-red-50"
               onClick={() => {
-                const dealershipName = (
-                  car.dealership?.name || testDriveInfo.dealership?.name
-                )
+                const name =
+                  car.dealership?.name || testDriveInfo.dealership?.name;
+                if (!name) return;
+
+                const slug = name
                   .toLowerCase()
-                  .replace(/\s+/g, "-");
-                router.push(`/profile/${dealershipName}`);
+                  .trim()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-+|-+$/g, "");
+
+                router.push(`/profile/${slug || encodeURIComponent(name)}`);
               }}
             >
               <Building2 className="h-4 w-4 mr-2" />

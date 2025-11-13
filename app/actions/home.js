@@ -90,62 +90,74 @@ export async function electricCars(limit = 3) {
   }
 }
 
+const DEFAULT_IMAGE_MIME = "image/jpeg";
+
 async function fileToBase64(file) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   return buffer.toString("base64");
 }
 
+function extractBase64(data) {
+  if (!data) return "";
+  if (typeof data !== "string") return "";
+  const base64Index = data.indexOf(",");
+  if (base64Index >= 0) {
+    return data.slice(base64Index + 1);
+  }
+  return data;
+}
+
 // Normalize AI response to match system body types
 function normalizeBodyType(bodyType) {
   if (!bodyType) return "";
-  
+
   const normalized = bodyType.toLowerCase().trim();
-  
+
   // Define mapping for common variations
   const mappings = {
     "pickup truck": "Pickup",
-    "pickup": "Pickup",
-    "truck": "Pickup",
+    pickup: "Pickup",
+    truck: "Pickup",
     "light truck": "Pickup",
-    "suv": "SUV",
+    suv: "SUV",
     "sport utility vehicle": "SUV",
-    "crossover": "SUV",
-    "sedan": "Sedan",
+    crossover: "SUV",
+    sedan: "Sedan",
     "4-door": "Sedan",
-    "saloon": "Sedan",
-    "hatchback": "Hatchback",
-    "hatch": "Hatchback",
-    "compact": "Hatchback",
-    "convertible": "Convertible",
-    "cabriolet": "Convertible",
-    "roadster": "Convertible",
-    "coupe": "Coupe",
-    "coupé": "Coupe",
+    saloon: "Sedan",
+    hatchback: "Hatchback",
+    hatch: "Hatchback",
+    compact: "Hatchback",
+    convertible: "Convertible",
+    cabriolet: "Convertible",
+    roadster: "Convertible",
+    coupe: "Coupe",
+    coupé: "Coupe",
     "2-door": "Coupe",
-    "wagon": "Wagon",
-    "estate": "Wagon",
+    wagon: "Wagon",
+    estate: "Wagon",
     "station wagon": "Wagon",
-    "touring": "Wagon"
+    touring: "Wagon",
   };
-  
+
   // Check for exact match first
   if (mappings[normalized]) {
     return mappings[normalized];
   }
-  
+
   // Check for partial matches
   for (const [key, value] of Object.entries(mappings)) {
     if (normalized.includes(key)) {
       return value;
     }
   }
-  
+
   // If no match found, return the original with proper capitalization
   return bodyType.charAt(0).toUpperCase() + bodyType.slice(1).toLowerCase();
 }
 
-export async function processImageSearch(file) {
+export async function processImageSearch(imagePayload) {
   try {
     const req = await request();
     const decision = await aj.protect(req, {
@@ -175,12 +187,38 @@ export async function processImageSearch(file) {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
 
-    const based64image = await fileToBase64(file);
+    let mimeType = DEFAULT_IMAGE_MIME;
+    let base64Data = "";
+
+    if (imagePayload) {
+      // Handle structured payload from client ({ data, type })
+      if (
+        typeof imagePayload === "object" &&
+        "data" in imagePayload &&
+        typeof imagePayload.data === "string"
+      ) {
+        base64Data = extractBase64(imagePayload.data);
+        mimeType = imagePayload.type || DEFAULT_IMAGE_MIME;
+      }
+      // Handle raw File/Blob object (fallback)
+      else if (typeof imagePayload === "object" && imagePayload.arrayBuffer) {
+        base64Data = await fileToBase64(imagePayload);
+        mimeType = imagePayload.type || DEFAULT_IMAGE_MIME;
+      }
+      // Handle string payloads
+      else if (typeof imagePayload === "string") {
+        base64Data = extractBase64(imagePayload);
+      }
+    }
+
+    if (!base64Data) {
+      throw new Error("Invalid image payload");
+    }
 
     const imagePart = {
       inlineData: {
-        data: based64image,
-        mimeType: file.type,
+        data: base64Data,
+        mimeType,
       },
     };
 
@@ -218,7 +256,7 @@ export async function processImageSearch(file) {
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
     try {
       const carDetails = JSON.parse(cleanedText);
-      
+
       // Normalize the bodyType to match system expectations
       if (carDetails.bodyType) {
         carDetails.bodyType = normalizeBodyType(carDetails.bodyType);

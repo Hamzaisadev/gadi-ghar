@@ -1273,21 +1273,47 @@ export async function getDealershipStats(dealershipId) {
   }
 }
 
+const slugifyName = (value = "") =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 export async function getDealershipByName(dealershipName) {
   try {
     if (!dealershipName) {
       return { success: false, error: "Dealership name is required" };
     }
 
-    // Convert hyphen-separated name back to spaces for search
-    const searchName = dealershipName.replace(/-/g, " ");
+    const targetSlug = slugifyName(dealershipName);
+
+    // Find the dealership whose generated slug matches the target
+    const potentialMatches = await db.dealershipInfo.findMany({
+      where: {
+        isActive: true,
+        isApproved: true,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const matchedDealership = potentialMatches.find(
+      (dealership) =>
+        slugifyName(dealership.name) === targetSlug ||
+        dealership.name.toLowerCase().trim() ===
+          dealershipName.toLowerCase().trim()
+    );
+
+    if (!matchedDealership) {
+      return { success: false, error: "Dealership not found" };
+    }
 
     const dealership = await db.dealershipInfo.findFirst({
       where: {
-        name: {
-          equals: searchName,
-          mode: "insensitive",
-        },
+        id: matchedDealership.id,
         isActive: true,
         isApproved: true,
       },
