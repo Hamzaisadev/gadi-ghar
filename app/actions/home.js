@@ -165,8 +165,10 @@ export async function processImageSearch(imagePayload) {
     });
 
     if (decision.isDenied()) {
-      if (decision.reason.isRateLimited()) {
-        const { remaining, reset } = decision.reason;
+      const reason = decision.reason;
+
+      if (reason?.isRateLimited?.()) {
+        const { remaining, reset } = reason;
 
         console.error({
           code: "RATE_LIMIT_EXCEEDS",
@@ -175,13 +177,21 @@ export async function processImageSearch(imagePayload) {
             resetInSecondes: reset,
           },
         });
-        throw new Error("Rate limit exceeded");
+        return {
+          success: false,
+          error: "Rate limit exceeded. Please try again later.",
+        };
       }
-      throw new Error("Request Blocked");
+      return {
+        success: false,
+        error:
+          "Request blocked. Please contact support if this persists." +
+          (reason?.toString ? ` (${reason.toString()})` : ""),
+      };
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error("Gemini API key is not set");
+      return { success: false, error: "Gemini API key is not configured." };
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -212,7 +222,7 @@ export async function processImageSearch(imagePayload) {
     }
 
     if (!base64Data) {
-      throw new Error("Invalid image payload");
+      return { success: false, error: "Invalid image payload." };
     }
 
     const imagePart = {
@@ -275,6 +285,12 @@ export async function processImageSearch(imagePayload) {
       };
     }
   } catch (error) {
-    throw new Error("AI Search error:" + error.message);
+    console.error("processImageSearch error:", error);
+    return {
+      success: false,
+      error: error.message
+        ? `AI Search error: ${error.message}`
+        : "AI Search error occurred",
+    };
   }
 }
