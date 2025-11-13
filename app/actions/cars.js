@@ -20,24 +20,24 @@ export async function processCarImageWithAI(file) {
       throw new Error("Failed to process file: " + error.message);
     }
   }
-  
+
   try {
     // Validate input file
     if (!file) {
       throw new Error("No file provided");
     }
-    
-    if (!file.type || !file.type.startsWith('image/')) {
+
+    if (!file.type || !file.type.startsWith("image/")) {
       throw new Error("Invalid file type. Please provide an image file.");
     }
-    
+
     // check if api is available
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("Gemini API key is not configured");
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0" });
 
     const based64image = await fileToBase64(file);
 
@@ -129,7 +129,7 @@ export async function processCarImageWithAI(file) {
       console.error("Failed to parse AI Response: ", error);
       return {
         success: false,
-        error: "Failed to parse AI response: " + error.message
+        error: "Failed to parse AI response: " + error.message,
       };
     }
   } catch (error) {
@@ -145,23 +145,25 @@ export async function addCar({ carData, images }) {
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
       include: {
-        dealership: true
-      }
+        dealership: true,
+      },
     });
 
     if (!user) throw new Error("User not found");
-    
+
     // Determine dealershipId based on user role
     let dealershipId = carData.dealershipId;
-    
-    if (user.role === 'DEALERSHIP' && user.dealership) {
+
+    if (user.role === "DEALERSHIP" && user.dealership) {
       // For dealership users, always use their own dealership
       dealershipId = user.dealership.id;
-    } else if (user.role === 'ADMIN') {
+    } else if (user.role === "ADMIN") {
       // For admin users, use the provided dealershipId or null
       dealershipId = carData.dealershipId || null;
     } else {
-      throw new Error("Unauthorized: Only admin and dealership users can add cars");
+      throw new Error(
+        "Unauthorized: Only admin and dealership users can add cars"
+      );
     }
 
     const carId = uuidv4();
@@ -359,11 +361,11 @@ export async function deleteCars(id) {
 export async function updateCarStatus(id, status, featured) {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: You must be logged in to update car status" 
+      return {
+        success: false,
+        error: "Unauthorized: You must be logged in to update car status",
       };
     }
 
@@ -372,27 +374,27 @@ export async function updateCarStatus(id, status, featured) {
       where: { clerkUserId: userId },
     });
 
-    if (!user || user.role !== 'ADMIN') {
-      return { 
-        success: false, 
-        error: "Unauthorized: Admin access required" 
+    if (!user || user.role !== "ADMIN") {
+      return {
+        success: false,
+        error: "Unauthorized: Admin access required",
       };
     }
 
     // Validate status
-    if (!['AVAILABLE', 'UNAVAILABLE', 'SOLD'].includes(status)) {
+    if (!["AVAILABLE", "UNAVAILABLE", "SOLD"].includes(status)) {
       return {
         success: false,
-        error: "Invalid status value"
+        error: "Invalid status value",
       };
     }
 
     // Update the car
     const updatedCar = await db.car.update({
       where: { id },
-      data: { 
+      data: {
         status,
-        featured: featured !== undefined ? featured : undefined
+        featured: featured !== undefined ? featured : undefined,
       },
     });
 
@@ -401,10 +403,10 @@ export async function updateCarStatus(id, status, featured) {
       data: serializeCarData(updatedCar),
     };
   } catch (error) {
-    console.error('Error updating car status:', error);
+    console.error("Error updating car status:", error);
     return {
       success: false,
-      error: error.message || 'Failed to update car status',
+      error: error.message || "Failed to update car status",
     };
   }
 }
@@ -421,21 +423,26 @@ export async function getCarsByDealership(dealershipId) {
     if (!user) throw new Error("User not found");
 
     // Check if user is dealership admin and owns this dealership
-    if (user.role === 'DEALERSHIP_ADMIN') {
+    if (user.role === "DEALERSHIP_ADMIN") {
       // Get the user with their dealership info
       const userWithDealership = await db.user.findUnique({
         where: { id: user.id },
-        include: { dealership: true }
+        include: { dealership: true },
       });
-      
-      if (!userWithDealership?.dealership || userWithDealership.dealership.id !== dealershipId) {
-        throw new Error("Unauthorized: You can only view your own dealership's cars");
+
+      if (
+        !userWithDealership?.dealership ||
+        userWithDealership.dealership.id !== dealershipId
+      ) {
+        throw new Error(
+          "Unauthorized: You can only view your own dealership's cars"
+        );
       }
     }
 
     const cars = await db.car.findMany({
       where: { dealershipId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     const serialized = cars.map(serializeCarData);

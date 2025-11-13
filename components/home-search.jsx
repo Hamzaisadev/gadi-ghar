@@ -237,15 +237,15 @@ const HomeSearch = () => {
           <form onSubmit={handleImageSearch}>
             <div
               {...getRootProps()}
-              className="border-2 border-dashed border-red-500 rounded-3xl p-8 text-center min-h-56 cursor-pointer"
+              className="border-2 flex flex-col items-center justify-center border-dashed border-red-500 rounded-3xl p-8 text-center min-h-56 cursor-pointer"
             >
               <input {...getInputProps()} />
               {imagePreview ? (
-                <div>
+                <div className="flex flex-col items-center gap-3 w-full">
                   <img
                     src={imagePreview}
-                    alt="Image"
-                    className="h-full object-contain mb-4"
+                    alt="Uploaded preview"
+                    className="max-h-64 w-auto object-contain rounded-xl shadow-lg border border-white/20 bg-black/30 p-2"
                   />
                   <Button
                     variant="destructive"
@@ -262,7 +262,7 @@ const HomeSearch = () => {
                   </Button>
                   <Button
                     type="button"
-                    className="ml-2"
+                    variant="outline"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
