@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { getUserTestDrives } from "@/app/actions/test-drive";
 import ReservationsClient from "./_components/ReservationsClient";
