@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
 import { Input } from "./ui/input";
-import { Camera, Loader2, Search, Trash, Upload } from "lucide-react";
+import { Camera, Loader2, Search, Trash, Upload, Car, Sparkles, X } from "lucide-react";
 import { Button } from "./ui/button";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import useFetch from "@/hooks/use-fetch";
 import { processImageSearch } from "@/app/actions/home";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const HomeSearch = () => {
+
+  const [activeTab, setActiveTab] = useState("text"); // 'text' or 'image'
   const [searchTerm, setSearchTerm] = useState("");
-  const [isImageSearchActive, setIsImageSearchActive] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [searchImage, setSearchImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -28,7 +30,7 @@ const HomeSearch = () => {
     error: processImageSearchError,
   } = useFetch(processImageSearch);
 
-  // Load recent searches from localStorage
+  // Load recent searches
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("recentSearches") || "[]");
@@ -40,10 +42,7 @@ const HomeSearch = () => {
     try {
       const trimmed = term.trim();
       if (!trimmed) return;
-      const next = [
-        trimmed,
-        ...recentSearches.filter((t) => t !== trimmed),
-      ].slice(0, 5);
+      const next = [trimmed, ...recentSearches.filter((t) => t !== trimmed)].slice(0, 5);
       setRecentSearches(next);
       localStorage.setItem("recentSearches", JSON.stringify(next));
     } catch {}
@@ -51,29 +50,22 @@ const HomeSearch = () => {
 
   const handleTextSearch = async (e) => {
     e.preventDefault();
-    if (searchTerm.trim().length < 2) {
-      // inline hint + disable handles UX; no toast
-      return;
-    }
+    if (searchTerm.trim().length < 2) return;
     saveRecentSearch(searchTerm);
     router.push(`/cars?search=${encodeURIComponent(searchTerm.trim())}`);
   };
 
   const handleImageSearch = async (e) => {
     e.preventDefault();
-    if (!searchImage || !imagePreview) {
-      // show inline helper instead of toast
-      return;
-    }
+    if (!searchImage || !imagePreview) return;
 
     const match = imagePreview.match(/^data:(.+);base64,(.+)$/);
     if (!match) {
-      toast.error("Invalid image data. Please re-upload the photo.");
+      toast.error("Invalid image data. Please re-upload.");
       return;
     }
 
     const [, mimeType, base64Data] = match;
-
     await processImageSearchFn({
       data: base64Data,
       type: mimeType,
@@ -83,10 +75,7 @@ const HomeSearch = () => {
 
   useEffect(() => {
     if (processImageSearchError) {
-      toast.error(
-        "failed to process image search " + processImageSearchError ||
-          "Something went wrong"
-      );
+      toast.error(processImageSearchError || "Something went wrong");
     }
   }, [processImageSearchError]);
 
@@ -99,260 +88,219 @@ const HomeSearch = () => {
         if (bodyType) params.set("bodyType", bodyType);
         if (color) params.set("color", color);
         const query = params.toString();
-        if (query) {
-          router.push(`/cars?${query}`);
-        } else {
-          toast.warning(
-            "Couldn't confidently detect details. Showing all cars."
-          );
-          router.push(`/cars`);
-        }
-      } else if (processImageSearchData.success === false) {
-        toast.error(
-          processImageSearchData.error || "Failed to process image search"
-        );
+        router.push(query ? `/cars?${query}` : `/cars`);
+      } else {
+        toast.error(processImageSearchData.error || "Failed to process image search");
       }
     }
   }, [processImageSearchData, router]);
+
   const onDrop = (acceptedFiles) => {
     const file = acceptedFiles[0];
-
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast.error("Image size must be less than 5MB");
         return;
       }
-
       setIsUploading(true);
       setSearchImage(file);
-
       const reader = new FileReader();
       reader.onload = () => {
         setImagePreview(reader.result);
         setIsUploading(false);
-        toast.success("Image Uploaded successfully");
+        toast.success("Image uploaded successfully");
       };
-
       reader.onerror = () => {
         setIsUploading(false);
-        toast.error("Failed to read the image");
+        toast.error("Failed to read image");
       };
-
       reader.readAsDataURL(file);
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive, isDragReject, open } =
-    useDropzone({
-      onDrop,
-      accept: {
-        "image/*": [".jpg", ".jpeg", ".png"],
-      },
-      maxFiles: 1,
-      // Allow clicking on the dropzone to open file dialog
-    });
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+    onDrop,
+    accept: { "image/*": [".jpg", ".jpeg", ".png"] },
+    maxFiles: 1,
+  });
 
   return (
-    <div className="bg-black/10 backdrop-blur-[20px] border-2 border-black/20 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-xl w-full mx-auto mb-6 sm:mb-8">
-      <form
-        onSubmit={handleTextSearch}
-        className="flex flex-col gap-3 sm:gap-4"
-      >
-        <Button
-          type="button"
-          onClick={() => {
-            const next = !isImageSearchActive;
-            setIsImageSearchActive(next);
-            if (next && !searchImage) {
-              // Open file dialog when enabling image search and no image selected
-              open();
-            }
-          }}
-          className="w-full bg-black/40 text-white backdrop-blur-sm font-bold text-sm cursor-pointer h-11 sm:h-12 px-3 sm:px-4 border-2 border-dashed border-gray-300 hover:border-black hover:bg-red-700 transition-colors touch-target"
-        >
-          <Camera className="w-5 h-5 sm:w-6 sm:h-6 mr-2 cursor-pointer" />
-          <span className="hidden xs:inline">Upload Photo</span>
-          <span className="xs:hidden">Photo</span>
-        </Button>
-        <div className="flex flex-col sm:flex-row gap-2 flex-1">
-          <Input
-            type="text"
-            placeholder="Search by make, model..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 h-11 sm:h-12 text-base sm:text-lg text-red-700 placeholder:text-black/70 placeholder:text-sm sm:placeholder:text-base bg-white/80 backdrop-blur-sm border-2 border-white/50 focus-visible:ring-offset-0 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-red-500 px-3 sm:px-4"
-          />
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              className="flex-1 sm:flex-none h-11 sm:h-12 px-4 sm:px-6 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm touch-target"
-              disabled={isProcessing || searchTerm.trim().length < 2}
-              aria-busy={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin mr-2" />
-                  <span className="hidden sm:inline">Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="w-4 h-4 sm:w-5 sm:h-5 sm:mr-2" />
-                  <span className="hidden xs:inline">Search</span>
-                </>
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-11 sm:h-12 px-3 sm:px-4 touch-target text-sm"
-              onClick={() => {
-                setSearchTerm("");
-                setSearchImage(null);
-                setImagePreview("");
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </form>
-
-      {/* Inline helpers */}
-      <div className="mt-2 sm:mt-3 space-y-1">
-        {searchTerm && searchTerm.trim().length < 2 && (
-          <p className="text-xs sm:text-sm text-gray-300">
-            Enter at least 2 characters to search.
-          </p>
-        )}
-        {isImageSearchActive && !searchImage && (
-          <p className="text-xs sm:text-sm text-gray-300">
-            Tip: add a car photo to analyze make/type/color.
-          </p>
-        )}
-        <p className="text-xs text-gray-400">Formats: .jpg, .png · max 5MB</p>
-      </div>
-
-      {isImageSearchActive && (
-        <div className="mt-4">
-          <form onSubmit={handleImageSearch}>
-            <div
-              {...getRootProps()}
-              className="border-2 flex flex-col items-center justify-center border-dashed border-red-500 rounded-3xl p-8 text-center min-h-56 cursor-pointer"
-            >
-              <input {...getInputProps()} />
-              {imagePreview ? (
-                <div className="flex flex-col items-center gap-3 w-full">
-                  <img
-                    src={imagePreview}
-                    alt="Uploaded preview"
-                    className="max-h-64 w-auto object-contain rounded-xl shadow-lg border border-white/20 bg-black/30 p-2"
-                  />
-                  <Button
-                    variant="destructive"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setSearchImage(null);
-                      setImagePreview("");
-                      toast.info("Image is cleared");
-                    }}
-                  >
-                    <Trash />
-                    Delete Image
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      open();
-                    }}
-                  >
-                    Replace
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center">
-                  <Upload className="h-12 w-12 text-gray-400 mb-2" />
-                  <p className="text-gray-400 text-lg">
-                    {isDragActive && !isDragReject
-                      ? "Leave the file here to upload "
-                      : "Drag and drop a car image or click to select "}
-                  </p>
-                  {isDragReject && (
-                    <p className="text-red-500 mb-2">Invalid image type</p>
-                  )}
-                  <p className="text-white text-sm">
-                    Supports : JPG, PNG (max 5MB)
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {imagePreview && (
-              <Button
-                type="submit"
-                className="w-full mt-2"
-                disabled={isUploading || isProcessing}
-                aria-busy={isUploading || isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 size="5" className="animate-spin" />
-                    Analyzing image...
-                  </>
-                ) : isUploading ? (
-                  <>
-                    <Loader2 size="5" className="animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  "Search with this Image"
-                )}
-              </Button>
+    <div className="w-full max-w-3xl mx-auto">
+      {/* Premium Glass Container */}
+      <div className="bg-white/10 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 hover:shadow-red-900/20">
+        
+        {/* Tabs */}
+        <div className="flex border-b border-white/10">
+          <button
+            onClick={() => setActiveTab("text")}
+            className={cn(
+              "flex-1 py-4 text-sm sm:text-base font-medium transition-all duration-300 flex items-center justify-center gap-2",
+              activeTab === "text"
+                ? "bg-white/10 text-white shadow-[inset_0_-2px_0_0_#ef4444]"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
             )}
-          </form>
+          >
+            <Search className="w-4 h-4" />
+             'Quick Search'
+          </button>
+          <button
+            onClick={() => setActiveTab("image")}
+            className={cn(
+              "flex-1 py-4 text-sm sm:text-base font-medium transition-all duration-300 flex items-center justify-center gap-2",
+              activeTab === "image"
+                ? "bg-white/10 text-white shadow-[inset_0_-2px_0_0_#ef4444]"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            )}
+          >
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+          'AI Image Search'
+          </button>
         </div>
-      )}
 
-      {/* Recent searches and quick filters */}
-      {(recentSearches.length > 0 || true) && (
-        <div className="mt-4 space-y-2">
-          {recentSearches.length > 0 && (
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-xs text-gray-400 mr-1">Recent:</span>
-              {recentSearches.map((term) => (
-                <button
-                  key={term}
-                  className="px-2 py-1 text-xs rounded-full bg-white/10 hover:bg-white/20 text-white"
-                  onClick={() => {
-                    setSearchTerm(term);
-                    router.push(`/cars?search=${encodeURIComponent(term)}`);
-                  }}
-                >
-                  {term}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-gray-400 mr-1">Popular:</span>
-            {["Honda", "Toyota", "SUV", "Sedan"].map((label) => (
-              <button
-                key={label}
-                className="px-2 py-1 text-xs rounded-full bg-white/10 hover:bg-white/20 text-white"
-                onClick={() => {
-                  const next = searchTerm ? `${searchTerm} ${label}` : label;
-                  setSearchTerm(next);
-                }}
+        {/* Content Area */}
+        <div className="p-6 sm:p-8">
+          <AnimatePresence mode="wait">
+            {activeTab === "text" ? (
+              <motion.form
+                key="text-search"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                onSubmit={handleTextSearch}
+                className="flex flex-col gap-4"
               >
-                {label}
-              </button>
-            ))}
-          </div>
+                <div className="relative group">
+                  <Input
+                    type="text"
+                    placeholder="Search by make, model..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-14 pl-12 pr-4 bg-black/20 border-white/10 text-white placeholder:text-gray-400 rounded-xl focus-visible:ring-red-500 focus-visible:border-red-500 text-lg transition-all group-hover:bg-black/30"
+                  />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 group-hover:text-white transition-colors" />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={searchTerm.trim().length < 2}
+                  className="h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold text-lg shadow-lg shadow-red-900/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Search Cars
+                </Button>
+
+                {/* Recent Searches */}
+                {recentSearches.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <span className="text-xs text-gray-400 self-center mr-1">Recent:</span>
+                    {recentSearches.map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => {
+                          setSearchTerm(term);
+                          router.push(`/cars?search=${encodeURIComponent(term)}`);
+                        }}
+                        className="px-3 py-1 text-xs rounded-full bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/5 transition-colors"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </motion.form>
+            ) : (
+              <motion.div
+                key="image-search"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                {!imagePreview ? (
+                  <div
+                    {...getRootProps()}
+                    className={cn(
+                      "border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-300 group",
+                      isDragActive
+                        ? "border-red-500 bg-red-500/10"
+                        : "border-white/20 hover:border-white/40 hover:bg-white/5"
+                    )}
+                  >
+                    <input {...getInputProps()} />
+                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <Camera className="w-8 h-8 text-gray-400 group-hover:text-white transition-colors" />
+                    </div>
+                    <p className="text-lg font-medium text-white mb-2">
+                      {isDragActive ? "Drop it here!" : "Upload Car Photo"}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      Drag & drop or click to select. AI will detect make, model & color.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative rounded-2xl overflow-hidden border border-white/20 group">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-64 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => open()}
+                          className="gap-2"
+                        >
+                          <Upload className="w-4 h-4" /> Replace
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setSearchImage(null);
+                            setImagePreview("");
+                          }}
+                          className="gap-2"
+                        >
+                          <Trash className="w-4 h-4" /> Remove
+                        </Button>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleImageSearch}
+                      disabled={isProcessing}
+                      className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-semibold text-lg shadow-lg shadow-red-900/20 transition-all hover:scale-[1.02]"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5 mr-2" />
+                          Analyze & Search
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      )}
+      </div>
     </div>
   );
 };

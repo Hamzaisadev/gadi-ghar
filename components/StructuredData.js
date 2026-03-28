@@ -110,7 +110,7 @@ export function OrganizationStructuredData() {
       "@type": "ContactPoint",
       "telephone": "+92 3343149433",
       "contactType": "Customer Service",
-      "availableLanguage": ["English", "Urdu"]
+      "availableLanguage": ["English"]
     },
     "address": {
       "@type": "PostalAddress",

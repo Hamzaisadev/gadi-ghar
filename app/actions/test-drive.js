@@ -5,6 +5,7 @@ import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { format } from "date-fns";
+import { testDriveBookingSchema } from "@/lib/validation";
 
 // Initialize Resend only when needed to avoid import issues
 let resend;
@@ -114,6 +115,24 @@ export async function bookTestDrive({
     const { userId } = await auth();
     if (!userId) throw new Error("You must be logged in to book a test drive");
 
+    const validationResult = testDriveBookingSchema.safeParse({
+      carId,
+      bookingDate: new Date(bookingDate),
+      startTime,
+      endTime,
+      notes,
+    });
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid booking data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const validatedData = validationResult.data;
+
     // Find user in our database
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
@@ -123,7 +142,7 @@ export async function bookTestDrive({
 
     // Check if car exists and is available
     const car = await db.car.findUnique({
-      where: { id: carId, status: "AVAILABLE" },
+      where: { id: validatedData.carId, status: "AVAILABLE" },
       include: {
         dealership: true,
       },
@@ -134,9 +153,9 @@ export async function bookTestDrive({
     // Check if slot is already booked
     const existingBooking = await db.testDriveBooking.findFirst({
       where: {
-        carId,
-        bookingDate: new Date(bookingDate),
-        startTime,
+        carId: validatedData.carId,
+        bookingDate: validatedData.bookingDate,
+        startTime: validatedData.startTime,
         status: { in: ["PENDING", "CONFIRMED"] },
       },
     });
@@ -150,12 +169,12 @@ export async function bookTestDrive({
     // Create the booking
     const booking = await db.testDriveBooking.create({
       data: {
-        carId,
+        carId: validatedData.carId,
         userId: user.id,
-        bookingDate: new Date(bookingDate),
-        startTime,
-        endTime,
-        notes: notes || null,
+        bookingDate: validatedData.bookingDate,
+        startTime: validatedData.startTime,
+        endTime: validatedData.endTime,
+        notes: validatedData.notes || null,
         status: "PENDING",
       },
       include: {
@@ -182,8 +201,8 @@ export async function bookTestDrive({
     }
 
     // Revalidate relevant paths
-    revalidatePath(`/test-drive/${carId}`);
-    revalidatePath(`/cars/${carId}`);
+    revalidatePath(`/test-drive/${validatedData.carId}`);
+    revalidatePath(`/cars/${validatedData.carId}`);
     revalidatePath(`/dealership/test-drives`);
     revalidatePath(`/admin/test-drives`);
 

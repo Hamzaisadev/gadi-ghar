@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 
 import { db } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { dealershipDataSchema, workingHoursSchema, userRoleSchema } from "@/lib/validation";
 
 export async function getDealershipInfo() {
   try {
@@ -224,7 +225,17 @@ export async function createDealership(dealershipData) {
     });
     if (!user) throw new Error("User not found");
 
-    const { name, address, phone, email, workingHours } = dealershipData;
+    const validationResult = dealershipDataSchema.safeParse(dealershipData);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid dealership data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const { name, address, phone, email, workingHours } = validationResult.data;
 
     const dealership = await db.dealershipInfo.create({
       data: {
@@ -274,48 +285,29 @@ export async function updateDealership(dealershipId, dealershipData) {
     });
     if (!user) throw new Error("User not found");
 
-    const { name, address, phone, email, isActive, workingHours } = dealershipData;
+    const validationResult = dealershipDataSchema.partial().safeParse(dealershipData);
 
-    // Update dealership info
-    const dealership = await db.dealershipInfo.update({
-      where: { id: dealershipId },
-      data: {
-        name,
-        address,
-        phone,
-        email,
-        isActive,
-      },
-      include: {
-        workingHours: {
-          orderBy: {
-            dayOfWeek: "asc",
-          },
-        },
-      },
-    });
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid dealership data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
 
-    // Update working hours
-    if (workingHours) {
-      // Delete existing working hours
-      await db.workingHour.deleteMany({
-        where: { dealershipId },
-      });
+    const { name, address, phone, email, isActive, workingHours } = validationResult.data;
 
-      // Create new working hours
-      await db.workingHour.createMany({
-        data: workingHours.map(hour => ({
-          dealershipId,
-          dayOfWeek: hour.dayOfWeek,
-          openTime: hour.openTime,
-          closeTime: hour.closeTime,
-          isOpen: hour.isOpen,
-        })),
-      });
-
-      // Fetch updated dealership with new working hours
-      const updatedDealership = await db.dealershipInfo.findUnique({
+    const updatedDealership = await db.$transaction(async (prisma) => {
+      // Update dealership info
+      const dealership = await prisma.dealershipInfo.update({
         where: { id: dealershipId },
+        data: {
+          name,
+          address,
+          phone,
+          email,
+          isActive,
+        },
         include: {
           workingHours: {
             orderBy: {
@@ -325,24 +317,35 @@ export async function updateDealership(dealershipId, dealershipData) {
         },
       });
 
-      revalidatePath("/admin/settings");
-      return {
-        success: true,
-        data: {
-          ...updatedDealership,
-          createdAt: updatedDealership.createdAt.toISOString(),
-          updatedAt: updatedDealership.updatedAt.toISOString(),
-        },
-      };
-    }
+      // Update working hours
+      if (workingHours) {
+        // Delete existing working hours
+        await prisma.workingHour.deleteMany({
+          where: { dealershipId },
+        });
+
+        // Create new working hours
+        await prisma.workingHour.createMany({
+          data: workingHours.map(hour => ({
+            dealershipId,
+            dayOfWeek: hour.dayOfWeek,
+            openTime: hour.openTime,
+            closeTime: hour.closeTime,
+            isOpen: hour.isOpen,
+          })),
+        });
+      }
+
+      return dealership;
+    });
 
     revalidatePath("/admin/settings");
     return {
       success: true,
       data: {
-        ...dealership,
-        createdAt: dealership.createdAt.toISOString(),
-        updatedAt: dealership.updatedAt.toISOString(),
+        ...updatedDealership,
+        createdAt: updatedDealership.createdAt.toISOString(),
+        updatedAt: updatedDealership.updatedAt.toISOString(),
       },
     };
   } catch (error) {
@@ -397,6 +400,18 @@ export async function saveWorkingHours(workingHours) {
       };
     }
 
+    const validationResult = workingHoursSchema.safeParse(workingHours);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid working hours data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const validatedData = validationResult.data;
+
     // Get the user and their dealership
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
@@ -412,42 +427,44 @@ export async function saveWorkingHours(workingHours) {
 
     let dealership = user.dealership;
 
-    // If no dealership exists, create one
-    if (!dealership) {
-      dealership = await db.dealershipInfo.create({
-        data: {
-          name: "New Dealership",
-          address: "Address to be updated",
-          phone: "Phone to be updated",
-          email: "Email to be updated",
-          isApproved: true,
-          approvedAt: new Date(),
-        },
+    await db.$transaction(async (prisma) => {
+      // If no dealership exists, create one
+      if (!dealership) {
+        dealership = await prisma.dealershipInfo.create({
+          data: {
+            name: "New Dealership",
+            address: "Address to be updated",
+            phone: "Phone to be updated",
+            email: "Email to be updated",
+            isApproved: true,
+            approvedAt: new Date(),
+          },
+        });
+
+        // Link the dealership to the user
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { dealershipId: dealership.id },
+        });
+      }
+
+      // Delete existing working hours
+      await prisma.workingHour.deleteMany({
+        where: { dealershipId: dealership.id },
       });
 
-      // Link the dealership to the user
-      await db.user.update({
-        where: { id: user.id },
-        data: { dealershipId: dealership.id },
+      // Create new working hours
+      const workingHoursData = Object.entries(validatedData).map(([day, hours]) => ({
+        dealershipId: dealership.id,
+        dayOfWeek: day.toUpperCase(),
+        openTime: hours.openTime || "",
+        closeTime: hours.closeTime || "",
+        isOpen: hours.isOpen,
+      }));
+
+      await prisma.workingHour.createMany({
+        data: workingHoursData,
       });
-    }
-
-    // Delete existing working hours
-    const deleteResult = await db.workingHour.deleteMany({
-      where: { dealershipId: dealership.id },
-    });
-
-    // Create new working hours
-    const workingHoursData = Object.entries(workingHours).map(([day, hours]) => ({
-      dealershipId: dealership.id,
-      dayOfWeek: day.toUpperCase(),
-      openTime: hours.openTime || "",
-      closeTime: hours.closeTime || "",
-      isOpen: hours.isOpen,
-    }));
-
-    await db.workingHour.createMany({
-      data: workingHoursData,
     });
 
     return {
@@ -506,6 +523,16 @@ export async function updateUserRole(userId, role) {
    
     if (!adminUser || adminUser.role !== "ADMIN") {
       throw new Error("Unauthorized: Admin access required")
+    }
+
+    const validationResult = userRoleSchema.safeParse({ role });
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid role",
+        errorDetails: validationResult.error.flatten(),
+      };
     }
 
     await db.user.update({

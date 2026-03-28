@@ -109,12 +109,6 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
   const isAdmin = user?.role === "ADMIN";
   const isDealershipAdmin = user?.role === "DEALERSHIP_ADMIN";
   
-  // Temporary fallback for testing - remove this later
-  // if (!user) {
-  //   console.debug('Navbar: No user found, showing login button only');
-  // }
-  
-
   return (
     <PageWrapper>
       <nav
@@ -156,6 +150,7 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                       <span>Back to app</span>
                     </Button>
                   </TransitionLink>
+                 
                 </>
               ) : (
                 <>
@@ -174,7 +169,7 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                                 </span>
                               </Button>
                             </TransitionLink>
-{showDealerButton && (
+                            {showDealerButton && (
                               <DealerNavButton />
                             )}
                           </>
@@ -222,82 +217,83 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                   </ClerkLoading>
 
                   <SignedIn>
-                  {(!isAdmin && !isDealershipAdmin) && (
-                    <>
-                      <TransitionLink
-                        href={isReservationPage ? "/cars" : "/reservations"}
-                      >
-                        <Button variant="outline">
-                          <CarFront size={18} />
-                          <span className="hidden md:inline">
-                            {isReservationPage
-                              ? "Browse Cars"
-                              : "My Reservations"}
-                          </span>
-                        </Button>
-                      </TransitionLink>
-                      
-{showDealerButton && (
-                              <DealerNavButton />
-                            )}
-                    </>
-                  )}
-                  <TransitionLink
-                    href={isWishlistedPage ? "/cars" : "/saved-cars"}
-                  >
-                    <Button>
-                      <Heart size={18} />
-                      <span className="hidden md:inline">
-                        {isWishlistedPage ? "Browse Cars" : "Saved Cars"}
-                      </span>
-                    </Button>
-                  </TransitionLink>
-
-                  <NavbarMenu />
-                  {(isAdmin || isDealershipAdmin) && (
-                    <TransitionLink href={isDealershipAdmin ? "/dealership" : "/admin"}>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <Layout size={18} />
+                   
+                   
+                    {(!isAdmin && !isDealershipAdmin) && (
+                      <>
+                        <TransitionLink
+                          href={isReservationPage ? "/cars" : "/reservations"}
+                        >
+                          <Button variant="outline">
+                            <CarFront size={18} />
+                            <span className="hidden md:inline">
+                              {isReservationPage
+                                ? "Browse Cars"
+                                : "My Reservations"}
+                            </span>
+                          </Button>
+                        </TransitionLink>
+                        
+                        {showDealerButton && (
+                          <DealerNavButton />
+                        )}
+                      </>
+                    )}
+                    <TransitionLink
+                      href={isWishlistedPage ? "/cars" : "/saved-cars"}
+                    >
+                      <Button>
+                        <Heart size={18} />
                         <span className="hidden md:inline">
-                          {isDealershipAdmin ? "Dealership Portal" : "Admin Portal"}
+                          {isWishlistedPage ? "Browse Cars" : "Saved Cars"}
                         </span>
                       </Button>
                     </TransitionLink>
-                  )}
-                </SignedIn>
+
+                    <NavbarMenu />
+                    {(isAdmin || isDealershipAdmin) && (
+                      <TransitionLink href={isDealershipAdmin ? "/dealership" : "/admin"}>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <Layout size={18} />
+                          <span className="hidden md:inline">
+                            {isDealershipAdmin ? "Dealership Portal" : "Admin Portal"}
+                          </span>
+                        </Button>
+                      </TransitionLink>
+                    )}
+                    <UserButton
+                      appearance={{
+                        elements: {
+                          avatarBox: "w-10 md:block hidden h-10",
+                        },
+                      }}
+                    />
+                  </SignedIn>
+                  
+                  <SignedOut>
+                    
+                    <NavbarMenu />
+                    {!isAdminPage && (
+                      <SignInButton forceRedirectUrl="/">
+                        <Button
+                          variant="outline"
+                          className="bg-red-600 border-none text-white"
+                        >
+                          <User /> Login
+                        </Button>
+                      </SignInButton>
+                    )}
+                  </SignedOut>
                 </>
               )}
-
-              <SignedOut>
-                <NavbarMenu />
-                {!isAdminPage && (
-                  <SignInButton forceRedirectUrl="/">
-                    <Button
-                      variant="outline"
-                      className="bg-red-600 border-none text-white"
-                    >
-                      {" "}
-                      <User /> Login
-                    </Button>
-                  </SignInButton>
-                )}
-              </SignedOut>
-
-              <SignedIn>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-10 md:block hidden h-10",
-                    },
-                  }}
-                />
-              </SignedIn>
             </div>
+
             {/* Mobile Navigation */}
             <div className="md:hidden flex items-center gap-x-1 sm:gap-x-2">
+           
               {isAdminPage ? (
                 <>
                   <TransitionLink href="/">
@@ -324,9 +320,9 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                                 </span>
                               </Button>
                             </TransitionLink>
-{showDealerButton && (
-                        <DealerNavButton />
-                      )}
+                            {showDealerButton && (
+                              <DealerNavButton />
+                            )}
                           </>
                         )}
                         <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
@@ -369,72 +365,69 @@ const Navbar = ({ user, isAdminPage: isAdminPageProp = false }) => {
                   </ClerkLoading>
 
                   <SignedIn>
-                  {(!isAdmin && !isDealershipAdmin) && (
-                    <>
-                      <TransitionLink
-                        href={isReservationPage ? "/cars" : "/reservations"}
-                        className="text-gray-600 hover:text-car-red flex items-center gap-2"
-                      >
-                        <Button variant="outline">
-                          <CarFront size={18} />
+                    {(!isAdmin && !isDealershipAdmin) && (
+                      <>
+                        <TransitionLink
+                          href={isReservationPage ? "/cars" : "/reservations"}
+                          className="text-gray-600 hover:text-car-red flex items-center gap-2"
+                        >
+                          <Button variant="outline">
+                            <CarFront size={18} />
+                            <span className="hidden md:inline">
+                              {isReservationPage ? "Browse Cars" : "My Reservations"}
+                            </span>
+                          </Button>
+                        </TransitionLink>
+                        
+                        {showDealerButton && (
+                          <DealerNavButton />
+                        )}
+                      </>
+                    )}
+                    <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
+                      <Button>
+                        <Heart size={18} />
+                        <span className="hidden md:inline">{isWishlistedPage ? "Browse Cars" : "Saved Cars"}</span>
+                      </Button>
+                    </TransitionLink>
+                    <MobNavbarMenu />
+                    {(isAdmin || isDealershipAdmin) && (
+                      <TransitionLink href={isDealershipAdmin ? "/dealership" : "/admin"}>
+                        <Button
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          <Layout size={18} />
                           <span className="hidden md:inline">
-                            {isReservationPage ? "Browse Cars" : "My Reservations"}
+                            {isDealershipAdmin ? "Dealership Portal" : "Admin Portal"}
                           </span>
                         </Button>
                       </TransitionLink>
-                      
-{showDealerButton && (
-                        <DealerNavButton />
-                      )}
-                    </>
-                  )}
-                  <TransitionLink href={isWishlistedPage ? "/cars" : "/saved-cars"}>
-                    <Button>
-                      <Heart size={18} />
-                      <span className="hidden md:inline">{isWishlistedPage ? "Browse Cars" : "Saved Cars"}</span>
-                    </Button>
-                  </TransitionLink>
-                  <MobNavbarMenu />
-                  {(isAdmin || isDealershipAdmin) && (
-                    <TransitionLink href={isDealershipAdmin ? "/dealership" : "/admin"}>
-                      <Button
-                        variant="outline"
-                        className="flex items-center gap-2"
-                      >
-                        <Layout size={18} />
-                        <span className="hidden md:inline">
-                          {isDealershipAdmin ? "Dealership Portal" : "Admin Portal"}
-                        </span>
-                      </Button>
-                    </TransitionLink>
-                  )}
-                </SignedIn>
+                    )}
+                    <UserButton
+                      appearance={{
+                        elements: {
+                          avatarBox: "w-8 h-8 sm:w-9 sm:h-9",
+                        },
+                      }}
+                    />
+                  </SignedIn>
+
+                  <SignedOut>
+                    <MobNavbarMenu />
+                    {!isAdminPage && (
+                      <SignInButton forceRedirectUrl="/">
+                        <Button
+                          variant="outline"
+                          className="bg-red-600 border-none text-white"
+                        >
+                          Login
+                        </Button>
+                      </SignInButton>
+                    )}
+                  </SignedOut>
                 </>
               )}
-
-              <SignedOut>
-                <MobNavbarMenu />
-                {!isAdminPage && (
-                  <SignInButton forceRedirectUrl="/">
-                    <Button
-                      variant="outline"
-                      className="bg-red-600 border-none text-white"
-                    >
-                      Login
-                    </Button>
-                  </SignInButton>
-                )}
-              </SignedOut>
-
-              <SignedIn>
-                <UserButton
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8 sm:w-9 sm:h-9",
-                    },
-                  }}
-                />
-              </SignedIn>
             </div>
           </div>
         </div>

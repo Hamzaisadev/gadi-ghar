@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { generatePlaceholderLogo } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/server";
+import { dealershipFormSchema } from "@/lib/validation";
 
 export async function getDealership() {
   const { userId } = await auth();
@@ -33,6 +34,18 @@ export async function submitDealershipApplication(applicationData) {
       };
     }
 
+    const validationResult = dealershipFormSchema.safeParse(applicationData);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid application data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const validatedData = validationResult.data;
+
     // Get the user
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
@@ -46,34 +59,34 @@ export async function submitDealershipApplication(applicationData) {
     }
 
     // Handle logo - applicationData.logo should already be a URL string
-    let logoUrl = applicationData.logo;
+    let logoUrl = validatedData.logo;
 
     // If no logo provided, generate placeholder
     if (!logoUrl || logoUrl === "null" || logoUrl === "undefined") {
-      logoUrl = generatePlaceholderLogo(applicationData.ownerName);
+      logoUrl = generatePlaceholderLogo(validatedData.ownerName);
     }
 
     // Create the application
     const application = await db.dealershipApplication.create({
       data: {
         userId: user.id,
-        dealershipName: applicationData.dealershipName,
-        businessLicense: applicationData.businessLicense,
-        businessAddress: applicationData.businessAddress,
-        businessPhone: applicationData.businessPhone,
-        businessEmail: applicationData.businessEmail,
-        ownerName: applicationData.ownerName,
-        ownerPhone: applicationData.ownerPhone,
-        ownerEmail: applicationData.ownerEmail,
-        businessType: applicationData.businessType,
-        yearsInBusiness: parseInt(applicationData.yearsInBusiness) || 0,
-        description: applicationData.description,
+        dealershipName: validatedData.dealershipName,
+        businessLicense: validatedData.businessLicense,
+        businessAddress: validatedData.businessAddress,
+        businessPhone: validatedData.businessPhone,
+        businessEmail: validatedData.businessEmail,
+        ownerName: validatedData.ownerName,
+        ownerPhone: validatedData.ownerPhone,
+        ownerEmail: validatedData.ownerEmail,
+        businessType: validatedData.businessType,
+        yearsInBusiness: parseInt(validatedData.yearsInBusiness) || 0,
+        description: validatedData.description,
         logo: logoUrl,
-        website: applicationData.website || null,
-        facebook: applicationData.facebook || null,
-        twitter: applicationData.twitter || null,
-        instagram: applicationData.instagram || null,
-        whatsapp: applicationData.whatsapp || null,
+        website: validatedData.website || null,
+        facebook: validatedData.facebook || null,
+        twitter: validatedData.twitter || null,
+        instagram: validatedData.instagram || null,
+        whatsapp: validatedData.whatsapp || null,
         status: "PENDING",
       },
     });
@@ -261,124 +274,124 @@ export async function reviewDealershipApplication(applicationId, reviewData) {
       };
     }
 
-    // Get the application
-    const application = await db.dealershipApplication.findUnique({
-      where: { id: applicationId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    const result = await db.$transaction(async (prisma) => {
+      // Get the application
+      const application = await prisma.dealershipApplication.findUnique({
+        where: { id: applicationId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!application) {
-      return {
-        success: false,
-        error: "Application not found",
-      };
-    }
+      if (!application) {
+        throw new Error("Application not found");
+      }
 
-    // Update the application status
-    const updatedApplication = await db.dealershipApplication.update({
-      where: { id: applicationId },
-      data: {
-        status: reviewData.status,
-        reviewNotes: reviewData.reviewNotes,
-        reviewedAt: new Date(),
-        reviewedBy: user.id,
-      },
-    });
-
-    // If approved, create dealership info and update user role
-    if (reviewData.status === "APPROVED") {
-      // Create dealership info
-      const dealershipInfo = await db.dealershipInfo.create({
+      // Update the application status
+      const updatedApplication = await prisma.dealershipApplication.update({
+        where: { id: applicationId },
         data: {
-          name: application.dealershipName,
-          address: application.businessAddress,
-          phone: application.businessPhone,
-          email: application.businessEmail,
-          logo: application.logo, // Include the logo
-          description: application.description,
-          // Include social media fields from application
-          website: application.website,
-          facebook: application.facebook,
-          twitter: application.twitter,
-          instagram: application.instagram,
-          whatsapp: application.whatsapp,
-          isApproved: true,
-          approvedBy: user.id,
-          approvedAt: new Date(),
+          status: reviewData.status,
+          reviewNotes: reviewData.reviewNotes,
+          reviewedAt: new Date(),
+          reviewedBy: user.id,
         },
       });
 
-      // Create working hours if the application had working hours data
-      // Note: We'll need to store working hours in the application or retrieve them from the form data
-      // For now, we'll create default working hours
-      const defaultWorkingHours = [
-        {
-          dayOfWeek: "MONDAY",
-          openTime: "09:00",
-          closeTime: "18:00",
-          isOpen: true,
-        },
-        {
-          dayOfWeek: "TUESDAY",
-          openTime: "09:00",
-          closeTime: "18:00",
-          isOpen: true,
-        },
-        {
-          dayOfWeek: "WEDNESDAY",
-          openTime: "09:00",
-          closeTime: "18:00",
-          isOpen: true,
-        },
-        {
-          dayOfWeek: "THURSDAY",
-          openTime: "09:00",
-          closeTime: "18:00",
-          isOpen: true,
-        },
-        {
-          dayOfWeek: "FRIDAY",
-          openTime: "09:00",
-          closeTime: "18:00",
-          isOpen: true,
-        },
-        {
-          dayOfWeek: "SATURDAY",
-          openTime: "09:00",
-          closeTime: "17:00",
-          isOpen: true,
-        },
-        { dayOfWeek: "SUNDAY", openTime: "", closeTime: "", isOpen: false },
-      ];
+      // If approved, create dealership info and update user role
+      if (reviewData.status === "APPROVED") {
+        // Create dealership info
+        const dealershipInfo = await prisma.dealershipInfo.create({
+          data: {
+            name: application.dealershipName,
+            address: application.businessAddress,
+            phone: application.businessPhone,
+            email: application.businessEmail,
+            logo: application.logo, // Include the logo
+            description: application.description,
+            // Include social media fields from application
+            website: application.website,
+            facebook: application.facebook,
+            twitter: application.twitter,
+            instagram: application.instagram,
+            whatsapp: application.whatsapp,
+            isApproved: true,
+            approvedBy: user.id,
+            approvedAt: new Date(),
+          },
+        });
 
-      await db.workingHour.createMany({
-        data: defaultWorkingHours.map((hours) => ({
-          ...hours,
-          dealershipId: dealershipInfo.id,
-        })),
-      });
+        // Create working hours if the application had working hours data
+        // Note: We'll need to store working hours in the application or retrieve them from the form data
+        // For now, we'll create default working hours
+        const defaultWorkingHours = [
+          {
+            dayOfWeek: "MONDAY",
+            openTime: "09:00",
+            closeTime: "18:00",
+            isOpen: true,
+          },
+          {
+            dayOfWeek: "TUESDAY",
+            openTime: "09:00",
+            closeTime: "18:00",
+            isOpen: true,
+          },
+          {
+            dayOfWeek: "WEDNESDAY",
+            openTime: "09:00",
+            closeTime: "18:00",
+            isOpen: true,
+          },
+          {
+            dayOfWeek: "THURSDAY",
+            openTime: "09:00",
+            closeTime: "18:00",
+            isOpen: true,
+          },
+          {
+            dayOfWeek: "FRIDAY",
+            openTime: "09:00",
+            closeTime: "18:00",
+            isOpen: true,
+          },
+          {
+            dayOfWeek: "SATURDAY",
+            openTime: "09:00",
+            closeTime: "17:00",
+            isOpen: true,
+          },
+          { dayOfWeek: "SUNDAY", openTime: "", closeTime: "", isOpen: false },
+        ];
 
-      // Update user role to dealership admin and link to dealership
-      await db.user.update({
-        where: { id: application.userId },
-        data: {
-          role: "DEALERSHIP_ADMIN",
-          dealershipId: dealershipInfo.id,
-        },
-      });
-    }
+        await prisma.workingHour.createMany({
+          data: defaultWorkingHours.map((hours) => ({
+            ...hours,
+            dealershipId: dealershipInfo.id,
+          })),
+        });
+
+        // Update user role to dealership admin and link to dealership
+        await prisma.user.update({
+          where: { id: application.userId },
+          data: {
+            role: "DEALERSHIP_ADMIN",
+            dealershipId: dealershipInfo.id,
+          },
+        });
+      }
+      return updatedApplication;
+    });
 
     return {
       success: true,
-      data: updatedApplication,
+      data: result,
     };
   } catch (error) {
     console.error("Error reviewing dealership application:", error);

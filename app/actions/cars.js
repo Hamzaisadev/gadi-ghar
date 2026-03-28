@@ -8,6 +8,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
+import { carFormSchema } from "@/lib/validation";
 
 export async function processCarImageWithAI(file) {
   async function fileToBase64() {
@@ -144,6 +145,18 @@ export async function addCar({ carData, images }) {
     const { userId } = await auth();
     if (!userId) throw new Error("User not authenticated");
 
+    const validationResult = carFormSchema.safeParse(carData);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid car data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const validatedData = validationResult.data;
+
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
       include: {
@@ -154,14 +167,14 @@ export async function addCar({ carData, images }) {
     if (!user) throw new Error("User not found");
 
     // Determine dealershipId based on user role
-    let dealershipId = carData.dealershipId;
+    let dealershipId = validatedData.dealershipId;
 
     if (user.role === "DEALERSHIP" && user.dealership) {
       // For dealership users, always use their own dealership
       dealershipId = user.dealership.id;
     } else if (user.role === "ADMIN") {
       // For admin users, use the provided dealershipId or null
-      dealershipId = carData.dealershipId || null;
+      dealershipId = validatedData.dealershipId || null;
     } else {
       throw new Error(
         "Unauthorized: Only admin and dealership users can add cars"
@@ -214,20 +227,20 @@ export async function addCar({ carData, images }) {
     const car = await db.car.create({
       data: {
         id: carId, // Use the same ID we used for the folder
-        make: carData.make,
-        model: carData.model,
-        year: carData.year,
-        minPrice: carData.minPrice,
-        maxPrice: carData.maxPrice,
-        mileage: carData.mileage,
-        color: carData.color,
-        fuelType: carData.fuelType,
-        transmission: carData.transmission,
-        bodyType: carData.bodyType,
-        seats: carData.seats,
-        description: carData.description,
-        status: carData.status,
-        featured: carData.featured,
+        make: validatedData.make,
+        model: validatedData.model,
+        year: validatedData.year,
+        minPrice: validatedData.minPrice,
+        maxPrice: validatedData.maxPrice,
+        mileage: validatedData.mileage,
+        color: validatedData.color,
+        fuelType: validatedData.fuelType,
+        transmission: validatedData.transmission,
+        bodyType: validatedData.bodyType,
+        seats: validatedData.seats,
+        description: validatedData.description,
+        status: validatedData.status,
+        featured: validatedData.featured,
         dealershipId: dealershipId,
         images: imageUrls, // Store the array of image URLs
       },

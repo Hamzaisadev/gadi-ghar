@@ -7,6 +7,7 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
+import { carFormSchema } from "@/lib/validation";
 
 /**
  * Get dealership user and verify permissions
@@ -76,6 +77,18 @@ export async function addDealershipCar({ carData, images }) {
       };
     }
 
+    const validationResult = carFormSchema.safeParse(carData);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid car data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const validatedData = validationResult.data;
+
     if (!images || images.length === 0) {
       return { success: false, error: "At least one image is required" };
     }
@@ -135,20 +148,20 @@ export async function addDealershipCar({ carData, images }) {
       return await tx.car.create({
         data: {
           id: carId,
-          make: carData.make,
-          model: carData.model,
-          year: parseInt(carData.year),
-          minPrice: parseFloat(carData.minPrice),
-          maxPrice: parseFloat(carData.maxPrice),
-          mileage: parseFloat(carData.mileage),
-          color: carData.color,
-          fuelType: carData.fuelType,
-          transmission: carData.transmission,
-          bodyType: carData.bodyType,
-          seats: carData.seats ? parseInt(carData.seats) : null,
-          description: carData.description,
-          status: carData.status || "AVAILABLE",
-          featured: Boolean(carData.featured),
+          make: validatedData.make,
+          model: validatedData.model,
+          year: parseInt(validatedData.year),
+          minPrice: parseFloat(validatedData.minPrice),
+          maxPrice: parseFloat(validatedData.maxPrice),
+          mileage: parseFloat(validatedData.mileage),
+          color: validatedData.color,
+          fuelType: validatedData.fuelType,
+          transmission: validatedData.transmission,
+          bodyType: validatedData.bodyType,
+          seats: validatedData.seats ? parseInt(validatedData.seats) : null,
+          description: validatedData.description,
+          status: validatedData.status || "AVAILABLE",
+          featured: Boolean(validatedData.featured),
           dealershipId: dealershipId,
           images: imageUrls,
         },
@@ -255,15 +268,27 @@ export async function updateDealershipCar(carId, updateData) {
       throw new Error("Car not found or unauthorized");
     }
 
+    const validationResult = carFormSchema.partial().safeParse(updateData);
+
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: "Invalid car data",
+        errorDetails: validationResult.error.flatten(),
+      };
+    }
+
+    const validatedData = validationResult.data;
+
     const updatedCar = await db.car.update({
       where: { id: carId },
       data: {
-        ...updateData,
-        year: updateData.year ? parseInt(updateData.year) : undefined,
-        minPrice: updateData.minPrice ? parseFloat(updateData.minPrice) : undefined,
-        maxPrice: updateData.maxPrice ? parseFloat(updateData.maxPrice) : undefined,
-        mileage: updateData.mileage ? parseFloat(updateData.mileage) : undefined,
-        seats: updateData.seats ? parseInt(updateData.seats) : undefined,
+        ...validatedData,
+        year: validatedData.year ? parseInt(validatedData.year) : undefined,
+        minPrice: validatedData.minPrice ? parseFloat(validatedData.minPrice) : undefined,
+        maxPrice: validatedData.maxPrice ? parseFloat(validatedData.maxPrice) : undefined,
+        mileage: validatedData.mileage ? parseFloat(validatedData.mileage) : undefined,
+        seats: validatedData.seats ? parseInt(validatedData.seats) : undefined,
       },
       include: {
         dealership: {
