@@ -1,4 +1,3 @@
-"use client";
 import DealershipProfilePage from "./_components/DealershipProfilePage";
 
 export const metadata = {
