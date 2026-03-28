@@ -1,5 +1,7 @@
 import DealerOverviewPage from "./_components/DealerOverviewPage";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Dashboard | Dealership",
   description: "Dealership dashboard overview",

@@ -4,6 +4,8 @@ import PageWrapper from "@/components/utils/pageWrapper";
 import { Car } from "lucide-react";
 import { AddCarForm } from "./_components/AddCarForm";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Add Car | Dealership",
   description: "Add a new car to your dealership inventory",
