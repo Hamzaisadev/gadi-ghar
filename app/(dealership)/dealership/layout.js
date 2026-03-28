@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { checkDealershipAuthorization, getDealership } from "@/app/actions/dealership";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
