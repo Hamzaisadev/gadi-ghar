@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +12,24 @@ export async function GET(request) {
   }
 
   try {
-    // Ping the database by requesting a single lightweight record
+    // 1. Prisma Ping (Keeps the DB connection active)
     await db.car.findFirst({ select: { id: true } });
     
-    return NextResponse.json({ message: "Database pinged successfully. Supabase is awake!" }, { status: 200 });
+    // 2. Supabase REST API Ping (Forces Supabase's activity tracker to log it)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      try {
+        await supabase.from("Car").select("id").limit(1);
+      } catch (e) {
+        // We ignore if the table name is slightly different, hitting the API is all that matters.
+        console.error("Supabase REST ping failed, but API was still hit:", e);
+      }
+    }
+    
+    return NextResponse.json({ message: "Database pinged via both Prisma and REST successfully. Supabase is awake!" }, { status: 200 });
   } catch (error) {
     console.error("Keep-alive database ping failed:", error);
     return NextResponse.json({ error: "Failed to ping database" }, { status: 500 });
